@@ -18,6 +18,7 @@ import {
   saveTrips,
   getStorageMode,
 } from "@/lib/supabase/storage";
+import { seedDemoData } from "@/lib/seed-demo";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -170,10 +171,12 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     setLoading(true);
     setStatus(null);
     try {
-      const { generateDemoTrips } = await import("@/lib/demo-data");
-      const userId = await getUserId();
-      const trips = generateDemoTrips(userId);
-      await processTrips(trips, "manual");
+      const { tripCount, safetyScore } = await seedDemoData();
+      setStatus({
+        type: "success",
+        message: `Imported ${tripCount} trips. Safety score updated to ${safetyScore}/100.`,
+      });
+      onImportComplete();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load demo data";
       setStatus({ type: "error", message: msg });

@@ -11,6 +11,7 @@ import {
   getStorageMode,
   getUserId,
 } from "@/lib/supabase/storage";
+import { seedDemoData } from "@/lib/seed-demo";
 import { DataImport } from "./DataImport";
 import { TripMapCard } from "./TripMapCard";
 import { RiskScoreCard } from "./RiskScoreCard";
@@ -57,8 +58,19 @@ export function Dashboard() {
         const uid = await getUserId();
         if (cancelled) return;
         setUserId(uid);
-        const [t, r, s, p] = await Promise.all([
-          fetchTrips("personal"),
+
+        let t = await fetchTrips("personal");
+        const shouldSeed =
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).has("demo") &&
+          t.length === 0;
+
+        if (shouldSeed) {
+          await seedDemoData();
+          t = await fetchTrips("personal");
+        }
+
+        const [r, s, p] = await Promise.all([
           fetchCommonRoutes("personal"),
           fetchLatestRiskScore("personal"),
           fetchRoutePredictions(),

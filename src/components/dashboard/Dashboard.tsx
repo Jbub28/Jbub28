@@ -25,7 +25,8 @@ import { HighRiskCorridors } from "./HighRiskCorridors";
 import { RiskPatterns } from "./RiskPatterns";
 import { RoutePredictor } from "./RoutePredictor";
 import { Card } from "@/components/ui/Card";
-import { MapPin, History, Database } from "lucide-react";
+import { MapPin, History, Database, Navigation } from "lucide-react";
+import Link from "next/link";
 
 export function Dashboard() {
   const [crashes, setCrashes] = useState<CrashEvent[]>([]);
@@ -115,9 +116,9 @@ export function Dashboard() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white">
             <MapPin className="h-5 w-5" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Route Risk Predictor
+              Route Risk Insights
             </h1>
             <p className="text-sm text-slate-500">
               Powered by Signal4 Analytics · Florida report loaded
@@ -125,6 +126,13 @@ export function Dashboard() {
               {storageMode === "local" && " · local storage"}
             </p>
           </div>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+          >
+            <Navigation className="h-4 w-4" />
+            Open GPS Nav
+          </Link>
         </div>
         <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
           Import historic crash data from{" "}

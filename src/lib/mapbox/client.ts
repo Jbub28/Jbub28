@@ -12,6 +12,18 @@ export interface RouteGeometry {
   durationMinutes?: number;
 }
 
+export interface RouteStep {
+  instruction: string;
+  maneuver: string;
+  distanceMeters: number;
+  durationSeconds: number;
+  location: [number, number];
+}
+
+export interface NavigationRoute extends RouteGeometry {
+  steps: RouteStep[];
+}
+
 export function isMapboxConfigured(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
 }
@@ -90,14 +102,64 @@ export async function geocodeAddress(
   };
 }
 
-interface DirectionsRoute {
+interface DirectionsManeuver {
+  instruction: string;
+  type: string;
+  modifier?: string;
+  location: [number, number];
+}
+
+interface DirectionsStep {
   geometry: { coordinates: [number, number][] };
+  maneuver: DirectionsManeuver;
   distance: number;
   duration: number;
 }
 
+interface DirectionsLeg {
+  steps: DirectionsStep[];
+}
+
+interface DirectionsRoute {
+  geometry: { coordinates: [number, number][] };
+  distance: number;
+  duration: number;
+  legs: DirectionsLeg[];
+}
+
 interface DirectionsResponse {
   routes: DirectionsRoute[];
+}
+
+function parseRouteSteps(route: DirectionsRoute): RouteStep[] {
+  const steps: RouteStep[] = [];
+  for (const leg of route.legs ?? []) {
+    for (const step of leg.steps ?? []) {
+      const modifier = step.maneuver.modifier ? ` ${step.maneuver.modifier}` : "";
+      steps.push({
+        instruction: step.maneuver.instruction,
+        maneuver: `${step.maneuver.type}${modifier}`,
+        distanceMeters: step.distance,
+        durationSeconds: step.duration,
+        location: step.maneuver.location,
+      });
+    }
+  }
+  return steps;
+}
+
+function buildRouteGeometry(
+  route: DirectionsRoute,
+  origin: MapboxCoord,
+  destination: MapboxCoord
+): RouteGeometry {
+  return {
+    coordinates: route.geometry.coordinates,
+    origin,
+    destination,
+    distanceMiles: route.distance / 1609.34,
+    durationMinutes: Math.round(route.duration / 60),
+  };
 }
 
 export async function fetchRoute(
@@ -108,13 +170,23 @@ export async function fetchRoute(
   const data = await mapboxFetch<DirectionsResponse>(path);
   const route = data.routes[0];
   if (!route) return null;
+  return buildRouteGeometry(route, origin, destination);
+}
+
+export async function fetchNavigationRoute(
+  origin: MapboxCoord,
+  destination: MapboxCoord
+): Promise<NavigationRoute | null> {
+  const path =
+    `/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}` +
+    `?geometries=geojson&overview=full&steps=true&banner_instructions=true`;
+  const data = await mapboxFetch<DirectionsResponse>(path);
+  const route = data.routes[0];
+  if (!route) return null;
 
   return {
-    coordinates: route.geometry.coordinates,
-    origin,
-    destination,
-    distanceMiles: route.distance / 1609.34,
-    durationMinutes: Math.round(route.duration / 60),
+    ...buildRouteGeometry(route, origin, destination),
+    steps: parseRouteSteps(route),
   };
 }
 

@@ -1,14 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
-  title: "Route Risk Predictor",
+  title: "SafeRoute Nav — GPS Navigation with Crash Risk Insights",
   description:
-    "Predict route risk using historic crash data from Signal4 Analytics (Florida statewide crash data).",
+    "GPS turn-by-turn navigation powered by Mapbox, with historic crash risk overlays from Signal4 Analytics.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

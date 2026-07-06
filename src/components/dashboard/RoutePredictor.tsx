@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Signal4StateReport } from "@/lib/types/signal4-report";
 import type { CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
 import { predictRouteRisk } from "@/lib/risk/prediction";
 import { saveRoutePrediction } from "@/lib/supabase/storage";
@@ -13,6 +14,7 @@ interface RoutePredictorProps {
   userId: string;
   crashes: CrashEvent[];
   corridors: HighRiskCorridor[];
+  stateReport?: Signal4StateReport | null;
   onPrediction?: (prediction: RoutePrediction) => void;
 }
 
@@ -49,6 +51,7 @@ export function RoutePredictor({
   userId,
   crashes,
   corridors,
+  stateReport,
   onPrediction,
 }: RoutePredictorProps) {
   const [origin, setOrigin] = useState("");
@@ -79,6 +82,7 @@ export function RoutePredictor({
         plannedTime: time,
         crashes,
         corridors,
+        stateReport,
       });
 
       await saveRoutePrediction(prediction);
@@ -102,14 +106,19 @@ export function RoutePredictor({
           <Input label="Departure time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </div>
 
-        <Button type="submit" disabled={loading || crashes.length === 0}>
+        <Button type="submit" disabled={loading || (!stateReport && crashes.length === 0)}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
           Predict route risk
         </Button>
 
-        {crashes.length === 0 && (
+        {crashes.length === 0 && !stateReport && (
           <p className="text-xs text-amber-600">
-            Import Signal4 crash data first to enable historic route predictions.
+            Import the Florida Traffic Safety Report (PDF) or Signal4 crash CSV to enable predictions.
+          </p>
+        )}
+        {stateReport && crashes.length === 0 && (
+          <p className="text-xs text-emerald-600">
+            Statewide Signal4 report loaded — predictions use Florida day-of-week and emphasis-area patterns.
           </p>
         )}
       </form>

@@ -13,12 +13,14 @@ import {
   saveCrashes,
   getStorageMode,
 } from "@/lib/supabase/storage";
+import { saveStateReport } from "@/lib/supabase/state-report";
 import { seedSignal4SampleData } from "@/lib/seed-signal4";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
   Upload,
   FileSpreadsheet,
+  FileText,
   CheckCircle,
   AlertCircle,
   Database,
@@ -35,7 +37,8 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     message: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const csvRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
 
   const processCrashes = useCallback(
     async (newCrashes: CrashEvent[]) => {
@@ -68,6 +71,40 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     [onImportComplete]
   );
 
+  async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    setStatus(null);
+    try {
+      const userId = await getUserId();
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", userId);
+
+      const res = await fetch("/api/import-signal4-report", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to parse PDF");
+
+      await saveStateReport(data.report);
+      setStatus({
+        type: "success",
+        message: `Imported Florida Traffic Safety Report (data through ${data.report.data_through}). Route predictions now use statewide patterns.`,
+      });
+      onImportComplete();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to parse PDF report";
+      setStatus({ type: "error", message: msg });
+    } finally {
+      setLoading(false);
+      if (pdfRef.current) pdfRef.current.value = "";
+    }
+  }
+
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,7 +122,7 @@ export function DataImport({ onImportComplete }: DataImportProps) {
       await logImport("signal4_analytics", 0, "error", msg);
     } finally {
       setLoading(false);
-      if (fileRef.current) fileRef.current.value = "";
+      if (csvRef.current) csvRef.current.value = "";
     }
   }
 
@@ -122,37 +159,28 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     >
       <div className="space-y-4">
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Download crash data from{" "}
-          <a
-            href="https://signal4analytics.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-emerald-600 underline"
-          >
+          Import from{" "}
+          <a href="https://signal4analytics.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-emerald-600 underline">
             Signal4 Analytics
             <ExternalLink className="h-3 w-3" />
-          </a>{" "}
-          using <strong>Event Analysis</strong> → query your area → download{" "}
-          <strong>Crash Tables (CSV)</strong>. Upload the export here to power route
-          risk predictions.
+          </a>
+          : upload the <strong>Florida Traffic Safety Report (PDF)</strong> for statewide patterns,
+          or <strong>Crash Tables (CSV)</strong> from Event Analysis for location-specific data.
         </p>
+
+        <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">
+          <FileText className="h-5 w-5 text-emerald-600" />
+          <div>
+            <span className="font-medium text-slate-800 dark:text-slate-200">Upload Florida Traffic Safety Report (PDF)</span>
+            <p className="text-xs text-slate-500">Statewide crash trends, day-of-week patterns, emphasis areas</p>
+          </div>
+          <input ref={pdfRef} type="file" accept=".pdf,application/pdf" className="hidden" onChange={handlePdfUpload} disabled={loading} />
+        </label>
 
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 p-6 transition-colors hover:border-emerald-400 dark:border-slate-600">
           <FileSpreadsheet className="h-8 w-8 text-slate-400" />
-          <span className="text-sm font-medium text-slate-600">
-            Drop Signal4 CSV or click to browse
-          </span>
-          <span className="text-xs text-slate-400">
-            Supports S4 Event Data exports with Latitude, Longitude, Crash Date and Time
-          </span>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv"
-            className="hidden"
-            onChange={handleCsvUpload}
-            disabled={loading}
-          />
+          <span className="text-sm font-medium text-slate-600">Drop Signal4 Crash Tables CSV or click to browse</span>
+          <input ref={csvRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvUpload} disabled={loading} />
         </label>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">

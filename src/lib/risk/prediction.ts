@@ -10,6 +10,11 @@ import {
   findCrashesNearRoute,
   matchRoadInText,
 } from "@/lib/risk/corridors";
+import {
+  getEmphasisAreaRisk,
+  getStatewideDayRisk,
+} from "@/lib/risk/statewide";
+import type { Signal4StateReport } from "@/lib/types/signal4-report";
 
 function getTimeOfDay(hour: number): string {
   if (hour >= 5 && hour < 12) return "morning";
@@ -36,6 +41,7 @@ interface PredictionInput {
   plannedTime: string;
   crashes: CrashEvent[];
   corridors: HighRiskCorridor[];
+  stateReport?: Signal4StateReport | null;
 }
 
 export function predictRouteRisk(input: PredictionInput): RoutePrediction {
@@ -47,6 +53,7 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
     plannedTime,
     crashes,
     corridors,
+    stateReport,
   } = input;
 
   const [hours] = plannedTime.split(":").map(Number);
@@ -144,6 +151,30 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
     factors.push("Afternoon rush hour increases crash exposure on busy corridors.");
   }
 
+  const dayRisk = getStatewideDayRisk(stateReport ?? null, plannedDate);
+  if (dayRisk.riskBoost > 0) {
+    riskScore += dayRisk.riskBoost;
+    factors.push(dayRisk.detail);
+  } else if (dayRisk.detail) {
+    factors.push(dayRisk.detail);
+  }
+
+  const emphasisRisk = getEmphasisAreaRisk(
+    stateReport ?? null,
+    originAddress,
+    destinationAddress
+  );
+  if (emphasisRisk.riskBoost > 0) {
+    riskScore += emphasisRisk.riskBoost;
+    factors.push(...emphasisRisk.details);
+  }
+
+  if (stateReport && relevantCrashes.length === 0) {
+    factors.push(
+      `Statewide Signal4 report loaded (through ${stateReport.data_through}) — predictions use Florida day-of-week and emphasis-area patterns.`
+    );
+  }
+
   riskScore = Math.min(100, Math.max(1, Math.round(riskScore)));
   const riskLevel = riskLevelFromScore(riskScore);
 
@@ -180,6 +211,7 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
       matchingCorridor: matchingCorridor?.name ?? null,
       factorDetails: factors,
       dataSource: "Signal4 Analytics",
+      statewideReport: stateReport?.data_through ?? null,
     },
     created_at: new Date().toISOString(),
   };

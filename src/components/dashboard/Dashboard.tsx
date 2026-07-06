@@ -11,7 +11,12 @@ import {
   getStorageMode,
   getUserId,
 } from "@/lib/supabase/storage";
-import { seedSignal4SampleData } from "@/lib/seed-signal4";
+import type { Signal4StateReport } from "@/lib/types/signal4-report";
+import {
+  ensureStateReport,
+  fetchStateReport,
+} from "@/lib/supabase/state-report";
+import { StateReportCard } from "./StateReportCard";
 import { DataImport } from "./DataImport";
 import { CrashMapCard } from "./CrashMapCard";
 import { RiskScoreCard } from "./RiskScoreCard";
@@ -28,6 +33,7 @@ export function Dashboard() {
   const [predictions, setPredictions] = useState<RoutePrediction[]>([]);
   const [userId, setUserId] = useState("");
   const [selectedCorridor, setSelectedCorridor] = useState<HighRiskCorridor | null>(null);
+  const [stateReport, setStateReport] = useState<Signal4StateReport | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -35,16 +41,18 @@ export function Dashboard() {
     try {
       const uid = await getUserId();
       setUserId(uid);
-      const [c, r, s, p] = await Promise.all([
+      const [c, r, s, p, report] = await Promise.all([
         fetchCrashes("signal4"),
         fetchCorridors("signal4"),
         fetchLatestAreaRiskScore("signal4"),
         fetchRoutePredictions(),
+        fetchStateReport(uid),
       ]);
       setCrashes(c);
       setCorridors(r);
       setScore(s);
       setPredictions(p);
+      setStateReport(report);
     } finally {
       setLoading(false);
     }
@@ -59,6 +67,10 @@ export function Dashboard() {
         if (cancelled) return;
         setUserId(uid);
 
+        const report = await ensureStateReport(uid);
+        if (cancelled) return;
+        setStateReport(report);
+
         let c = await fetchCrashes("signal4");
         const shouldSeed =
           typeof window !== "undefined" &&
@@ -66,6 +78,7 @@ export function Dashboard() {
           c.length === 0;
 
         if (shouldSeed) {
+          const { seedSignal4SampleData } = await import("@/lib/seed-signal4");
           await seedSignal4SampleData();
           c = await fetchCrashes("signal4");
         }
@@ -104,7 +117,8 @@ export function Dashboard() {
               Route Risk Predictor
             </h1>
             <p className="text-sm text-slate-500">
-              Powered by Signal4 Analytics · {crashes.length} historic crashes loaded
+              Powered by Signal4 Analytics · Florida report loaded
+              {crashes.length > 0 && ` · ${crashes.length} crash points`}
               {storageMode === "local" && " · local storage"}
             </p>
           </div>
@@ -118,7 +132,7 @@ export function Dashboard() {
         </p>
       </header>
 
-      {loading && crashes.length === 0 ? (
+      {loading && !stateReport ? (
         <div className="flex h-40 items-center justify-center text-sm text-slate-500">
           Loading dashboard…
         </div>
@@ -128,8 +142,11 @@ export function Dashboard() {
             userId={userId}
             crashes={crashes}
             corridors={corridors}
+            stateReport={stateReport}
             onPrediction={(p) => setPredictions((prev) => [p, ...prev])}
           />
+
+          <StateReportCard report={stateReport} />
 
           <DataImport onImportComplete={refresh} />
 

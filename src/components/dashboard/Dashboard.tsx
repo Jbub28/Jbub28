@@ -1,33 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CommonRoute, RiskScore, RoutePrediction, Trip } from "@/lib/types/driving";
+import type { AreaRiskScore, CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
 import { extractPatternInsights } from "@/lib/risk/scoring";
 import {
-  fetchCommonRoutes,
-  fetchLatestRiskScore,
+  fetchCorridors,
+  fetchCrashes,
+  fetchLatestAreaRiskScore,
   fetchRoutePredictions,
-  fetchTrips,
   getStorageMode,
   getUserId,
 } from "@/lib/supabase/storage";
-import { seedDemoData } from "@/lib/seed-demo";
+import { seedSignal4SampleData } from "@/lib/seed-signal4";
 import { DataImport } from "./DataImport";
-import { TripMapCard } from "./TripMapCard";
+import { CrashMapCard } from "./CrashMapCard";
 import { RiskScoreCard } from "./RiskScoreCard";
-import { CommonRoutes } from "./CommonRoutes";
+import { HighRiskCorridors } from "./HighRiskCorridors";
 import { RiskPatterns } from "./RiskPatterns";
 import { RoutePredictor } from "./RoutePredictor";
 import { Card } from "@/components/ui/Card";
-import { MapPin, History, Truck } from "lucide-react";
+import { MapPin, History, Database } from "lucide-react";
 
 export function Dashboard() {
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [routes, setRoutes] = useState<CommonRoute[]>([]);
-  const [score, setScore] = useState<RiskScore | null>(null);
+  const [crashes, setCrashes] = useState<CrashEvent[]>([]);
+  const [corridors, setCorridors] = useState<HighRiskCorridor[]>([]);
+  const [score, setScore] = useState<AreaRiskScore | null>(null);
   const [predictions, setPredictions] = useState<RoutePrediction[]>([]);
   const [userId, setUserId] = useState("");
-  const [selectedRoute, setSelectedRoute] = useState<CommonRoute | null>(null);
+  const [selectedCorridor, setSelectedCorridor] = useState<HighRiskCorridor | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -35,14 +35,14 @@ export function Dashboard() {
     try {
       const uid = await getUserId();
       setUserId(uid);
-      const [t, r, s, p] = await Promise.all([
-        fetchTrips("personal"),
-        fetchCommonRoutes("personal"),
-        fetchLatestRiskScore("personal"),
+      const [c, r, s, p] = await Promise.all([
+        fetchCrashes("signal4"),
+        fetchCorridors("signal4"),
+        fetchLatestAreaRiskScore("signal4"),
         fetchRoutePredictions(),
       ]);
-      setTrips(t);
-      setRoutes(r);
+      setCrashes(c);
+      setCorridors(r);
       setScore(s);
       setPredictions(p);
     } finally {
@@ -59,39 +59,37 @@ export function Dashboard() {
         if (cancelled) return;
         setUserId(uid);
 
-        let t = await fetchTrips("personal");
+        let c = await fetchCrashes("signal4");
         const shouldSeed =
           typeof window !== "undefined" &&
           new URLSearchParams(window.location.search).has("demo") &&
-          t.length === 0;
+          c.length === 0;
 
         if (shouldSeed) {
-          await seedDemoData();
-          t = await fetchTrips("personal");
+          await seedSignal4SampleData();
+          c = await fetchCrashes("signal4");
         }
 
         const [r, s, p] = await Promise.all([
-          fetchCommonRoutes("personal"),
-          fetchLatestRiskScore("personal"),
+          fetchCorridors("signal4"),
+          fetchLatestAreaRiskScore("signal4"),
           fetchRoutePredictions(),
         ]);
         if (cancelled) return;
-        setTrips(t);
-        setRoutes(r);
+        setCrashes(c);
+        setCorridors(r);
         setScore(s);
         setPredictions(p);
       } catch (error) {
-        console.error("Failed to load dashboard data", error);
+        console.error("Failed to load dashboard", error);
       } finally {
         setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  const insights = extractPatternInsights(trips);
+  const insights = extractPatternInsights(crashes);
   const storageMode = getStorageMode();
 
   return (
@@ -103,86 +101,72 @@ export function Dashboard() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Personal Route Risk Predictor
+              Route Risk Predictor
             </h1>
             <p className="text-sm text-slate-500">
-              Your personal driving dashboard · {trips.length} trips loaded
-              {storageMode === "local" && " · demo mode (local storage)"}
+              Powered by Signal4 Analytics · {crashes.length} historic crashes loaded
+              {storageMode === "local" && " · local storage"}
             </p>
           </div>
         </div>
         <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-          Import Google Maps Timeline and GEICO DriveEasy data to map your trips,
-          find common routes, surface risky patterns, and predict risk for future drives.
-          Architecture supports future TECO fleet accident data integration.
+          Import historic crash data from{" "}
+          <a href="https://signal4analytics.com" className="text-emerald-600 underline" target="_blank" rel="noopener noreferrer">
+            Signal4 Analytics
+          </a>{" "}
+          to map high-risk corridors and predict whether a future route is low, medium, or high risk.
         </p>
       </header>
 
-      {loading && trips.length === 0 ? (
+      {loading && crashes.length === 0 ? (
         <div className="flex h-40 items-center justify-center text-sm text-slate-500">
           Loading dashboard…
         </div>
       ) : (
         <>
+          <RoutePredictor
+            userId={userId}
+            crashes={crashes}
+            corridors={corridors}
+            onPrediction={(p) => setPredictions((prev) => [p, ...prev])}
+          />
+
           <DataImport onImportComplete={refresh} />
 
           <RiskScoreCard score={score} />
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <TripMapCard
-                trips={trips}
-                highlightRoute={
-                  selectedRoute
-                    ? { waypoints: selectedRoute.waypoints }
-                    : undefined
-                }
+              <CrashMapCard
+                crashes={crashes}
+                highlightCenter={selectedCorridor?.center}
               />
             </div>
-            <CommonRoutes
-              routes={routes}
-              selectedId={selectedRoute?.id}
-              onSelect={setSelectedRoute}
+            <HighRiskCorridors
+              corridors={corridors}
+              selectedId={selectedCorridor?.id}
+              onSelect={setSelectedCorridor}
             />
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <RiskPatterns insights={insights} />
-            <RoutePredictor
-              userId={userId}
-              trips={trips}
-              commonRoutes={routes}
-              onPrediction={(p) => setPredictions((prev) => [p, ...prev])}
-            />
-          </div>
+          <RiskPatterns insights={insights} />
 
           {predictions.length > 0 && (
-            <Card title="Recent predictions" subtitle="Saved route risk forecasts">
+            <Card title="Recent predictions" subtitle="Route forecasts from Signal4 historic data">
               <ul className="space-y-3">
                 {predictions.map((p) => (
-                  <li
-                    key={p.id}
-                    className="rounded-lg border border-slate-200 p-3 dark:border-slate-700"
-                  >
+                  <li key={p.id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <History className="h-4 w-4 text-slate-400" />
-                      <span className="font-medium">
-                        {p.origin_address} → {p.destination_address}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                          p.risk_level === "low"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : p.risk_level === "medium"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
-                      >
-                        {p.risk_level}
-                      </span>
+                      <span className="font-medium">{p.origin_address} → {p.destination_address}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                        p.risk_level === "low" ? "bg-emerald-100 text-emerald-700"
+                          : p.risk_level === "medium" ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
+                      }`}>{p.risk_level}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {p.planned_date} at {p.planned_time}
+                      {p.planned_date} at {p.planned_time} · {p.nearby_crash_count} nearby crashes
                     </p>
                   </li>
                 ))}
@@ -190,17 +174,17 @@ export function Dashboard() {
             </Card>
           )}
 
-          <Card
-            title="Future expansion: TECO fleet data"
-            subtitle="Schema ready for fleet accident integration"
-          >
+          <Card title="Data source" subtitle="Florida statewide crash analytics">
             <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
-              <Truck className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
+              <Database className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
               <p>
-                The database includes <code>fleet_vehicles</code> and{" "}
-                <code>fleet_accidents</code> tables with a <code>data_source</code> field
-                on all trip records. Personal and fleet data stay separated so TECO
-                accident history can be layered in without changing the personal dashboard.
+                Crash data comes from{" "}
+                <a href="https://signal4analytics.com" className="text-emerald-600 underline" target="_blank" rel="noopener noreferrer">
+                  Signal4 Analytics
+                </a>
+                , Florida&apos;s statewide crash mapping platform (UF GeoPlan Center / FDOT).
+                Download CSV exports via Event Analysis and upload them here. Future versions can
+                layer in TECO fleet accident data alongside Signal4 records.
               </p>
             </div>
           </Card>

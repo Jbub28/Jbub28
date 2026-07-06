@@ -1,15 +1,9 @@
 "use client";
 
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
 } from "recharts";
-import type { PatternInsight } from "@/lib/types/driving";
+import type { PatternInsight } from "@/lib/types/crash";
 import { Card } from "@/components/ui/Card";
 
 interface RiskPatternsProps {
@@ -32,25 +26,18 @@ export function RiskPatterns({ insights }: RiskPatternsProps) {
 
   return (
     <Card
-      title="Risky driving patterns"
-      subtitle="By time of day, speed, braking, and phone use"
+      title="Historic crash patterns"
+      subtitle="From Signal4 data — severity, time, weather, and contributing factors"
     >
       {insights.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          Import trips to analyze your risk patterns.
-        </p>
+        <p className="text-sm text-slate-500">Import Signal4 crash data to analyze patterns.</p>
       ) : (
         <div className="space-y-4">
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16 }}>
                 <XAxis type="number" domain={[0, "auto"]} tick={{ fontSize: 11 }} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={100}
-                  tick={{ fontSize: 11 }}
-                />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (!active || !payload?.[0]) return null;
@@ -59,7 +46,6 @@ export function RiskPatterns({ insights }: RiskPatternsProps) {
                       <div className="rounded-lg border bg-white p-2 text-xs shadow dark:bg-slate-800">
                         <p className="font-medium">{d.fullLabel}</p>
                         <p className="text-slate-500">{d.detail}</p>
-                        <p>Risk contribution: {d.risk}</p>
                       </div>
                     );
                   }}
@@ -72,19 +58,11 @@ export function RiskPatterns({ insights }: RiskPatternsProps) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-
           <ul className="grid gap-2 sm:grid-cols-2">
             {insights.slice(0, 6).map((insight, i) => (
-              <li
-                key={i}
-                className="rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/50"
-              >
-                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  {insight.category}
-                </span>
-                <p className="font-medium text-slate-800 dark:text-slate-200">
-                  {insight.label}
-                </p>
+              <li key={i} className="rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/50">
+                <span className="text-xs font-medium uppercase tracking-wide text-slate-400">{insight.category}</span>
+                <p className="font-medium text-slate-800 dark:text-slate-200">{insight.label}</p>
                 <p className="text-xs text-slate-500">{insight.value}</p>
               </li>
             ))}

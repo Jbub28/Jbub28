@@ -1,18 +1,15 @@
-# Personal Route Risk Predictor
+# Route Risk Predictor
 
-A Next.js dashboard for analyzing **your personal driving history** and predicting risk for future routes. Built to expand later with TECO fleet accident data.
+Predict whether a future route is **low, medium, or high risk** using historic crash data from [Signal4 Analytics](https://signal4analytics.com) — Florida's statewide crash mapping platform (UF GeoPlan Center / FDOT).
 
 ## Features
 
-- **Import driving history**
-  - Google Maps Timeline / [Google Takeout](https://takeout.google.com) (`Timeline.json`, Semantic Location History, `Records.json`)
-  - GEICO DriveEasy via CSV export, screenshot text paste, or manual trip entry
-- **Trip map** — visualize recent drives on an interactive OpenStreetMap
-- **Common routes** — cluster trips by origin/destination
-- **Risk patterns** — time of day, speed, braking, phone use, weather, road type
-- **Safety score** — personal 1–100 score with plain-English explanation
-- **Route predictor** — enter a future origin, destination, date, and time → low / medium / high risk forecast
-- **Supabase storage** — trips, routes, scores, and predictions persist in Supabase (local storage fallback for demo)
+- **Signal4 crash import** — upload CSV exports from Event Analysis
+- **Historic crash map** — plot crashes by severity on an interactive map
+- **High-risk corridors** — identify locations with the most crashes
+- **Crash patterns** — severity, time of day, weather, speeding, distraction, alcohol
+- **Route predictor** — enter origin, destination, date, and time → risk forecast with plain-English explanation
+- **Supabase storage** — persist crashes, corridors, scores, and predictions
 
 ## Quick start
 
@@ -21,63 +18,51 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Click **Load sample Tampa-area data** to explore without imports.
+Open http://localhost:3000 and click **Load sample Tampa crash data**, or visit `?demo=1`.
+
+## Importing Signal4 data
+
+1. Log in at [signal4analytics.com](https://signal4analytics.com) (account required for downloads)
+2. Go to **Event Analysis** → run a query for your area and time period
+3. Download **Crash Tables (CSV)**
+4. Upload the CSV in the app
+
+The parser recognizes standard S4 fields: `Report Number`, `Crash Date and Time`, `Latitude`, `Longitude`, `S4 Crash Severity`, `On Street Road Highway`, `Light Condition`, `Weather Condition`, and contributing-factor flags.
+
+## Route prediction
+
+Enter a future route (e.g. "Dale Mabry Hwy, Tampa" → "I-275 & Kennedy Blvd") with a date and time. The predictor:
+
+1. Finds historic crashes near the corridor from your Signal4 dataset
+2. Weights severity, fatalities, time-of-day match, speeding, distraction, and weather
+3. Returns **low / medium / high** risk with a plain-English explanation
 
 ## Supabase setup
 
-1. Create a project at [supabase.com](https://supabase.com)
-2. Run the migration in `supabase/migrations/001_initial_schema.sql` in the SQL editor
-3. Copy `.env.example` to `.env.local` and add your keys:
+1. Run migrations in `supabase/migrations/`
+2. Copy `.env.example` → `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Without these variables the app runs in **local storage demo mode**.
-
-## Google Takeout import
-
-1. Go to [takeout.google.com](https://takeout.google.com)
-2. Deselect all, then select **Location History**
-3. Choose JSON format and create export
-4. Upload `Timeline.json` or files from the Semantic Location History folder
-
-## GEICO DriveEasy import
-
-- **CSV** — upload if your export includes date, distance, speed, braking, phone use columns
-- **Screenshot** — paste copied text; the parser looks for dates, miles, max speed, harsh braking, phone use
-- **Manual** — enter one trip at a time with driving behavior metrics
-
 ## Architecture
 
 ```
-src/
-  lib/
-    parsers/       # Google Takeout + GEICO parsers
-    risk/          # Scoring, route clustering, prediction
-    supabase/      # Client + storage abstraction
-    types/         # Shared types (personal + fleet-ready)
-  components/
-    dashboard/     # Map, import, patterns, predictor
+src/lib/parsers/signal4-analytics.ts   CSV parser for S4 exports
+src/lib/risk/corridors.ts              High-risk corridor clustering
+src/lib/risk/scoring.ts                Area risk index from crash history
+src/lib/risk/prediction.ts             Route risk forecast engine
+src/lib/data/signal4-sample.ts         Sample Tampa crash data
 ```
 
-The schema uses a `data_source` field (`personal` | `fleet`) on all trip-related tables. Placeholder `fleet_vehicles` and `fleet_accidents` tables are included for future TECO integration.
+Designed to expand with TECO fleet accident data alongside Signal4 records.
 
-## Scripts
+## Data citation
 
-| Command        | Description          |
-|----------------|----------------------|
-| `npm run dev`  | Start dev server     |
-| `npm run build`| Production build     |
-| `npm run start`| Start production     |
-| `npm run lint` | ESLint               |
+> Signal4 Lab, University of Florida. (n.d.). Signal4 Analytics Database. Retrieved [date], from https://signal4analytics.com.
 
 ## Tech stack
 
-- Next.js 16 (App Router)
-- TypeScript
-- Tailwind CSS
-- Supabase
-- Leaflet / react-leaflet
-- Recharts
+Next.js 16 · TypeScript · Tailwind CSS · Supabase · Leaflet · Recharts

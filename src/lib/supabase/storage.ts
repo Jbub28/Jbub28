@@ -1,18 +1,18 @@
 import { v4 as uuidv4 } from "uuid";
 import { getSupabaseClient, isSupabaseConfigured } from "./client";
 import type {
-  CommonRoute,
+  AreaRiskScore,
+  CrashEvent,
   DataSource,
+  HighRiskCorridor,
   ImportSource,
-  RiskScore,
   RoutePrediction,
-  Trip,
-} from "@/lib/types/driving";
+} from "@/lib/types/crash";
 
 const STORAGE_KEYS = {
-  trips: "prrp_trips",
-  routes: "prrp_common_routes",
-  scores: "prrp_risk_scores",
+  crashes: "prrp_crashes",
+  corridors: "prrp_corridors",
+  scores: "prrp_area_scores",
   predictions: "prrp_predictions",
   userId: "prrp_user_id",
 } as const;
@@ -55,108 +55,108 @@ export async function getUserId(): Promise<string> {
   return getLocalUserId();
 }
 
-export async function fetchTrips(
-  dataSource: DataSource = "personal"
-): Promise<Trip[]> {
+export async function fetchCrashes(
+  dataSource: DataSource = "signal4"
+): Promise<CrashEvent[]> {
   const supabase = getSupabaseClient();
   const userId = await getUserId();
 
   if (supabase) {
     const { data, error } = await supabase
-      .from("trips")
+      .from("crash_events")
       .select("*")
       .eq("user_id", userId)
       .eq("data_source", dataSource)
-      .order("start_time", { ascending: false });
+      .order("crash_datetime", { ascending: false });
 
     if (error) throw error;
-    return (data ?? []).map(normalizeTrip);
+    return (data ?? []) as CrashEvent[];
   }
 
-  return readLocal<Trip>(STORAGE_KEYS.trips)
-    .filter((t) => t.user_id === userId && t.data_source === dataSource)
+  return readLocal<CrashEvent>(STORAGE_KEYS.crashes)
+    .filter((c) => c.user_id === userId && c.data_source === dataSource)
     .sort(
       (a, b) =>
-        new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+        new Date(b.crash_datetime).getTime() - new Date(a.crash_datetime).getTime()
     );
 }
 
-export async function saveTrips(trips: Trip[]): Promise<void> {
+export async function saveCrashes(crashes: CrashEvent[]): Promise<void> {
   const supabase = getSupabaseClient();
 
   if (supabase) {
-    const { error } = await supabase.from("trips").upsert(trips);
+    const { error } = await supabase.from("crash_events").upsert(crashes);
     if (error) throw error;
     return;
   }
 
-  const existing = readLocal<Trip>(STORAGE_KEYS.trips);
-  const map = new Map(existing.map((t) => [t.id, t]));
-  trips.forEach((t) => map.set(t.id, t));
-  writeLocal(STORAGE_KEYS.trips, Array.from(map.values()));
+  const existing = readLocal<CrashEvent>(STORAGE_KEYS.crashes);
+  const map = new Map(existing.map((c) => [c.id, c]));
+  crashes.forEach((c) => map.set(c.id, c));
+  writeLocal(STORAGE_KEYS.crashes, Array.from(map.values()));
 }
 
-export async function fetchCommonRoutes(
-  dataSource: DataSource = "personal"
-): Promise<CommonRoute[]> {
+export async function fetchCorridors(
+  dataSource: DataSource = "signal4"
+): Promise<HighRiskCorridor[]> {
   const supabase = getSupabaseClient();
   const userId = await getUserId();
 
   if (supabase) {
     const { data, error } = await supabase
-      .from("common_routes")
+      .from("high_risk_corridors")
       .select("*")
       .eq("user_id", userId)
       .eq("data_source", dataSource)
-      .order("trip_count", { ascending: false });
+      .order("crash_count", { ascending: false });
 
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []) as HighRiskCorridor[];
   }
 
-  return readLocal<CommonRoute>(STORAGE_KEYS.routes)
+  return readLocal<HighRiskCorridor>(STORAGE_KEYS.corridors)
     .filter((r) => r.user_id === userId && r.data_source === dataSource)
-    .sort((a, b) => b.trip_count - a.trip_count);
+    .sort((a, b) => b.crash_count - a.crash_count);
 }
 
-export async function saveCommonRoutes(routes: CommonRoute[]): Promise<void> {
+export async function saveCorridors(corridors: HighRiskCorridor[]): Promise<void> {
   const supabase = getSupabaseClient();
 
   if (supabase) {
-    const { error } = await supabase.from("common_routes").upsert(routes);
+    const { error } = await supabase.from("high_risk_corridors").upsert(corridors);
     if (error) throw error;
     return;
   }
 
-  const existing = readLocal<CommonRoute>(STORAGE_KEYS.routes);
+  const existing = readLocal<HighRiskCorridor>(STORAGE_KEYS.corridors);
   const map = new Map(existing.map((r) => [r.id, r]));
-  routes.forEach((r) => map.set(r.id, r));
-  writeLocal(STORAGE_KEYS.routes, Array.from(map.values()));
+  corridors.forEach((r) => map.set(r.id, r));
+  writeLocal(STORAGE_KEYS.corridors, Array.from(map.values()));
 }
 
-export async function saveRiskScore(score: RiskScore): Promise<void> {
+export async function saveAreaRiskScore(score: AreaRiskScore): Promise<void> {
   const supabase = getSupabaseClient();
 
   if (supabase) {
-    const { error } = await supabase.from("risk_scores").insert(score);
+    const { error } = await supabase.from("area_risk_scores").insert(score);
     if (error) throw error;
     return;
   }
 
-  const existing = readLocal<RiskScore>(STORAGE_KEYS.scores);
+  const existing = readLocal<AreaRiskScore>(STORAGE_KEYS.scores);
   existing.unshift(score);
   writeLocal(STORAGE_KEYS.scores, existing.slice(0, 50));
 }
 
-export async function fetchLatestRiskScore(
-  dataSource: DataSource = "personal"
-): Promise<RiskScore | null> {
+export async function fetchLatestAreaRiskScore(
+  dataSource: DataSource = "signal4"
+): Promise<AreaRiskScore | null> {
   const supabase = getSupabaseClient();
   const userId = await getUserId();
 
   if (supabase) {
     const { data, error } = await supabase
-      .from("risk_scores")
+      .from("area_risk_scores")
       .select("*")
       .eq("user_id", userId)
       .eq("data_source", dataSource)
@@ -165,10 +165,10 @@ export async function fetchLatestRiskScore(
       .maybeSingle();
 
     if (error) throw error;
-    return data;
+    return data as AreaRiskScore | null;
   }
 
-  const scores = readLocal<RiskScore>(STORAGE_KEYS.scores).filter(
+  const scores = readLocal<AreaRiskScore>(STORAGE_KEYS.scores).filter(
     (s) => s.user_id === userId && s.data_source === dataSource
   );
   return scores[0] ?? null;
@@ -203,7 +203,7 @@ export async function fetchRoutePredictions(): Promise<RoutePrediction[]> {
       .limit(10);
 
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []) as RoutePrediction[];
   }
 
   return readLocal<RoutePrediction>(STORAGE_KEYS.predictions)
@@ -229,15 +229,4 @@ export async function logImport(
       error_message: errorMessage,
     });
   }
-}
-
-function normalizeTrip(row: Record<string, unknown>): Trip {
-  return {
-    ...row,
-    route_polyline: (row.route_polyline as Trip["route_polyline"]) ?? [],
-    harsh_braking_count: (row.harsh_braking_count as number) ?? 0,
-    harsh_acceleration_count: (row.harsh_acceleration_count as number) ?? 0,
-    phone_use_count: (row.phone_use_count as number) ?? 0,
-    speeding_events: (row.speeding_events as number) ?? 0,
-  } as Trip;
 }

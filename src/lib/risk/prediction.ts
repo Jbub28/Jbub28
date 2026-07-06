@@ -1,11 +1,15 @@
 import { v4 as uuidv4 } from "uuid";
 import type {
-  CommonRoute,
+  CrashEvent,
+  HighRiskCorridor,
   RiskLevel,
   RoutePrediction,
-  Trip,
-} from "@/lib/types/driving";
-import { findMatchingRoute } from "./routes";
+} from "@/lib/types/crash";
+import { severityToScore } from "@/lib/types/crash";
+import {
+  findCrashesNearRoute,
+  matchRoadInText,
+} from "@/lib/risk/corridors";
 
 function getTimeOfDay(hour: number): string {
   if (hour >= 5 && hour < 12) return "morning";
@@ -20,10 +24,6 @@ function riskLevelFromScore(score: number): RiskLevel {
   return "high";
 }
 
-function riskLevelLabel(level: RiskLevel): string {
-  return { low: "Low", medium: "Medium", high: "High" }[level];
-}
-
 interface PredictionInput {
   userId: string;
   originAddress: string;
@@ -34,8 +34,8 @@ interface PredictionInput {
   destLng?: number;
   plannedDate: string;
   plannedTime: string;
-  trips: Trip[];
-  commonRoutes: CommonRoute[];
+  crashes: CrashEvent[];
+  corridors: HighRiskCorridor[];
 }
 
 export function predictRouteRisk(input: PredictionInput): RoutePrediction {
@@ -45,107 +45,123 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
     destinationAddress,
     plannedDate,
     plannedTime,
-    trips,
-    commonRoutes,
+    crashes,
+    corridors,
   } = input;
 
   const [hours] = plannedTime.split(":").map(Number);
   const plannedDateTime = new Date(`${plannedDate}T${plannedTime}`);
   const timeOfDay = getTimeOfDay(hours);
-  const dayOfWeek = plannedDateTime.getDay();
-  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const isWeekend = plannedDateTime.getDay() === 0 || plannedDateTime.getDay() === 6;
 
-  let riskScore = 30;
+  let riskScore = 25;
   const factors: string[] = [];
 
-  const matchingRoute = findMatchingRoute(
-    commonRoutes,
+  const nearbyCrashes = findCrashesNearRoute(
+    crashes,
     input.originLat,
     input.originLng,
     input.destLat,
     input.destLng
   );
 
-  if (matchingRoute) {
-    const routeRisk = matchingRoute.avg_risk_score ?? 20;
-    riskScore += routeRisk * 0.6;
+  const roadMentioned = `${originAddress} ${destinationAddress}`;
+  const roadMatchedCrashes = crashes.filter(
+    (c) => c.road_name && (matchRoadInText(c.road_name, roadMentioned) || nearbyCrashes.includes(c))
+  );
+
+  const relevantCrashes = nearbyCrashes.length > 0 ? nearbyCrashes : roadMatchedCrashes;
+
+  if (relevantCrashes.length === 0) {
     factors.push(
-      `You've driven this route ${matchingRoute.trip_count} times before with an average risk profile.`
+      "No historic crashes from Signal4 were found directly along this corridor in the loaded dataset."
+    );
+    riskScore += 10;
+  } else {
+    const avgSeverity =
+      relevantCrashes.reduce((s, c) => s + severityToScore(c.severity), 0) /
+      relevantCrashes.length;
+    riskScore += Math.min(40, relevantCrashes.length * 4);
+    riskScore += avgSeverity * 0.25;
+
+    const fatalities = relevantCrashes.reduce((s, c) => s + c.fatality_count, 0);
+    factors.push(
+      `Signal4 historic data shows ${relevantCrashes.length} crash${relevantCrashes.length > 1 ? "es" : ""} near this route${fatalities > 0 ? `, including ${fatalities} fatality/fatalities` : ""}.`
     );
 
-    const patterns = matchingRoute.risk_patterns as Record<string, number> | undefined;
-    if (patterns?.nightDrivingPct && patterns.nightDrivingPct > 40 && timeOfDay === "night") {
+    const nightCrashes = relevantCrashes.filter((c) =>
+      c.day_or_night?.toLowerCase().includes("night")
+    );
+    if (timeOfDay === "night" && nightCrashes.length > 0) {
       riskScore += 15;
       factors.push(
-        `${patterns.nightDrivingPct}% of your past trips on this route were at night, which aligns with your planned time.`
+        `${nightCrashes.length} historic night crashes occurred on this corridor — your planned departure is at night.`
       );
     }
-    if (patterns?.phoneUsePct && patterns.phoneUsePct > 20) {
+
+    const speeding = relevantCrashes.filter((c) => c.is_speeding_related).length;
+    if (speeding > relevantCrashes.length * 0.3) {
       riskScore += 10;
-      factors.push("This route has a history of phone use during your past trips.");
+      factors.push("Speeding was a contributing factor in many historic crashes along this corridor.");
     }
-  } else {
-    factors.push(
-      "This appears to be a less familiar route based on your driving history."
+
+    const distracted = relevantCrashes.filter((c) => c.is_distracted).length;
+    if (distracted > 0) {
+      riskScore += 6;
+      factors.push(`${distracted} distracted-driving crashes recorded near this route.`);
+    }
+
+    const rainy = relevantCrashes.filter((c) =>
+      c.weather_condition?.toLowerCase().includes("rain")
     );
-    riskScore += 12;
-  }
-
-  const sameTimeTrips = trips.filter((t) => t.time_of_day === timeOfDay);
-  if (sameTimeTrips.length > 0) {
-    const nightRisk = timeOfDay === "night";
-    const eveningRisk = timeOfDay === "evening";
-    if (nightRisk) {
-      riskScore += 18;
-      factors.push("Night driving is historically riskier in your trip data.");
-    } else if (eveningRisk) {
-      riskScore += 10;
-      factors.push("Evening rush-hour trips show elevated risk patterns for you.");
-    }
-
-    const avgBraking =
-      sameTimeTrips.reduce((s, t) => s + t.harsh_braking_count, 0) /
-      sameTimeTrips.length;
-    if (avgBraking > 1) {
+    if (rainy.length > relevantCrashes.length * 0.25) {
       riskScore += 8;
-      factors.push(
-        `You average ${avgBraking.toFixed(1)} harsh braking events during ${timeOfDay} trips.`
-      );
+      factors.push("Rain-related crashes are common on this corridor in the Signal4 dataset.");
     }
   }
 
-  if (isWeekend && timeOfDay === "night") {
-    riskScore += 8;
-    factors.push("Late weekend nights tend to have higher incident rates.");
+  const matchingCorridor = corridors.find((c) =>
+    relevantCrashes.some(
+      (crash) =>
+        Math.abs(crash.latitude - c.center.lat) < 0.02 &&
+        Math.abs(crash.longitude - c.center.lng) < 0.02
+    )
+  );
+
+  if (matchingCorridor) {
+    factors.push(
+      `This route passes near "${matchingCorridor.name}", a high-risk corridor with ${matchingCorridor.crash_count} historic crashes.`
+    );
+    riskScore += matchingCorridor.avg_severity_score * 0.15;
   }
 
   if (hours >= 7 && hours <= 9 && !isWeekend) {
-    riskScore += 6;
-    factors.push("Morning commute hours may add congestion-related risk.");
+    riskScore += 5;
+    factors.push("Morning commute hours add congestion-related exposure.");
   }
-
   if (hours >= 16 && hours <= 18 && !isWeekend) {
-    riskScore += 8;
-    factors.push("Afternoon rush hour increases exposure on this type of trip.");
+    riskScore += 7;
+    factors.push("Afternoon rush hour increases crash exposure on busy corridors.");
   }
 
   riskScore = Math.min(100, Math.max(1, Math.round(riskScore)));
   const riskLevel = riskLevelFromScore(riskScore);
 
-  const explanation = buildPlainEnglishExplanation(
+  const explanation = buildExplanation(
     riskLevel,
     riskScore,
     originAddress,
     destinationAddress,
     plannedDate,
     plannedTime,
+    relevantCrashes.length,
     factors
   );
 
   return {
     id: uuidv4(),
     user_id: userId,
-    data_source: "personal",
+    data_source: "signal4",
     origin_address: originAddress,
     destination_address: destinationAddress,
     origin_lat: input.originLat,
@@ -157,23 +173,26 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
     risk_level: riskLevel,
     risk_score: riskScore,
     explanation,
+    nearby_crash_count: relevantCrashes.length,
     contributing_factors: {
       timeOfDay,
       isWeekend,
-      matchingRoute: matchingRoute?.name ?? null,
+      matchingCorridor: matchingCorridor?.name ?? null,
       factorDetails: factors,
+      dataSource: "Signal4 Analytics",
     },
     created_at: new Date().toISOString(),
   };
 }
 
-function buildPlainEnglishExplanation(
+function buildExplanation(
   level: RiskLevel,
   score: number,
   origin: string,
   destination: string,
   date: string,
   time: string,
+  crashCount: number,
   factors: string[]
 ): string {
   const dateStr = new Date(`${date}T${time}`).toLocaleString("en-US", {
@@ -184,25 +203,15 @@ function buildPlainEnglishExplanation(
     minute: "2-digit",
   });
 
-  let intro = `For your trip from "${origin}" to "${destination}" on ${dateStr}, `;
-  intro += `we predict **${riskLevelLabel(level)} risk** (score: ${score}/100). `;
+  const levelLabel = { low: "Low", medium: "Medium", high: "High" }[level];
+  let intro = `For your planned route from "${origin}" to "${destination}" on ${dateStr}, `;
+  intro += `historic Signal4 Analytics crash data suggests ${levelLabel} risk (score: ${score}/100). `;
 
-  if (level === "low") {
+  if (crashCount === 0) {
     intro +=
-      "Based on your personal driving history, this trip looks relatively safe. ";
-  } else if (level === "medium") {
-    intro +=
-      "This trip has some risk factors worth being aware of, but nothing extreme. ";
-  } else {
-    intro +=
-      "Several factors from your driving history suggest elevated caution for this trip. ";
+      "No matching crashes were found in the loaded dataset, so this estimate relies on general time-of-day patterns. ";
   }
 
-  if (factors.length > 0) {
-    intro += factors.join(" ");
-  } else {
-    intro += "We don't have enough matching history to identify specific patterns.";
-  }
-
-  return intro.replace(/\*\*/g, "");
+  intro += factors.join(" ");
+  return intro;
 }

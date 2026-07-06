@@ -1,292 +1,239 @@
 import { v4 as uuidv4 } from "uuid";
 import type {
+  AreaRiskFactors,
+  AreaRiskScore,
+  CrashEvent,
   PatternInsight,
-  RiskFactors,
-  RiskScore,
-  Trip,
-} from "@/lib/types/driving";
-
-const TIME_LABELS: Record<string, string> = {
-  morning: "Morning (5am–12pm)",
-  afternoon: "Afternoon (12pm–5pm)",
-  evening: "Evening (5pm–9pm)",
-  night: "Night (9pm–5am)",
-};
-
-const ROAD_LABELS: Record<string, string> = {
-  highway: "Highway",
-  arterial: "Arterial roads",
-  local: "Local streets",
-  unknown: "Unknown roads",
-};
+} from "@/lib/types/crash";
+import { severityToScore } from "@/lib/types/crash";
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
 
-function analyzeTimeOfDay(trips: Trip[]): RiskFactors["timeOfDay"] {
-  const buckets: Record<string, { count: number; risk: number }> = {};
+function analyzeSeverity(crashes: CrashEvent[]): AreaRiskFactors["severity"] {
+  if (crashes.length === 0) {
+    return { label: "Crash severity", score: 0, detail: "No crash data loaded" };
+  }
+  const avg =
+    crashes.reduce((s, c) => s + severityToScore(c.severity), 0) / crashes.length;
+  const fatalities = crashes.reduce((s, c) => s + c.fatality_count, 0);
+  return {
+    label: "Crash severity",
+    score: clamp(Math.round(avg), 0, 100),
+    detail: `${crashes.length} crashes, ${fatalities} fatalities, avg severity score ${Math.round(avg)}`,
+  };
+}
 
-  for (const trip of trips) {
-    const tod = trip.time_of_day ?? "unknown";
-    const bucket = buckets[tod] ?? { count: 0, risk: 0 };
+function analyzeTimeOfDay(crashes: CrashEvent[]): AreaRiskFactors["timeOfDay"] {
+  const buckets: Record<string, { count: number; score: number }> = {};
+  for (const crash of crashes) {
+    const tod = crash.day_or_night ?? "Unknown";
+    const bucket = buckets[tod] ?? { count: 0, score: 0 };
     bucket.count++;
-    if (tod === "night") bucket.risk += 25;
-    else if (tod === "evening") bucket.risk += 10;
-    else bucket.risk += 5;
+    bucket.score += tod.toLowerCase().includes("night") ? 30 : 12;
     buckets[tod] = bucket;
   }
-
   return Object.entries(buckets)
-    .map(([key, val]) => ({
-      label: TIME_LABELS[key] ?? key,
-      score: val.count > 0 ? Math.round(val.risk / val.count) : 0,
-      detail: `${val.count} trips during this period`,
+    .map(([label, val]) => ({
+      label,
+      score: val.count > 0 ? Math.round(val.score / val.count) : 0,
+      detail: `${val.count} crashes`,
     }))
     .sort((a, b) => b.score - a.score);
 }
 
-function analyzeSpeed(trips: Trip[]): RiskFactors["speed"] {
-  const speeds = trips
-    .map((t) => t.max_speed_mph ?? t.avg_speed_mph)
-    .filter((s): s is number => s != null);
-
-  if (speeds.length === 0) {
-    return { label: "Speed", score: 0, detail: "No speed data available" };
-  }
-
-  const avg = speeds.reduce((a, b) => a + b, 0) / speeds.length;
-  const over75 = speeds.filter((s) => s > 75).length;
-  let score = 0;
-  if (avg > 70) score += 30;
-  else if (avg > 55) score += 15;
-  score += over75 * 5;
-
-  return {
-    label: "Speed",
-    score: clamp(score, 0, 100),
-    detail: `Average max speed ${Math.round(avg)} mph across ${speeds.length} trips`,
-  };
-}
-
-function analyzeBraking(trips: Trip[]): RiskFactors["braking"] {
-  const total = trips.reduce((s, t) => s + t.harsh_braking_count, 0);
-  const perTrip = trips.length > 0 ? total / trips.length : 0;
-  const score = clamp(Math.round(perTrip * 20), 0, 100);
-
-  return {
-    label: "Harsh braking",
-    score,
-    detail:
-      total === 0
-        ? "No harsh braking events recorded"
-        : `${total} harsh braking events (${perTrip.toFixed(1)} per trip on average)`,
-  };
-}
-
-function analyzePhoneUse(trips: Trip[]): RiskFactors["phoneUse"] {
-  const phoneTrips = trips.filter((t) => t.phone_use_count > 0).length;
-  const pct = trips.length > 0 ? (phoneTrips / trips.length) * 100 : 0;
-  const score = clamp(Math.round(pct * 1.5), 0, 100);
-
-  return {
-    label: "Phone use",
-    score,
-    detail:
-      phoneTrips === 0
-        ? "No phone use detected in your trip data"
-        : `Phone use detected on ${phoneTrips} of ${trips.length} trips (${Math.round(pct)}%)`,
-  };
-}
-
-function analyzeWeather(trips: Trip[]): RiskFactors["weather"] {
+function analyzeWeather(crashes: CrashEvent[]): AreaRiskFactors["weather"] {
   const buckets: Record<string, number> = {};
-  for (const trip of trips) {
-    const w = trip.weather ?? "unknown";
+  for (const crash of crashes) {
+    const w = crash.weather_condition ?? "Unknown";
     buckets[w] = (buckets[w] ?? 0) + 1;
   }
-
   const riskMap: Record<string, number> = {
-    rain: 20,
+    rain: 25,
+    fog: 30,
     snow: 35,
-    fog: 25,
-    clear: 5,
-    unknown: 8,
+    clear: 10,
+    unknown: 12,
   };
-
   return Object.entries(buckets).map(([weather, count]) => ({
-    label: weather.charAt(0).toUpperCase() + weather.slice(1),
-    score: riskMap[weather] ?? 10,
-    detail: `${count} trips in ${weather} conditions`,
+    label: weather,
+    score: riskMap[weather.toLowerCase()] ?? 15,
+    detail: `${count} crashes in ${weather} conditions`,
   }));
 }
 
-function analyzeRoadType(trips: Trip[]): RiskFactors["roadType"] {
-  const buckets: Record<string, { count: number; risk: number }> = {};
-
-  for (const trip of trips) {
-    const road = trip.road_type ?? "unknown";
-    const bucket = buckets[road] ?? { count: 0, risk: 0 };
-    bucket.count++;
-    if (road === "highway") bucket.risk += 12;
-    else if (road === "arterial") bucket.risk += 8;
-    else bucket.risk += 5;
-    buckets[road] = bucket;
+function analyzeRoadType(crashes: CrashEvent[]): AreaRiskFactors["roadType"] {
+  const buckets: Record<string, number> = {};
+  for (const crash of crashes) {
+    const road = crash.road_name ?? "Unknown";
+    let type = "Local";
+    if (/I-|interstate|I\s*\d/i.test(road)) type = "Interstate";
+    else if (/US-|SR-|HWY|Highway/i.test(road)) type = "Highway";
+    else if (/Blvd|Ave|St/i.test(road)) type = "Arterial";
+    buckets[type] = (buckets[type] ?? 0) + 1;
   }
-
-  return Object.entries(buckets).map(([road, val]) => ({
-    label: ROAD_LABELS[road] ?? road,
-    score: val.count > 0 ? Math.round(val.risk / val.count) : 0,
-    detail: `${val.count} trips on this road type`,
+  const riskMap: Record<string, number> = {
+    Interstate: 28,
+    Highway: 22,
+    Arterial: 18,
+    Local: 14,
+  };
+  return Object.entries(buckets).map(([type, count]) => ({
+    label: type,
+    score: riskMap[type] ?? 15,
+    detail: `${count} crashes on ${type.toLowerCase()} roads`,
   }));
 }
 
-function buildExplanation(factors: Omit<RiskFactors, "overallExplanation">, safetyScore: number): string {
+function analyzeContributing(crashes: CrashEvent[]): AreaRiskFactors["contributingFactors"] {
+  const factors = [
+    { key: "is_speeding_related", label: "Speeding-related" },
+    { key: "is_distracted", label: "Distracted driving" },
+    { key: "is_alcohol_related", label: "Alcohol-related" },
+    { key: "is_intersection_related", label: "Intersection-related" },
+    { key: "is_pedestrian_involved", label: "Pedestrian-involved" },
+  ] as const;
+
+  return factors.map(({ key, label }) => {
+    const count = crashes.filter((c) => c[key]).length;
+    const pct = crashes.length > 0 ? (count / crashes.length) * 100 : 0;
+    return {
+      label,
+      score: clamp(Math.round(pct * 1.2), 0, 100),
+      detail: `${count} of ${crashes.length} crashes (${Math.round(pct)}%)`,
+    };
+  }).sort((a, b) => b.score - a.score);
+}
+
+function buildExplanation(
+  factors: Omit<AreaRiskFactors, "overallExplanation">,
+  safetyIndex: number
+): string {
   const parts: string[] = [];
-
-  if (safetyScore >= 80) {
-    parts.push("Your overall driving profile looks relatively safe.");
-  } else if (safetyScore >= 60) {
-    parts.push("Your driving shows moderate risk in a few areas worth attention.");
+  if (safetyIndex >= 70) {
+    parts.push("Historic crash patterns in this dataset indicate relatively lower corridor risk.");
+  } else if (safetyIndex >= 45) {
+    parts.push("Historic Signal4 data shows moderate crash risk across analyzed corridors.");
   } else {
-    parts.push("Your driving history shows several elevated risk patterns.");
+    parts.push("Historic crash data indicates elevated risk in several corridors.");
   }
-
-  const topTime = factors.timeOfDay[0];
-  if (topTime && topTime.score >= 15) {
-    parts.push(`Trips during ${topTime.label.toLowerCase()} tend to be riskier for you.`);
+  if (factors.severity.score >= 50) {
+    parts.push("Severity levels are a significant factor in the overall risk index.");
   }
-
-  if (factors.speed.score >= 20) {
-    parts.push(factors.speed.detail + ".");
+  const topFactor = factors.contributingFactors[0];
+  if (topFactor && topFactor.score >= 20) {
+    parts.push(`${topFactor.label} crashes are notably frequent in this dataset.`);
   }
-
-  if (factors.braking.score >= 20) {
-    parts.push("Harsh braking is a notable factor in your risk profile.");
-  }
-
-  if (factors.phoneUse.score >= 15) {
-    parts.push("Phone use while driving is increasing your risk.");
-  }
-
   return parts.join(" ");
 }
 
-export function calculateRiskScore(
-  trips: Trip[],
+export function calculateAreaRiskScore(
+  crashes: CrashEvent[],
   userId: string
-): RiskScore {
-  if (trips.length === 0) {
+): AreaRiskScore {
+  if (crashes.length === 0) {
     return {
       id: uuidv4(),
       user_id: userId,
-      data_source: "personal",
+      data_source: "signal4",
       score: 50,
-      safety_score: 50,
+      safety_index: 50,
       factors: {
+        severity: { label: "Crash severity", score: 0, detail: "No data" },
         timeOfDay: [],
-        speed: { label: "Speed", score: 0, detail: "No data" },
-        braking: { label: "Harsh braking", score: 0, detail: "No data" },
-        phoneUse: { label: "Phone use", score: 0, detail: "No data" },
         weather: [],
         roadType: [],
+        contributingFactors: [],
         overallExplanation:
-          "Import your driving history to generate a personalized risk score.",
+          "Import Signal4 Analytics crash data to generate a historic risk index.",
       },
-      trip_count: 0,
+      crash_count: 0,
       calculated_at: new Date().toISOString(),
     };
   }
 
-  const timeOfDay = analyzeTimeOfDay(trips);
-  const speed = analyzeSpeed(trips);
-  const braking = analyzeBraking(trips);
-  const phoneUse = analyzePhoneUse(trips);
-  const weather = analyzeWeather(trips);
-  const roadType = analyzeRoadType(trips);
+  const severity = analyzeSeverity(crashes);
+  const timeOfDay = analyzeTimeOfDay(crashes);
+  const weather = analyzeWeather(crashes);
+  const roadType = analyzeRoadType(crashes);
+  const contributingFactors = analyzeContributing(crashes);
 
-  const avgTimeRisk =
+  const avgTime =
     timeOfDay.length > 0
       ? timeOfDay.reduce((s, t) => s + t.score, 0) / timeOfDay.length
       : 0;
-  const avgWeatherRisk =
-    weather.length > 0
-      ? weather.reduce((s, w) => s + w.score, 0) / weather.length
+  const avgWeather =
+    weather.length > 0 ? weather.reduce((s, w) => s + w.score, 0) / weather.length : 0;
+  const avgRoad =
+    roadType.length > 0 ? roadType.reduce((s, r) => s + r.score, 0) / roadType.length : 0;
+  const avgContrib =
+    contributingFactors.length > 0
+      ? contributingFactors.slice(0, 3).reduce((s, c) => s + c.score, 0) / 3
       : 0;
-  const avgRoadRisk =
-    roadType.length > 0
-      ? roadType.reduce((s, r) => s + r.score, 0) / roadType.length
-      : 0;
 
-  const compositeRisk =
-    avgTimeRisk * 0.2 +
-    speed.score * 0.25 +
-    braking.score * 0.2 +
-    phoneUse.score * 0.2 +
-    avgWeatherRisk * 0.05 +
-    avgRoadRisk * 0.1;
+  const compositeRisk = clamp(
+    Math.round(
+      severity.score * 0.35 +
+        avgTime * 0.2 +
+        avgWeather * 0.1 +
+        avgRoad * 0.15 +
+        avgContrib * 0.2
+    ),
+    1,
+    100
+  );
 
-  const riskScore = clamp(Math.round(compositeRisk), 1, 100);
-  const safetyScore = clamp(100 - riskScore + 50, 1, 100);
-
-  const partialFactors = { timeOfDay, speed, braking, phoneUse, weather, roadType };
-  const factors: RiskFactors = {
-    ...partialFactors,
-    overallExplanation: buildExplanation(partialFactors, safetyScore),
+  const safetyIndex = clamp(100 - compositeRisk + 35, 1, 100);
+  const partial = { severity, timeOfDay, weather, roadType, contributingFactors };
+  const factors: AreaRiskFactors = {
+    ...partial,
+    overallExplanation: buildExplanation(partial, safetyIndex),
   };
 
   return {
     id: uuidv4(),
     user_id: userId,
-    data_source: "personal",
-    score: riskScore,
-    safety_score: safetyScore,
+    data_source: "signal4",
+    score: compositeRisk,
+    safety_index: safetyIndex,
     factors,
-    trip_count: trips.length,
+    crash_count: crashes.length,
     calculated_at: new Date().toISOString(),
   };
 }
 
-export function extractPatternInsights(trips: Trip[]): PatternInsight[] {
+export function extractPatternInsights(crashes: CrashEvent[]): PatternInsight[] {
+  const score = calculateAreaRiskScore(crashes, "temp");
   const insights: PatternInsight[] = [];
 
-  const timeOfDay = analyzeTimeOfDay(trips);
-  for (const t of timeOfDay.slice(0, 3)) {
+  insights.push({
+    category: "Severity",
+    label: score.factors.severity.label,
+    value: score.factors.severity.detail,
+    riskContribution: score.factors.severity.score,
+    eventsAffected: crashes.length,
+  });
+
+  for (const t of score.factors.timeOfDay.slice(0, 2)) {
     insights.push({
       category: "Time of day",
       label: t.label,
       value: t.detail,
       riskContribution: t.score,
-      tripsAffected: parseInt(t.detail) || 0,
+      eventsAffected: parseInt(t.detail) || 0,
     });
   }
 
-  const speed = analyzeSpeed(trips);
-  insights.push({
-    category: "Speed",
-    label: speed.label,
-    value: speed.detail,
-    riskContribution: speed.score,
-    tripsAffected: trips.filter((t) => (t.max_speed_mph ?? 0) > 0).length,
-  });
-
-  const braking = analyzeBraking(trips);
-  insights.push({
-    category: "Braking",
-    label: braking.label,
-    value: braking.detail,
-    riskContribution: braking.score,
-    tripsAffected: trips.filter((t) => t.harsh_braking_count > 0).length,
-  });
-
-  const phone = analyzePhoneUse(trips);
-  insights.push({
-    category: "Phone use",
-    label: phone.label,
-    value: phone.detail,
-    riskContribution: phone.score,
-    tripsAffected: trips.filter((t) => t.phone_use_count > 0).length,
-  });
+  for (const c of score.factors.contributingFactors.slice(0, 3)) {
+    insights.push({
+      category: "Contributing factor",
+      label: c.label,
+      value: c.detail,
+      riskContribution: c.score,
+      eventsAffected: parseInt(c.detail) || 0,
+    });
+  }
 
   return insights.sort((a, b) => b.riskContribution - a.riskContribution);
 }

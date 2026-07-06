@@ -14,7 +14,9 @@ import {
 import { Card } from "@/components/ui/Card";
 import { AddressAutocomplete } from "@/components/ui/AddressAutocomplete";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { DEPARTURE_TIME_OPTIONS } from "@/lib/departure-times";
 import { Navigation, Loader2 } from "lucide-react";
 import type { AddressSuggestion } from "@/lib/mapbox/client";
 
@@ -44,7 +46,9 @@ export function RoutePredictor({
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [time, setTime] = useState("08:00");
+  const [timePreset, setTimePreset] = useState("08:00");
+  const [customTime, setCustomTime] = useState("08:00");
+  const time = timePreset === "custom" ? customTime : timePreset;
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoutePrediction | null>(null);
   const [routeInfo, setRouteInfo] = useState<string | null>(null);
@@ -154,7 +158,27 @@ export function RoutePredictor({
             required
           />
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-          <Input label="Departure time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+          <div className="space-y-2">
+            <Select
+              label="Departure time"
+              value={timePreset}
+              onChange={(e) => setTimePreset(e.target.value)}
+              options={DEPARTURE_TIME_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.hint ? `${o.label} — ${o.hint}` : o.label,
+              }))}
+              required
+            />
+            {timePreset === "custom" && (
+              <Input
+                label="Custom departure time"
+                type="time"
+                value={customTime}
+                onChange={(e) => setCustomTime(e.target.value)}
+                required
+              />
+            )}
+          </div>
         </div>
 
         <Button type="submit" disabled={loading || (!stateReport && crashes.length === 0)}>

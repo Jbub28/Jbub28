@@ -80,8 +80,10 @@ export function Dashboard() {
         setRoutes(r);
         setScore(s);
         setPredictions(p);
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     })();
     return () => {

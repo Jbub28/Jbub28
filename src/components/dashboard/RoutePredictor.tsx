@@ -12,9 +12,11 @@ import {
   type RouteGeometry,
 } from "@/lib/mapbox/client";
 import { Card } from "@/components/ui/Card";
+import { AddressAutocomplete } from "@/components/ui/AddressAutocomplete";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Navigation, Loader2 } from "lucide-react";
+import type { AddressSuggestion } from "@/lib/mapbox/client";
 
 interface RoutePredictorProps {
   userId: string;
@@ -46,6 +48,8 @@ export function RoutePredictor({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoutePrediction | null>(null);
   const [routeInfo, setRouteInfo] = useState<string | null>(null);
+  const [originCoord, setOriginCoord] = useState<AddressSuggestion | null>(null);
+  const [destCoord, setDestCoord] = useState<AddressSuggestion | null>(null);
 
   async function handlePredict(e: React.FormEvent) {
     e.preventDefault();
@@ -61,12 +65,24 @@ export function RoutePredictor({
       let route: RouteGeometry | null = null;
 
       if (isMapboxConfigured()) {
-        const resolved = await resolveRouteFromAddresses(origin.trim(), destination.trim());
-        originLat = resolved.origin.lat;
-        originLng = resolved.origin.lng;
-        destLat = resolved.destination.lat;
-        destLng = resolved.destination.lng;
-        route = resolved.route;
+        if (originCoord && destCoord) {
+          originLat = originCoord.lat;
+          originLng = originCoord.lng;
+          destLat = destCoord.lat;
+          destLng = destCoord.lng;
+          const { fetchRoute } = await import("@/lib/mapbox/client");
+          route = await fetchRoute(
+            { lat: originCoord.lat, lng: originCoord.lng, label: originCoord.label },
+            { lat: destCoord.lat, lng: destCoord.lng, label: destCoord.label }
+          );
+        } else {
+          const resolved = await resolveRouteFromAddresses(origin.trim(), destination.trim());
+          originLat = resolved.origin.lat;
+          originLng = resolved.origin.lng;
+          destLat = resolved.destination.lat;
+          destLng = resolved.destination.lng;
+          route = resolved.route;
+        }
         if (route?.distanceMiles) {
           setRouteInfo(
             `${route.distanceMiles.toFixed(1)} mi · ~${route.durationMinutes} min via Mapbox`
@@ -114,8 +130,29 @@ export function RoutePredictor({
     >
       <form onSubmit={handlePredict} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Origin" placeholder="e.g. Dale Mabry Hwy, Tampa, FL" value={origin} onChange={(e) => setOrigin(e.target.value)} required />
-          <Input label="Destination" placeholder="e.g. Tampa International Airport" value={destination} onChange={(e) => setDestination(e.target.value)} required />
+          <AddressAutocomplete
+            label="Origin"
+            placeholder="Start typing an address…"
+            value={origin}
+            onChange={(v) => {
+              setOrigin(v);
+              setOriginCoord(null);
+            }}
+            onSelect={setOriginCoord}
+            required
+          />
+          <AddressAutocomplete
+            label="Destination"
+            placeholder="Start typing an address…"
+            value={destination}
+            onChange={(v) => {
+              setDestination(v);
+              setDestCoord(null);
+            }}
+            onSelect={setDestCoord}
+            proximity={originCoord ? { lat: originCoord.lat, lng: originCoord.lng } : undefined}
+            required
+          />
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           <Input label="Departure time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </div>

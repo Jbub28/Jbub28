@@ -35,10 +35,41 @@ async function mapboxFetch<T>(path: string): Promise<T> {
 interface GeocodeFeature {
   center: [number, number];
   place_name: string;
+  text?: string;
 }
 
 interface GeocodeResponse {
   features: GeocodeFeature[];
+}
+
+export interface AddressSuggestion {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export async function searchAddressSuggestions(
+  query: string,
+  proximity?: MapboxCoord,
+  limit = 5
+): Promise<AddressSuggestion[]> {
+  if (!query.trim() || query.trim().length < 2) return [];
+  if (!isMapboxConfigured()) return [];
+
+  const encoded = encodeURIComponent(query.trim());
+  const prox = proximity
+    ? `&proximity=${proximity.lng},${proximity.lat}`
+    : "&proximity=-82.45,27.95";
+
+  const data = await mapboxFetch<GeocodeResponse>(
+    `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=address,place,poi,locality,neighborhood${prox}&limit=${limit}`
+  );
+
+  return data.features.map((f) => ({
+    label: f.place_name,
+    lng: f.center[0],
+    lat: f.center[1],
+  }));
 }
 
 export async function geocodeAddress(

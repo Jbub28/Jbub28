@@ -63,6 +63,23 @@ Designed to expand with TECO fleet accident data alongside Signal4 records.
 
 > Signal4 Lab, University of Florida. (n.d.). Signal4 Analytics Database. Retrieved [date], from https://signal4analytics.com.
 
+## Mapbox setup (routes on map)
+
+1. Create a free account at [mapbox.com](https://account.mapbox.com/)
+2. Copy your default public token
+3. Add to `.env.local`:
+
+```env
+NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_token_here
+```
+
+Mapbox enables:
+- **Address geocoding** (origin/destination → coordinates)
+- **Driving routes** drawn on the map (color-coded by risk level)
+- **Distance & duration** estimates
+
+Without a token, the app falls back to OpenStreetMap and keyword-based geocoding.
+
 ## Tech stack
 
-Next.js 16 · TypeScript · Tailwind CSS · Supabase · Leaflet · Recharts
+Next.js 16 · TypeScript · Tailwind CSS · Supabase · Mapbox GL · Recharts

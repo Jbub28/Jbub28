@@ -5,6 +5,12 @@ import type { Signal4StateReport } from "@/lib/types/signal4-report";
 import type { CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
 import { predictRouteRisk } from "@/lib/risk/prediction";
 import { saveRoutePrediction } from "@/lib/supabase/storage";
+import {
+  geocodeHint,
+  isMapboxConfigured,
+  resolveRouteFromAddresses,
+  type RouteGeometry,
+} from "@/lib/mapbox/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +22,7 @@ interface RoutePredictorProps {
   corridors: HighRiskCorridor[];
   stateReport?: Signal4StateReport | null;
   onPrediction?: (prediction: RoutePrediction) => void;
+  onRouteResolved?: (route: RouteGeometry | null, prediction: RoutePrediction) => void;
 }
 
 const RISK_STYLES = {
@@ -24,35 +31,13 @@ const RISK_STYLES = {
   high: "bg-red-100 text-red-800 border-red-200",
 };
 
-// Tampa-area geocoding hints for common roads
-const ROAD_COORDS: Record<string, { lat: number; lng: number }> = {
-  "i-275": { lat: 27.965, lng: -82.49 },
-  "dale mabry": { lat: 27.94, lng: -82.506 },
-  "kennedy": { lat: 27.948, lng: -82.459 },
-  "westshore": { lat: 27.944, lng: -82.524 },
-  "fowler": { lat: 28.055, lng: -82.413 },
-  "brandon": { lat: 27.938, lng: -82.286 },
-  "airport": { lat: 27.976, lng: -82.533 },
-  "downtown": { lat: 27.948, lng: -82.459 },
-  "hyde park": { lat: 27.938, lng: -82.482 },
-  "st pete": { lat: 27.768, lng: -82.64 },
-  "howard frankland": { lat: 27.966, lng: -82.55 },
-};
-
-function geocodeHint(address: string): { lat?: number; lng?: number } {
-  const lower = address.toLowerCase();
-  for (const [key, coords] of Object.entries(ROAD_COORDS)) {
-    if (lower.includes(key)) return coords;
-  }
-  return {};
-}
-
 export function RoutePredictor({
   userId,
   crashes,
   corridors,
   stateReport,
   onPrediction,
+  onRouteResolved,
 }: RoutePredictorProps) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
@@ -60,24 +45,50 @@ export function RoutePredictor({
   const [time, setTime] = useState("08:00");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RoutePrediction | null>(null);
+  const [routeInfo, setRouteInfo] = useState<string | null>(null);
 
   async function handlePredict(e: React.FormEvent) {
     e.preventDefault();
     if (!origin.trim() || !destination.trim()) return;
 
     setLoading(true);
+    setRouteInfo(null);
     try {
-      const originCoords = geocodeHint(origin);
-      const destCoords = geocodeHint(destination);
+      let originLat: number | undefined;
+      let originLng: number | undefined;
+      let destLat: number | undefined;
+      let destLng: number | undefined;
+      let route: RouteGeometry | null = null;
+
+      if (isMapboxConfigured()) {
+        const resolved = await resolveRouteFromAddresses(origin.trim(), destination.trim());
+        originLat = resolved.origin.lat;
+        originLng = resolved.origin.lng;
+        destLat = resolved.destination.lat;
+        destLng = resolved.destination.lng;
+        route = resolved.route;
+        if (route?.distanceMiles) {
+          setRouteInfo(
+            `${route.distanceMiles.toFixed(1)} mi · ~${route.durationMinutes} min via Mapbox`
+          );
+        }
+      } else {
+        const o = geocodeHint(origin);
+        const d = geocodeHint(destination);
+        originLat = o?.lat;
+        originLng = o?.lng;
+        destLat = d?.lat;
+        destLng = d?.lng;
+      }
 
       const prediction = predictRouteRisk({
         userId,
         originAddress: origin.trim(),
         destinationAddress: destination.trim(),
-        originLat: originCoords.lat,
-        originLng: originCoords.lng,
-        destLat: destCoords.lat,
-        destLng: destCoords.lng,
+        originLat,
+        originLng,
+        destLat,
+        destLng,
         plannedDate: date,
         plannedTime: time,
         crashes,
@@ -88,6 +99,9 @@ export function RoutePredictor({
       await saveRoutePrediction(prediction);
       setResult(prediction);
       onPrediction?.(prediction);
+      onRouteResolved?.(route, prediction);
+    } catch (err) {
+      setRouteInfo(err instanceof Error ? err.message : "Failed to resolve route");
     } finally {
       setLoading(false);
     }
@@ -96,12 +110,12 @@ export function RoutePredictor({
   return (
     <Card
       title="Route risk predictor"
-      subtitle="Predict low / medium / high risk using Signal4 historic crash data"
+      subtitle="Mapbox routing + Signal4 historic crash risk"
     >
       <form onSubmit={handlePredict} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Origin" placeholder="e.g. Dale Mabry Hwy, Tampa" value={origin} onChange={(e) => setOrigin(e.target.value)} required />
-          <Input label="Destination" placeholder="e.g. I-275 & Kennedy Blvd" value={destination} onChange={(e) => setDestination(e.target.value)} required />
+          <Input label="Origin" placeholder="e.g. Dale Mabry Hwy, Tampa, FL" value={origin} onChange={(e) => setOrigin(e.target.value)} required />
+          <Input label="Destination" placeholder="e.g. Tampa International Airport" value={destination} onChange={(e) => setDestination(e.target.value)} required />
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
           <Input label="Departure time" type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
         </div>
@@ -111,6 +125,8 @@ export function RoutePredictor({
           Predict route risk
         </Button>
 
+        {routeInfo && <p className="text-xs text-slate-500">{routeInfo}</p>}
+
         {crashes.length === 0 && !stateReport && (
           <p className="text-xs text-amber-600">
             Import the Florida Traffic Safety Report (PDF) or Signal4 crash CSV to enable predictions.
@@ -119,6 +135,11 @@ export function RoutePredictor({
         {stateReport && crashes.length === 0 && (
           <p className="text-xs text-emerald-600">
             Statewide Signal4 report loaded — predictions use Florida day-of-week and emphasis-area patterns.
+          </p>
+        )}
+        {!isMapboxConfigured() && (
+          <p className="text-xs text-slate-500">
+            Add <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> to draw routes on the map and geocode addresses.
           </p>
         )}
       </form>

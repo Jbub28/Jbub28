@@ -18,7 +18,8 @@ import {
 } from "@/lib/supabase/state-report";
 import { StateReportCard } from "./StateReportCard";
 import { DataImport } from "./DataImport";
-import { CrashMapCard } from "./CrashMapCard";
+import type { RouteGeometry } from "@/lib/mapbox/client";
+import { MapCard } from "./MapCard";
 import { RiskScoreCard } from "./RiskScoreCard";
 import { HighRiskCorridors } from "./HighRiskCorridors";
 import { RiskPatterns } from "./RiskPatterns";
@@ -33,6 +34,8 @@ export function Dashboard() {
   const [predictions, setPredictions] = useState<RoutePrediction[]>([]);
   const [userId, setUserId] = useState("");
   const [selectedCorridor, setSelectedCorridor] = useState<HighRiskCorridor | null>(null);
+  const [activeRoute, setActiveRoute] = useState<RouteGeometry | null>(null);
+  const [activeRouteRisk, setActiveRouteRisk] = useState<RoutePrediction["risk_level"] | undefined>();
   const [stateReport, setStateReport] = useState<Signal4StateReport | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -144,6 +147,10 @@ export function Dashboard() {
             corridors={corridors}
             stateReport={stateReport}
             onPrediction={(p) => setPredictions((prev) => [p, ...prev])}
+            onRouteResolved={(route, prediction) => {
+              setActiveRoute(route);
+              setActiveRouteRisk(prediction.risk_level);
+            }}
           />
 
           <StateReportCard report={stateReport} />
@@ -154,8 +161,10 @@ export function Dashboard() {
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <CrashMapCard
+              <MapCard
                 crashes={crashes}
+                route={activeRoute}
+                routeRiskLevel={activeRouteRisk}
                 highlightCenter={selectedCorridor?.center}
               />
             </div>

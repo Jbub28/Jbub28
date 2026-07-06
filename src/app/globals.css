@@ -26,7 +26,4 @@ body {
 }
 
 /* Leaflet z-index fix inside dashboard */
-.leaflet-container {
-  z-index: 0;
-  font-family: inherit;
-}
+.mapboxgl-map { font-family: inherit; }

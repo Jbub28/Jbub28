@@ -6,6 +6,9 @@ import Link from "next/link";
 import type { CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
 import type { Signal4StateReport } from "@/lib/types/signal4-report";
 import { predictRouteRisk } from "@/lib/risk/prediction";
+import { evaluateRouteOverviewRisks } from "@/lib/risk/reroute-advisor";
+import { summarizeRouteRiskZones } from "@/lib/risk/route-heatmap";
+import { buildHazardCatalog, getHazardsAlongRoute } from "@/lib/risk/hazards";
 import {
   fetchNavigationRoute,
   geocodeAddress,
@@ -19,9 +22,12 @@ import {
   cleanInstruction,
 } from "@/lib/mapbox/navigation";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { useRouteHazardMonitor } from "@/hooks/useRouteHazardMonitor";
 import { AddressAutocomplete } from "@/components/ui/AddressAutocomplete";
 import { Button } from "@/components/ui/Button";
 import { TurnBanner } from "./TurnBanner";
+import { RerouteAlert } from "./RerouteAlert";
+import { RouteRiskSummary } from "./RouteRiskSummary";
 import {
   ArrowLeft,
   BarChart3,
@@ -29,7 +35,6 @@ import {
   LocateFixed,
   MapPin,
   Navigation,
-  Shield,
   X,
 } from "lucide-react";
 import type { AddressSuggestion } from "@/lib/mapbox/client";
@@ -48,12 +53,6 @@ interface NavigationAppProps {
   stateReport?: Signal4StateReport | null;
 }
 
-const RISK_STYLES = {
-  low: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  medium: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  high: "bg-red-500/20 text-red-300 border-red-500/40",
-};
-
 export function NavigationApp({
   userId,
   crashes,
@@ -69,6 +68,7 @@ export function NavigationApp({
   const [prediction, setPrediction] = useState<RoutePrediction | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rerouting, setRerouting] = useState(false);
   const lastSpokenStep = useRef(-1);
   const reroutingRef = useRef(false);
 
@@ -78,6 +78,27 @@ export function NavigationApp({
     if (phase !== "navigating" || !route || !geo.position) return null;
     return computeNavigationProgress(route, geo.position);
   }, [phase, route, geo.position]);
+
+  const routeOverview = useMemo(() => {
+    if (!route) return null;
+    const overview = evaluateRouteOverviewRisks(route, crashes);
+    const zones = summarizeRouteRiskZones(crashes, route.coordinates);
+    return { ...overview, zones };
+  }, [route, crashes]);
+
+  const previewHazards = useMemo(() => {
+    if (!route) return [];
+    return getHazardsAlongRoute(buildHazardCatalog(crashes), route.coordinates, 600).slice(0, 15);
+  }, [route, crashes]);
+
+  const { recommendation, hazardsAhead, dismissRecommendation, clearDismissal } =
+    useRouteHazardMonitor({
+      enabled: phase === "navigating",
+      position: geo.position,
+      route,
+      routeProgressIndex: progress?.routeIndex ?? 0,
+      crashes,
+    });
 
   const resolveOrigin = useCallback(async (): Promise<MapboxCoord> => {
     if (originCoord) return originCoord;
@@ -149,6 +170,7 @@ export function NavigationApp({
   const reroute = useCallback(async () => {
     if (!route || !geo.position || reroutingRef.current) return;
     reroutingRef.current = true;
+    setRerouting(true);
     try {
       const origin: MapboxCoord = {
         lat: geo.position.lat,
@@ -159,11 +181,14 @@ export function NavigationApp({
       if (navRoute) {
         setRoute(navRoute);
         setOriginCoord(origin);
+        clearDismissal();
+        lastSpokenStep.current = -1;
       }
     } finally {
       reroutingRef.current = false;
+      setRerouting(false);
     }
-  }, [route, geo.position]);
+  }, [route, geo.position, clearDismissal]);
 
   useEffect(() => {
     if (phase !== "navigating" || !route || !progress || !geo.position) return;
@@ -242,6 +267,14 @@ export function NavigationApp({
             followUser={phase === "navigating"}
             crashes={crashes}
             showCrashOverlay={phase === "navigating"}
+            showHeatmap={phase === "preview"}
+            hazards={
+              phase === "preview"
+                ? previewHazards
+                : hazardsAhead.filter(
+                    (h) => h.severity === "high" || h.severity === "critical" || h.type === "active_crash"
+                  )
+            }
           />
         </div>
       )}
@@ -333,14 +366,13 @@ export function NavigationApp({
               </button>
             </div>
 
-            {prediction && (
-              <div
-                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${RISK_STYLES[prediction.risk_level]}`}
-              >
-                <Shield className="h-4 w-4 shrink-0" />
-                <span className="capitalize">{prediction.risk_level} crash risk</span>
-                <span className="text-slate-400">· {prediction.risk_score}/100</span>
-              </div>
+            {prediction && routeOverview && (
+              <RouteRiskSummary
+                prediction={prediction}
+                riskZones={routeOverview.zones}
+                activeIncidentCount={routeOverview.activeIncidentCount}
+                highRiskZoneCount={routeOverview.highRiskZoneCount}
+              />
             )}
 
             <Button type="button" className="w-full" onClick={startNavigation}>
@@ -358,6 +390,16 @@ export function NavigationApp({
             <p className="rounded-xl bg-red-500/90 px-4 py-2 text-center text-sm text-white">
               {geo.error}
             </p>
+          )}
+          {recommendation && (
+            <div className="mx-auto w-full max-w-lg">
+              <RerouteAlert
+                recommendation={recommendation}
+                rerouting={rerouting}
+                onReroute={() => void reroute()}
+                onDismiss={dismissRecommendation}
+              />
+            </div>
           )}
           <div className="mx-auto w-full max-w-lg">
             <TurnBanner

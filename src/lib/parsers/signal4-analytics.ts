@@ -159,6 +159,11 @@ function rowToCrash(row: CsvRow, userId: string): CrashEvent | null {
       source: "signal4_analytics",
       rural_or_urban: getField(row, "Rural or Urban"),
       work_zone: getField(row, "Crash in Work Zone"),
+      is_active: parseBool(
+        getField(row, "Active", "Is Active", "Hazard Active", "is_active")
+      ),
+      hazard_status: getField(row, "Hazard Status", "hazard_status"),
+      hazard_type: getField(row, "Hazard Type", "hazard_type"),
     },
   };
 }

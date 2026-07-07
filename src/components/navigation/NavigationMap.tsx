@@ -9,6 +9,11 @@ import type { NavigationRoute } from "@/lib/mapbox/client";
 import { getMapboxToken, isMapboxConfigured } from "@/lib/mapbox/client";
 import type { LatLng } from "@/lib/geo";
 import { bearingDegrees } from "@/lib/geo";
+import {
+  buildRouteHeatmapPoints,
+  heatmapPointsToGeoJSON,
+} from "@/lib/risk/route-heatmap";
+import type { RouteHazard } from "@/lib/types/hazard";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 interface NavigationMapProps {
@@ -19,6 +24,8 @@ interface NavigationMapProps {
   followUser?: boolean;
   crashes?: CrashEvent[];
   showCrashOverlay?: boolean;
+  showHeatmap?: boolean;
+  hazards?: RouteHazard[];
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -28,6 +35,13 @@ const SEVERITY_COLORS: Record<string, string> = {
   possible: "#ca8a04",
   none: "#65a30d",
   unknown: "#6b7280",
+};
+
+const HAZARD_COLORS: Record<string, string> = {
+  low: "#65a30d",
+  medium: "#d97706",
+  high: "#ea580c",
+  critical: "#dc2626",
 };
 
 function splitRoute(
@@ -50,6 +64,8 @@ export function NavigationMap({
   followUser = false,
   crashes = [],
   showCrashOverlay = false,
+  showHeatmap = false,
+  hazards = [],
 }: NavigationMapProps) {
   const mapRef = useRef<MapRef>(null);
   const token = getMapboxToken();
@@ -58,6 +74,12 @@ export function NavigationMap({
     () => splitRoute(route.coordinates, routeProgressIndex),
     [route.coordinates, routeProgressIndex]
   );
+
+  const heatmapGeoJson = useMemo(() => {
+    if (!showHeatmap || crashes.length === 0) return null;
+    const points = buildRouteHeatmapPoints(crashes, route.coordinates, 600);
+    return heatmapPointsToGeoJSON(points);
+  }, [showHeatmap, crashes, route.coordinates]);
 
   const traveledGeoJson = useMemo(
     () =>
@@ -151,6 +173,36 @@ export function NavigationMap({
       style={{ width: "100%", height: "100%" }}
       mapStyle="mapbox://styles/mapbox/navigation-day-v1"
     >
+      {heatmapGeoJson && heatmapGeoJson.features.length > 0 && (
+        <Source id="risk-heat" type="geojson" data={heatmapGeoJson}>
+          <Layer
+            id="risk-heat-layer"
+            type="heatmap"
+            paint={{
+              "heatmap-weight": ["get", "weight"],
+              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 10, 0.8, 14, 1.4],
+              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 10, 18, 14, 28],
+              "heatmap-opacity": 0.75,
+              "heatmap-color": [
+                "interpolate",
+                ["linear"],
+                ["heatmap-density"],
+                0,
+                "rgba(34,197,94,0)",
+                0.25,
+                "rgba(34,197,94,0.35)",
+                0.5,
+                "rgba(234,179,8,0.55)",
+                0.75,
+                "rgba(249,115,22,0.75)",
+                1,
+                "rgba(220,38,38,0.9)",
+              ],
+            }}
+          />
+        </Source>
+      )}
+
       {traveledGeoJson && (
         <Source id="route-traveled" type="geojson" data={traveledGeoJson}>
           <Layer
@@ -186,16 +238,27 @@ export function NavigationMap({
             <div
               className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-lg"
               style={
-                userHeading != null
-                  ? { transform: `rotate(${userHeading}deg)` }
-                  : undefined
+                userHeading != null ? { transform: `rotate(${userHeading}deg)` } : undefined
               }
             />
           </div>
         </Marker>
       )}
 
+      {hazards.slice(0, 20).map((hazard) => (
+        <Marker key={hazard.id} latitude={hazard.lat} longitude={hazard.lng} anchor="center">
+          <div
+            title={hazard.title}
+            className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-white shadow-lg"
+            style={{ backgroundColor: HAZARD_COLORS[hazard.severity] ?? "#d97706" }}
+          >
+            {hazard.type === "active_crash" ? "!" : "•"}
+          </div>
+        </Marker>
+      ))}
+
       {showCrashOverlay &&
+        !showHeatmap &&
         crashes.slice(0, 80).map((crash) => {
           const color = SEVERITY_COLORS[crash.severity] ?? "#6b7280";
           const size = 6 + severityToScore(crash.severity) / 20;

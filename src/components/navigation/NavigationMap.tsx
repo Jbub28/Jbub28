@@ -192,10 +192,14 @@ export function NavigationMap({
             `${radarMetadata.host}${radarPath}/256/{z}/{x}/{y}/2/1_1.png`,
           ]}
           tileSize={256}
+          minzoom={0}
+          maxzoom={7}
         >
           <Layer
             id="weather-radar-layer"
             type="raster"
+            minzoom={0}
+            maxzoom={22}
             paint={{ "raster-opacity": 0.55 }}
           />
         </Source>

@@ -255,6 +255,57 @@ export async function fetchNavigationRoute(
   };
 }
 
+import { isRerouteEtaAcceptable } from "@/lib/driving/behavior";
+
+export interface SafetyRerouteResult {
+  route: NavigationRoute;
+  etaAcceptable: boolean;
+  addedMinutes: number;
+  rejectedLongerRoute: boolean;
+}
+
+export async function fetchSafetyReroute(
+  origin: MapboxCoord,
+  destination: MapboxCoord,
+  remainingMinutes: number
+): Promise<SafetyRerouteResult | null> {
+  const path =
+    `/directions/v5/mapbox/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}` +
+    `?geometries=geojson&overview=full&steps=true&banner_instructions=true&alternatives=true`;
+
+  const data = await mapboxFetch<DirectionsResponse>(path);
+  if (!data.routes.length) return null;
+
+  const candidates = data.routes.map((r) => ({
+    ...buildRouteGeometry(r, origin, destination),
+    steps: parseRouteSteps(r),
+  }));
+
+  candidates.sort(
+    (a, b) => (a.durationMinutes ?? Infinity) - (b.durationMinutes ?? Infinity)
+  );
+
+  const best = candidates[0];
+  const addedMinutes = (best.durationMinutes ?? 0) - remainingMinutes;
+  const etaAcceptable = isRerouteEtaAcceptable(remainingMinutes, best.durationMinutes ?? 0);
+
+  if (!etaAcceptable) {
+    return {
+      route: best,
+      etaAcceptable: false,
+      addedMinutes,
+      rejectedLongerRoute: true,
+    };
+  }
+
+  return {
+    route: best,
+    etaAcceptable: true,
+    addedMinutes,
+    rejectedLongerRoute: false,
+  };
+}
+
 export async function resolveRouteFromAddresses(
   originAddress: string,
   destinationAddress: string

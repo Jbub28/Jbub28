@@ -6,15 +6,35 @@ import type { LatLng } from "@/lib/geo";
 export interface GeolocationState {
   position: LatLng | null;
   heading: number | null;
+  speedMph: number | null;
   accuracyMeters: number | null;
   error: string | null;
   watching: boolean;
 }
 
-export function useGeolocation() {
+export interface GeolocationSample {
+  position: LatLng;
+  heading: number | null;
+  speedMph: number | null;
+  accuracyMeters: number | null;
+  timestamp: number;
+}
+
+interface UseGeolocationOptions {
+  onSample?: (sample: GeolocationSample) => void;
+}
+
+export function useGeolocation(options: UseGeolocationOptions = {}) {
+  const onSampleRef = useRef(options.onSample);
+
+  useEffect(() => {
+    onSampleRef.current = options.onSample;
+  }, [options.onSample]);
+
   const [state, setState] = useState<GeolocationState>({
     position: null,
     heading: null,
+    speedMph: null,
     accuracyMeters: null,
     error: null,
     watching: false,
@@ -39,12 +59,25 @@ export function useGeolocation() {
 
     watchId.current = navigator.geolocation.watchPosition(
       (pos) => {
+        const speedMph =
+          pos.coords.speed != null && pos.coords.speed >= 0
+            ? pos.coords.speed * 2.23694
+            : null;
+        const position = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setState({
-          position: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          position,
           heading: pos.coords.heading,
+          speedMph,
           accuracyMeters: pos.coords.accuracy,
           error: null,
           watching: true,
+        });
+        onSampleRef.current?.({
+          position,
+          heading: pos.coords.heading,
+          speedMph,
+          accuracyMeters: pos.coords.accuracy,
+          timestamp: pos.timestamp || Date.now(),
         });
       },
       (err) => {

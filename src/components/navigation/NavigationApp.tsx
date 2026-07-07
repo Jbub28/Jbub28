@@ -11,6 +11,7 @@ import { summarizeRouteRiskZones } from "@/lib/risk/route-heatmap";
 import { buildHazardCatalog, getHazardsAlongRoute } from "@/lib/risk/hazards";
 import {
   fetchNavigationRoute,
+  fetchSafetyReroute,
   geocodeAddress,
   isMapboxConfigured,
   type MapboxCoord,
@@ -25,6 +26,8 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useRouteHazardMonitor } from "@/hooks/useRouteHazardMonitor";
 import { useWeatherMonitor } from "@/hooks/useWeatherMonitor";
 import { useConnectivity } from "@/hooks/useConnectivity";
+import { useDrivingBehavior } from "@/hooks/useDrivingBehavior";
+import { assessDrivingBehavior } from "@/lib/driving/behavior";
 import { useNotifications } from "@/hooks/useNotifications";
 import { DestinationSearch } from "@/components/ui/DestinationSearch";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +35,7 @@ import { TurnBanner } from "./TurnBanner";
 import { RerouteAlert } from "./RerouteAlert";
 import { RouteRiskSummary } from "./RouteRiskSummary";
 import { NotificationStack } from "./NotificationStack";
+import { DrivingAlert } from "./DrivingAlert";
 import { fetchRouteWeather } from "@/lib/weather/open-meteo";
 import { fetchRadarMetadata } from "@/lib/weather/radar";
 import type { RadarMetadata } from "@/lib/types/weather";
@@ -79,9 +83,16 @@ export function NavigationApp({
   const [radarMetadata, setRadarMetadata] = useState<RadarMetadata | null>(null);
   const lastSpokenStep = useRef(-1);
   const lastWeatherAlertRef = useRef<string | null>(null);
+  const lastDrivingAlertRef = useRef<string | null>(null);
   const reroutingRef = useRef(false);
 
-  const geo = useGeolocation();
+  const rerouteFnRef = useRef<() => void>(() => {});
+
+  const { samples: drivingSamples, onGpsSample, resetSamples } = useDrivingBehavior({
+    enabled: phase === "navigating",
+  });
+
+  const geo = useGeolocation({ onSample: onGpsSample });
   const connectivity = useConnectivity();
   const { notifications, push, dismiss } = useNotifications();
 
@@ -89,6 +100,15 @@ export function NavigationApp({
     if (phase !== "navigating" || !route || !geo.position) return null;
     return computeNavigationProgress(route, geo.position);
   }, [phase, route, geo.position]);
+
+  const isUrbanContext =
+    (progress?.distanceRemainingMeters ?? 99999) < 8000 ||
+    (geo.speedMph != null && geo.speedMph < 50);
+
+  const drivingBehavior = useMemo(() => {
+    if (drivingSamples.length < 2) return null;
+    return assessDrivingBehavior(drivingSamples, isUrbanContext);
+  }, [drivingSamples, isUrbanContext]);
 
   const routeOverview = useMemo(() => {
     if (!route) return null;
@@ -101,8 +121,6 @@ export function NavigationApp({
     if (!route) return [];
     return getHazardsAlongRoute(buildHazardCatalog(crashes), route.coordinates, 600).slice(0, 15);
   }, [route, crashes]);
-
-  const rerouteFnRef = useRef<() => void>(() => {});
 
   const weatherMonitor = useWeatherMonitor({
     enabled: phase === "preview" || phase === "navigating",
@@ -223,13 +241,14 @@ export function NavigationApp({
 
   const stopNavigation = useCallback(() => {
     geo.stopWatching();
+    resetSamples();
     setPhase("search");
     setRoute(null);
     setPrediction(null);
     setDestination("");
     setDestCoord(null);
     lastSpokenStep.current = -1;
-  }, [geo]);
+  }, [geo, resetSamples]);
 
   const reroute = useCallback(async () => {
     if (!route || !geo.position || reroutingRef.current) return;
@@ -241,18 +260,40 @@ export function NavigationApp({
         lng: geo.position.lng,
         label: "Current location",
       };
-      const navRoute = await fetchNavigationRoute(origin, route.destination);
-      if (navRoute) {
-        setRoute(navRoute);
-        setOriginCoord(origin);
-        clearDismissal();
-        lastSpokenStep.current = -1;
+      const remainingMinutes = progress
+        ? Math.max(1, Math.round(progress.durationRemainingSeconds / 60))
+        : route.durationMinutes ?? 10;
+
+      const result = await fetchSafetyReroute(origin, route.destination, remainingMinutes);
+
+      if (!result) {
+        const fallback = await fetchNavigationRoute(origin, route.destination);
+        if (fallback) {
+          setRoute(fallback);
+          setOriginCoord(origin);
+        }
+        return;
       }
+
+      if (result.rejectedLongerRoute) {
+        push({
+          type: "info",
+          title: "Safer route skipped",
+          message: `Alternate route would add ${Math.round(result.addedMinutes)} min — keeping current route to avoid inconvenience. Slow down to protect other drivers.`,
+          urgency: "low",
+        });
+        return;
+      }
+
+      setRoute(result.route);
+      setOriginCoord(origin);
+      clearDismissal();
+      lastSpokenStep.current = -1;
     } finally {
       reroutingRef.current = false;
       setRerouting(false);
     }
-  }, [route, geo.position, clearDismissal]);
+  }, [route, geo.position, progress, clearDismissal, push]);
 
   useEffect(() => {
     rerouteFnRef.current = () => {
@@ -275,6 +316,41 @@ export function NavigationApp({
     }
     if (connectivity.mode === "online") connectivityAlertedRef.current = false;
   }, [connectivity.mode, push]);
+
+  useEffect(() => {
+    if (phase !== "navigating" || !drivingBehavior) return;
+    if (drivingBehavior.riskLevel === "normal") return;
+
+    const alertKey = `${drivingBehavior.riskLevel}-${drivingBehavior.issues[0]?.type ?? ""}`;
+    if (lastDrivingAlertRef.current === alertKey) return;
+    lastDrivingAlertRef.current = alertKey;
+
+    push({
+      type: "hazard",
+      title:
+        drivingBehavior.riskLevel === "critical"
+          ? "Critical driving behavior"
+          : "Driving behavior warning",
+      message: drivingBehavior.recommendation,
+      urgency: drivingBehavior.riskLevel === "critical" ? "high" : "medium",
+    });
+
+    if (
+      drivingBehavior.shouldConsiderReroute &&
+      drivingBehavior.affectsOthers &&
+      (recommendation || weatherMonitor.currentWeather?.isSevere)
+    ) {
+      push({
+        type: "reroute",
+        title: "Safety reroute available",
+        message:
+          "Hazardous driving combined with route risk. Reroute only if it won't add more than 2 minutes.",
+        urgency: "medium",
+        actionLabel: "Check safer route",
+        onAction: () => rerouteFnRef.current(),
+      });
+    }
+  }, [phase, drivingBehavior, push, recommendation, weatherMonitor.currentWeather?.isSevere]);
 
   useEffect(() => {
     if (phase !== "navigating" || !route || !progress || !geo.position) return;
@@ -496,6 +572,11 @@ export function NavigationApp({
                 onReroute={() => void reroute()}
                 onDismiss={dismissRecommendation}
               />
+            </div>
+          )}
+          {drivingBehavior && drivingBehavior.riskLevel !== "normal" && (
+            <div className="mx-auto w-full max-w-lg">
+              <DrivingAlert assessment={drivingBehavior} />
             </div>
           )}
           <div className="mx-auto w-full max-w-lg">

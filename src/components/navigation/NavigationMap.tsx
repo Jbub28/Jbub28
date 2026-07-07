@@ -14,6 +14,8 @@ import {
   heatmapPointsToGeoJSON,
 } from "@/lib/risk/route-heatmap";
 import type { RouteHazard } from "@/lib/types/hazard";
+import type { RadarMetadata } from "@/lib/types/weather";
+import { latestRadarFrame } from "@/lib/weather/radar";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 interface NavigationMapProps {
@@ -26,6 +28,8 @@ interface NavigationMapProps {
   showCrashOverlay?: boolean;
   showHeatmap?: boolean;
   hazards?: RouteHazard[];
+  radarMetadata?: RadarMetadata | null;
+  showRadar?: boolean;
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -66,6 +70,8 @@ export function NavigationMap({
   showCrashOverlay = false,
   showHeatmap = false,
   hazards = [],
+  radarMetadata = null,
+  showRadar = false,
 }: NavigationMapProps) {
   const mapRef = useRef<MapRef>(null);
   const token = getMapboxToken();
@@ -80,6 +86,11 @@ export function NavigationMap({
     const points = buildRouteHeatmapPoints(crashes, route.coordinates, 600);
     return heatmapPointsToGeoJSON(points);
   }, [showHeatmap, crashes, route.coordinates]);
+
+  const radarPath = useMemo(
+    () => (showRadar ? latestRadarFrame(radarMetadata) : null),
+    [showRadar, radarMetadata]
+  );
 
   const traveledGeoJson = useMemo(
     () =>
@@ -173,6 +184,23 @@ export function NavigationMap({
       style={{ width: "100%", height: "100%" }}
       mapStyle="mapbox://styles/mapbox/navigation-day-v1"
     >
+      {radarPath && radarMetadata && (
+        <Source
+          id="weather-radar"
+          type="raster"
+          tiles={[
+            `${radarMetadata.host}${radarPath}/256/{z}/{x}/{y}/2/1_1.png`,
+          ]}
+          tileSize={256}
+        >
+          <Layer
+            id="weather-radar-layer"
+            type="raster"
+            paint={{ "raster-opacity": 0.55 }}
+          />
+        </Source>
+      )}
+
       {heatmapGeoJson && heatmapGeoJson.features.length > 0 && (
         <Source id="risk-heat" type="geojson" data={heatmapGeoJson}>
           <Layer

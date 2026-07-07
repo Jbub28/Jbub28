@@ -6,6 +6,7 @@ import type { CrashEvent } from "@/lib/types/crash";
 import type { RerouteRecommendation, RouteHazard } from "@/lib/types/hazard";
 import { buildHazardCatalog, getHazardsAlongRoute } from "@/lib/risk/hazards";
 import { evaluateRerouteNeed } from "@/lib/risk/reroute-advisor";
+import type { CurrentWeather } from "@/lib/types/weather";
 import type { LatLng } from "@/lib/geo";
 
 interface UseRouteHazardMonitorOptions {
@@ -15,6 +16,7 @@ interface UseRouteHazardMonitorOptions {
   routeProgressIndex: number;
   crashes: CrashEvent[];
   externalHazards?: RouteHazard[];
+  currentWeather?: CurrentWeather | null;
   pollIntervalMs?: number;
 }
 
@@ -25,6 +27,7 @@ export function useRouteHazardMonitor({
   routeProgressIndex,
   crashes,
   externalHazards = [],
+  currentWeather = null,
   pollIntervalMs = 12000,
 }: UseRouteHazardMonitorOptions) {
   const [tick, setTick] = useState(0);
@@ -61,6 +64,7 @@ export function useRouteHazardMonitor({
       crashes,
       externalHazards,
       previousHazards,
+      currentWeather,
     });
 
     if (rec && rec.id === dismissedId) return null;
@@ -74,6 +78,7 @@ export function useRouteHazardMonitor({
     externalHazards,
     dismissedId,
     previousHazards,
+    currentWeather,
   ]);
 
   const dismissRecommendation = () => {

@@ -5,6 +5,7 @@ import type { CrashEvent, HighRiskCorridor } from "@/lib/types/crash";
 import type { Signal4StateReport } from "@/lib/types/signal4-report";
 import { fetchCorridors, fetchCrashes, getUserId } from "@/lib/supabase/storage";
 import { ensureStateReport } from "@/lib/supabase/state-report";
+import { NotificationProvider } from "@/hooks/useNotifications";
 import { NavigationApp } from "./NavigationApp";
 import { Loader2 } from "lucide-react";
 
@@ -54,11 +55,13 @@ export function NavigationShell() {
   }
 
   return (
-    <NavigationApp
-      userId={userId}
-      crashes={crashes}
-      corridors={corridors}
-      stateReport={stateReport}
-    />
+    <NotificationProvider>
+      <NavigationApp
+        userId={userId}
+        crashes={crashes}
+        corridors={corridors}
+        stateReport={stateReport}
+      />
+    </NotificationProvider>
   );
 }

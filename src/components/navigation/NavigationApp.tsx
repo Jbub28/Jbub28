@@ -23,11 +23,18 @@ import {
 } from "@/lib/mapbox/navigation";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useRouteHazardMonitor } from "@/hooks/useRouteHazardMonitor";
-import { AddressAutocomplete } from "@/components/ui/AddressAutocomplete";
+import { useWeatherMonitor } from "@/hooks/useWeatherMonitor";
+import { useConnectivity } from "@/hooks/useConnectivity";
+import { useNotifications } from "@/hooks/useNotifications";
+import { DestinationSearch } from "@/components/ui/DestinationSearch";
 import { Button } from "@/components/ui/Button";
 import { TurnBanner } from "./TurnBanner";
 import { RerouteAlert } from "./RerouteAlert";
 import { RouteRiskSummary } from "./RouteRiskSummary";
+import { NotificationStack } from "./NotificationStack";
+import { fetchRouteWeather } from "@/lib/weather/open-meteo";
+import { fetchRadarMetadata } from "@/lib/weather/radar";
+import type { RadarMetadata } from "@/lib/types/weather";
 import {
   ArrowLeft,
   BarChart3,
@@ -69,10 +76,14 @@ export function NavigationApp({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rerouting, setRerouting] = useState(false);
+  const [radarMetadata, setRadarMetadata] = useState<RadarMetadata | null>(null);
   const lastSpokenStep = useRef(-1);
+  const lastWeatherAlertRef = useRef<string | null>(null);
   const reroutingRef = useRef(false);
 
   const geo = useGeolocation();
+  const connectivity = useConnectivity();
+  const { notifications, push, dismiss } = useNotifications();
 
   const progress = useMemo(() => {
     if (phase !== "navigating" || !route || !geo.position) return null;
@@ -91,6 +102,37 @@ export function NavigationApp({
     return getHazardsAlongRoute(buildHazardCatalog(crashes), route.coordinates, 600).slice(0, 15);
   }, [route, crashes]);
 
+  const rerouteFnRef = useRef<() => void>(() => {});
+
+  const weatherMonitor = useWeatherMonitor({
+    enabled: phase === "preview" || phase === "navigating",
+    position: geo.position,
+    route,
+    crashes,
+    onWeatherChange: (message, weather) => {
+      if (lastWeatherAlertRef.current === message) return;
+      lastWeatherAlertRef.current = message;
+      push({
+        type: "weather",
+        title: "Weather change",
+        message,
+        urgency: weather.isSevere ? "high" : "medium",
+        actionLabel: phase === "navigating" ? "Reroute" : undefined,
+        onAction: phase === "navigating" ? () => rerouteFnRef.current() : undefined,
+      });
+    },
+    onSevereWeather: (weather, recommendation) => {
+      push({
+        type: "weather",
+        title: "Severe weather advisory",
+        message: `${weather.weatherLabel} — ${recommendation}`,
+        urgency: "high",
+        actionLabel: "Reroute now",
+        onAction: () => rerouteFnRef.current(),
+      });
+    },
+  });
+
   const { recommendation, hazardsAhead, dismissRecommendation, clearDismissal } =
     useRouteHazardMonitor({
       enabled: phase === "navigating",
@@ -98,6 +140,7 @@ export function NavigationApp({
       route,
       routeProgressIndex: progress?.routeIndex ?? 0,
       crashes,
+      currentWeather: weatherMonitor.currentWeather,
     });
 
   const resolveOrigin = useCallback(async (): Promise<MapboxCoord> => {
@@ -124,6 +167,16 @@ export function NavigationApp({
       const navRoute = await fetchNavigationRoute(origin, dest);
       if (!navRoute) throw new Error("No driving route found.");
 
+      let weatherAlong: Awaited<ReturnType<typeof fetchRouteWeather>> = [];
+      try {
+        weatherAlong = await fetchRouteWeather(navRoute.coordinates);
+      } catch {
+        weatherAlong = [];
+      }
+
+      const radar = await fetchRadarMetadata();
+      setRadarMetadata(radar);
+
       const risk = predictRouteRisk({
         userId,
         originAddress: origin.label ?? "My location",
@@ -137,7 +190,18 @@ export function NavigationApp({
         crashes,
         corridors,
         stateReport,
+        routeCoordinates: navRoute.coordinates,
+        weatherConditions: weatherAlong.length > 0 ? weatherAlong : undefined,
       });
+
+      if (weatherAlong.length > 0 && risk.risk_level !== "low") {
+        push({
+          type: "weather",
+          title: "Weather risk on route",
+          message: `Risk score ${risk.risk_score}/100 — live conditions factored into this route.`,
+          urgency: risk.risk_level === "high" ? "high" : "medium",
+        });
+      }
 
       setOriginCoord(origin);
       setRoute(navRoute);
@@ -148,7 +212,7 @@ export function NavigationApp({
     } finally {
       setLoading(false);
     }
-  }, [destination, destCoord, resolveOrigin, userId, crashes, corridors, stateReport]);
+  }, [destination, destCoord, resolveOrigin, userId, crashes, corridors, stateReport, push]);
 
   const startNavigation = useCallback(() => {
     if (!route) return;
@@ -189,6 +253,28 @@ export function NavigationApp({
       setRerouting(false);
     }
   }, [route, geo.position, clearDismissal]);
+
+  useEffect(() => {
+    rerouteFnRef.current = () => {
+      void reroute();
+    };
+  }, [reroute]);
+
+  const connectivityAlertedRef = useRef(false);
+
+  useEffect(() => {
+    if (connectivity.mode === "offline" && !connectivityAlertedRef.current) {
+      connectivityAlertedRef.current = true;
+      push({
+        type: "connectivity",
+        title: "Offline — GPS navigation active",
+        message:
+          "Network unavailable. Using device GPS and cached weather/crash data. Satellite (Iridium) devices can bridge via companion API.",
+        urgency: "medium",
+      });
+    }
+    if (connectivity.mode === "online") connectivityAlertedRef.current = false;
+  }, [connectivity.mode, push]);
 
   useEffect(() => {
     if (phase !== "navigating" || !route || !progress || !geo.position) return;
@@ -256,6 +342,16 @@ export function NavigationApp({
         </Link>
       </header>
 
+      <NotificationStack notifications={notifications} onDismiss={dismiss} />
+
+      {connectivity.mode !== "online" && (
+        <div className="absolute left-4 right-4 top-14 z-20 rounded-lg bg-amber-950/90 px-3 py-2 text-center text-xs text-amber-200 backdrop-blur">
+          {connectivity.mode === "offline"
+            ? "Offline — GPS active, using cached data"
+            : "Limited connectivity — weather/radar may use cache"}
+        </div>
+      )}
+
       {/* Map layer */}
       {(phase === "preview" || phase === "navigating") && route && (
         <div className="absolute inset-0">
@@ -268,6 +364,8 @@ export function NavigationApp({
             crashes={crashes}
             showCrashOverlay={phase === "navigating"}
             showHeatmap={phase === "preview"}
+            showRadar={phase === "preview" || phase === "navigating"}
+            radarMetadata={radarMetadata}
             hazards={
               phase === "preview"
                 ? previewHazards
@@ -295,9 +393,7 @@ export function NavigationApp({
               <span className="truncate">{originLabel}</span>
             </div>
 
-            <AddressAutocomplete
-              label="Destination"
-              placeholder="Search address or place…"
+            <DestinationSearch
               value={destination}
               onChange={(v) => {
                 setDestination(v);
@@ -372,6 +468,7 @@ export function NavigationApp({
                 riskZones={routeOverview.zones}
                 activeIncidentCount={routeOverview.activeIncidentCount}
                 highRiskZoneCount={routeOverview.highRiskZoneCount}
+                routeWeather={weatherMonitor.routeWeather}
               />
             )}
 

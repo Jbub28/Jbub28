@@ -2,13 +2,15 @@
 
 import type { RouteRiskZone } from "@/lib/risk/route-heatmap";
 import type { RoutePrediction } from "@/lib/types/crash";
-import { Flame, Shield } from "lucide-react";
+import type { RouteWeatherSnapshot } from "@/lib/types/weather";
+import { CloudRain, Flame, Shield, Thermometer, Wind } from "lucide-react";
 
 interface RouteRiskSummaryProps {
   prediction: RoutePrediction | null;
   riskZones: RouteRiskZone[];
   activeIncidentCount: number;
   highRiskZoneCount: number;
+  routeWeather?: RouteWeatherSnapshot | null;
 }
 
 const ZONE_COLORS: Record<string, string> = {
@@ -22,6 +24,7 @@ export function RouteRiskSummary({
   riskZones,
   activeIncidentCount,
   highRiskZoneCount,
+  routeWeather,
 }: RouteRiskSummaryProps) {
   return (
     <div className="space-y-3">
@@ -30,6 +33,30 @@ export function RouteRiskSummary({
           <Shield className="h-4 w-4 shrink-0 text-emerald-400" />
           <span className="capitalize text-slate-200">{prediction.risk_level} crash risk</span>
           <span className="text-slate-500">· {prediction.risk_score}/100</span>
+        </div>
+      )}
+
+      {routeWeather?.origin && (
+        <div className="rounded-xl border border-sky-500/30 bg-sky-950/40 px-3 py-2.5 text-sm">
+          <div className="flex items-center gap-2 text-sky-300">
+            <CloudRain className="h-4 w-4 shrink-0" />
+            <span className="font-medium">Live weather risk</span>
+            <span className="text-slate-500">· {routeWeather.aggregate.score}/100</span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
+            <span className="flex items-center gap-1">
+              <Thermometer className="h-3 w-3" />
+              {routeWeather.origin.temperatureF}°F
+            </span>
+            <span>{routeWeather.origin.weatherLabel}</span>
+            <span className="flex items-center gap-1">
+              <Wind className="h-3 w-3" />
+              {routeWeather.origin.windGustMph} mph gusts
+            </span>
+          </div>
+          {routeWeather.aggregate.factors[0] && (
+            <p className="mt-1.5 text-xs text-slate-500">{routeWeather.aggregate.factors[0]}</p>
+          )}
         </div>
       )}
 

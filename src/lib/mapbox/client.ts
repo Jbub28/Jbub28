@@ -48,6 +48,8 @@ interface GeocodeFeature {
   center: [number, number];
   place_name: string;
   text?: string;
+  place_type?: string[];
+  properties?: { category?: string; landmark?: boolean };
 }
 
 interface GeocodeResponse {
@@ -58,12 +60,37 @@ export interface AddressSuggestion {
   label: string;
   lat: number;
   lng: number;
+  kind?: "poi" | "address" | "place" | "locality";
+  category?: string;
+  shortName?: string;
+}
+
+function mapFeature(f: GeocodeFeature): AddressSuggestion {
+  const kind = f.place_type?.[0] as AddressSuggestion["kind"];
+  return {
+    label: f.place_name,
+    shortName: f.text ?? f.place_name.split(",")[0],
+    lng: f.center[0],
+    lat: f.center[1],
+    kind: kind ?? "address",
+    category: f.properties?.category,
+  };
+}
+
+function dedupeSuggestions(items: AddressSuggestion[]): AddressSuggestion[] {
+  const seen = new Set<string>();
+  return items.filter((s) => {
+    const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)},${s.shortName?.toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export async function searchAddressSuggestions(
   query: string,
   proximity?: MapboxCoord,
-  limit = 5
+  limit = 8
 ): Promise<AddressSuggestion[]> {
   if (!query.trim() || query.trim().length < 2) return [];
   if (!isMapboxConfigured()) return [];
@@ -77,11 +104,35 @@ export async function searchAddressSuggestions(
     `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=address,place,poi,locality,neighborhood${prox}&limit=${limit}`
   );
 
-  return data.features.map((f) => ({
-    label: f.place_name,
-    lng: f.center[0],
-    lat: f.center[1],
-  }));
+  return dedupeSuggestions(data.features.map(mapFeature));
+}
+
+/** Business & POI-first search for destination field. */
+export async function searchDestinationSuggestions(
+  query: string,
+  proximity?: MapboxCoord,
+  limit = 10
+): Promise<AddressSuggestion[]> {
+  if (!query.trim() || query.trim().length < 2) return [];
+  if (!isMapboxConfigured()) return [];
+
+  const encoded = encodeURIComponent(query.trim());
+  const prox = proximity
+    ? `&proximity=${proximity.lng},${proximity.lat}`
+    : "&proximity=-82.45,27.95";
+
+  const [poiData, placeData] = await Promise.all([
+    mapboxFetch<GeocodeResponse>(
+      `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=poi${prox}&limit=${limit}`
+    ).catch(() => ({ features: [] } as GeocodeResponse)),
+    mapboxFetch<GeocodeResponse>(
+      `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=place,address,locality${prox}&limit=${Math.ceil(limit / 2)}`
+    ).catch(() => ({ features: [] } as GeocodeResponse)),
+  ]);
+
+  const poi = poiData.features.map(mapFeature);
+  const places = placeData.features.map(mapFeature);
+  return dedupeSuggestions([...poi, ...places]).slice(0, limit);
 }
 
 export async function geocodeAddress(
@@ -90,15 +141,29 @@ export async function geocodeAddress(
 ): Promise<MapboxCoord | null> {
   const encoded = encodeURIComponent(address);
   const prox = proximity ? `&proximity=${proximity.lng},${proximity.lat}` : "&proximity=-82.45,27.95";
+
+  const poiAttempt = await mapboxFetch<GeocodeResponse>(
+    `/geocoding/v5/mapbox.places/${encoded}.json?country=US&types=poi,place,address${prox}&limit=1`
+  ).catch(() => null);
+
+  const feature = poiAttempt?.features[0];
+  if (feature) {
+    return {
+      lng: feature.center[0],
+      lat: feature.center[1],
+      label: feature.place_name,
+    };
+  }
+
   const data = await mapboxFetch<GeocodeResponse>(
     `/geocoding/v5/mapbox.places/${encoded}.json?country=US&limit=1${prox}`
   );
-  const feature = data.features[0];
-  if (!feature) return null;
+  const fallback = data.features[0];
+  if (!fallback) return null;
   return {
-    lng: feature.center[0],
-    lat: feature.center[1],
-    label: feature.place_name,
+    lng: fallback.center[0],
+    lat: fallback.center[1],
+    label: fallback.place_name,
   };
 }
 

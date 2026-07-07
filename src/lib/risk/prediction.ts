@@ -10,6 +10,13 @@ import {
   findCrashesNearRoute,
   matchRoadInText,
 } from "@/lib/risk/corridors";
+import { findCrashesAlongPolyline } from "@/lib/risk/route-buffer";
+import { computeTemporalCrashRisk } from "@/lib/risk/temporal";
+import {
+  assessRouteWeather,
+  historicWeatherMatchBoost,
+} from "@/lib/weather/risk";
+import type { CurrentWeather } from "@/lib/types/weather";
 import {
   getEmphasisAreaRisk,
   getStatewideDayRisk,
@@ -42,6 +49,8 @@ interface PredictionInput {
   crashes: CrashEvent[];
   corridors: HighRiskCorridor[];
   stateReport?: Signal4StateReport | null;
+  routeCoordinates?: [number, number][];
+  weatherConditions?: CurrentWeather[];
 }
 
 export function predictRouteRisk(input: PredictionInput): RoutePrediction {
@@ -64,20 +73,31 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
   let riskScore = 25;
   const factors: string[] = [];
 
-  const nearbyCrashes = findCrashesNearRoute(
-    crashes,
-    input.originLat,
-    input.originLng,
-    input.destLat,
-    input.destLng
-  );
+  let relevantCrashes: CrashEvent[] = [];
+  if (input.routeCoordinates && input.routeCoordinates.length > 1) {
+    relevantCrashes = findCrashesAlongPolyline(
+      crashes,
+      input.routeCoordinates,
+      600
+    ).map((r) => r.item);
+  }
+
+  if (relevantCrashes.length === 0) {
+    relevantCrashes = findCrashesNearRoute(
+      crashes,
+      input.originLat,
+      input.originLng,
+      input.destLat,
+      input.destLng
+    );
+  }
 
   const roadMentioned = `${originAddress} ${destinationAddress}`;
-  const roadMatchedCrashes = crashes.filter(
-    (c) => c.road_name && (matchRoadInText(c.road_name, roadMentioned) || nearbyCrashes.includes(c))
-  );
-
-  const relevantCrashes = nearbyCrashes.length > 0 ? nearbyCrashes : roadMatchedCrashes;
+  if (relevantCrashes.length === 0) {
+    relevantCrashes = crashes.filter(
+      (c) => c.road_name && matchRoadInText(c.road_name, roadMentioned)
+    );
+  }
 
   if (relevantCrashes.length === 0) {
     factors.push(
@@ -175,6 +195,35 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
     );
   }
 
+  if (input.routeCoordinates && input.routeCoordinates.length > 1) {
+    const temporal = computeTemporalCrashRisk(
+      crashes,
+      input.routeCoordinates,
+      plannedDateTime
+    );
+    if (temporal.score > 0) {
+      riskScore += temporal.score;
+      factors.push(...temporal.factors);
+    }
+  }
+
+  if (input.weatherConditions && input.weatherConditions.length > 0) {
+    const weatherRisk = assessRouteWeather(input.weatherConditions);
+    if (weatherRisk.score > 0) {
+      riskScore += Math.round(weatherRisk.score * 0.35);
+      factors.push(...weatherRisk.factors.map((f) => `Live weather: ${f}`));
+      if (weatherRisk.recommendation) factors.push(weatherRisk.recommendation);
+    }
+    const primary = input.weatherConditions[0];
+    if (primary && input.routeCoordinates) {
+      const match = historicWeatherMatchBoost(crashes, input.routeCoordinates, primary);
+      if (match.boost > 0) {
+        riskScore += match.boost;
+        factors.push(match.detail);
+      }
+    }
+  }
+
   riskScore = Math.min(100, Math.max(1, Math.round(riskScore)));
   const riskLevel = riskLevelFromScore(riskScore);
 
@@ -212,6 +261,12 @@ export function predictRouteRisk(input: PredictionInput): RoutePrediction {
       factorDetails: factors,
       dataSource: "Signal4 Analytics",
       statewideReport: stateReport?.data_through ?? null,
+      weatherRisk: input.weatherConditions
+        ? assessRouteWeather(input.weatherConditions)
+        : null,
+      temporalAnalysis: input.routeCoordinates
+        ? computeTemporalCrashRisk(crashes, input.routeCoordinates, plannedDateTime)
+        : null,
     },
     created_at: new Date().toISOString(),
   };

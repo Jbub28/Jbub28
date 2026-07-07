@@ -4,6 +4,8 @@ import { formatDistance } from "@/lib/geo";
 import type { NavigationRoute } from "@/lib/mapbox/client";
 import type { CrashEvent } from "@/lib/types/crash";
 import type { RerouteRecommendation, RouteHazard } from "@/lib/types/hazard";
+import type { CurrentWeather } from "@/lib/types/weather";
+import { assessWeatherRisk } from "@/lib/weather/risk";
 import {
   buildHazardCatalog,
   detectEscalatedHazards,
@@ -21,6 +23,7 @@ interface EvaluateInput {
   crashes: CrashEvent[];
   externalHazards?: RouteHazard[];
   previousHazards?: RouteHazard[];
+  currentWeather?: CurrentWeather | null;
 }
 
 function buildSummary(hazards: RouteHazard[]): string {
@@ -95,7 +98,14 @@ export function evaluateRerouteNeed(input: EvaluateInput): RerouteRecommendation
   }
 
   const unique = Array.from(new Map(triggerHazards.map((h) => [h.id, h])).values());
-  if (unique.length === 0) return null;
+
+  const weatherRec = input.currentWeather
+    ? evaluateWeatherReroute(input.currentWeather)
+    : null;
+
+  if (unique.length === 0 && !weatherRec) return null;
+
+  if (unique.length === 0 && weatherRec) return weatherRec;
 
   unique.sort((a, b) => (a.distanceAheadMeters ?? 0) - (b.distanceAheadMeters ?? 0));
   const nearest = unique[0];
@@ -132,5 +142,26 @@ export function evaluateRouteOverviewRisks(
     hazards: along,
     highRiskZoneCount: clusters.length + along.filter((h) => h.severity === "high" || h.severity === "critical").length,
     activeIncidentCount: active.length,
+  };
+}
+
+/** Suggest reroute when live weather is hazardous. */
+export function evaluateWeatherReroute(
+  weather: CurrentWeather
+): RerouteRecommendation | null {
+  const assessment = assessWeatherRisk(weather);
+  if (assessment.severity !== "high" && assessment.severity !== "severe") return null;
+
+  return {
+    id: uuidv4(),
+    urgency: assessment.severity === "severe" ? "high" : "medium",
+    reason: `${weather.weatherLabel} — ${weather.temperatureF}°F, wind gusts ${weather.windGustMph} mph`,
+    summary: `Severe weather conditions detected: ${assessment.factors.join("; ")}`,
+    suggestedAction:
+      assessment.recommendation ??
+      "Consider rerouting or delaying travel until conditions improve.",
+    hazards: [],
+    distanceAheadMeters: 0,
+    createdAt: new Date().toISOString(),
   };
 }

@@ -47,7 +47,9 @@ const TAMPA_SAMPLES: SampleCrash[] = [
 function daysAgoToDate(daysAgo: number, hour: number): string {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
-  d.setHours(hour, Math.floor(Math.random() * 60), 0, 0);
+  const minute = Math.floor(Math.random() * 60);
+  const second = Math.floor(Math.random() * 60);
+  d.setHours(hour, minute, second, 0);
   return d.toISOString();
 }
 

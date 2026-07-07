@@ -1,0 +1,222 @@
+"use client";
+
+import { useState } from "react";
+import type { Signal4StateReport } from "@/lib/types/signal4-report";
+import type { CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
+import { predictRouteRisk } from "@/lib/risk/prediction";
+import { saveRoutePrediction } from "@/lib/supabase/storage";
+import {
+  geocodeHint,
+  isMapboxConfigured,
+  resolveRouteFromAddresses,
+  type RouteGeometry,
+} from "@/lib/mapbox/client";
+import { Card } from "@/components/ui/Card";
+import { AddressAutocomplete } from "@/components/ui/AddressAutocomplete";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
+import { DEPARTURE_TIME_OPTIONS } from "@/lib/departure-times";
+import { Navigation, Loader2 } from "lucide-react";
+import type { AddressSuggestion } from "@/lib/mapbox/client";
+
+interface RoutePredictorProps {
+  userId: string;
+  crashes: CrashEvent[];
+  corridors: HighRiskCorridor[];
+  stateReport?: Signal4StateReport | null;
+  onPrediction?: (prediction: RoutePrediction) => void;
+  onRouteResolved?: (route: RouteGeometry | null, prediction: RoutePrediction) => void;
+}
+
+const RISK_STYLES = {
+  low: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  medium: "bg-amber-100 text-amber-800 border-amber-200",
+  high: "bg-red-100 text-red-800 border-red-200",
+};
+
+export function RoutePredictor({
+  userId,
+  crashes,
+  corridors,
+  stateReport,
+  onPrediction,
+  onRouteResolved,
+}: RoutePredictorProps) {
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [timePreset, setTimePreset] = useState("08:00");
+  const [customTime, setCustomTime] = useState("08:00");
+  const time = timePreset === "custom" ? customTime : timePreset;
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<RoutePrediction | null>(null);
+  const [routeInfo, setRouteInfo] = useState<string | null>(null);
+  const [originCoord, setOriginCoord] = useState<AddressSuggestion | null>(null);
+  const [destCoord, setDestCoord] = useState<AddressSuggestion | null>(null);
+
+  async function handlePredict(e: React.FormEvent) {
+    e.preventDefault();
+    if (!origin.trim() || !destination.trim()) return;
+
+    setLoading(true);
+    setRouteInfo(null);
+    try {
+      let originLat: number | undefined;
+      let originLng: number | undefined;
+      let destLat: number | undefined;
+      let destLng: number | undefined;
+      let route: RouteGeometry | null = null;
+
+      if (isMapboxConfigured()) {
+        if (originCoord && destCoord) {
+          originLat = originCoord.lat;
+          originLng = originCoord.lng;
+          destLat = destCoord.lat;
+          destLng = destCoord.lng;
+          const { fetchRoute } = await import("@/lib/mapbox/client");
+          route = await fetchRoute(
+            { lat: originCoord.lat, lng: originCoord.lng, label: originCoord.label },
+            { lat: destCoord.lat, lng: destCoord.lng, label: destCoord.label }
+          );
+        } else {
+          const resolved = await resolveRouteFromAddresses(origin.trim(), destination.trim());
+          originLat = resolved.origin.lat;
+          originLng = resolved.origin.lng;
+          destLat = resolved.destination.lat;
+          destLng = resolved.destination.lng;
+          route = resolved.route;
+        }
+        if (route?.distanceMiles) {
+          setRouteInfo(
+            `${route.distanceMiles.toFixed(1)} mi · ~${route.durationMinutes} min via Mapbox`
+          );
+        }
+      } else {
+        const o = geocodeHint(origin);
+        const d = geocodeHint(destination);
+        originLat = o?.lat;
+        originLng = o?.lng;
+        destLat = d?.lat;
+        destLng = d?.lng;
+      }
+
+      const prediction = predictRouteRisk({
+        userId,
+        originAddress: origin.trim(),
+        destinationAddress: destination.trim(),
+        originLat,
+        originLng,
+        destLat,
+        destLng,
+        plannedDate: date,
+        plannedTime: time,
+        crashes,
+        corridors,
+        stateReport,
+      });
+
+      await saveRoutePrediction(prediction);
+      setResult(prediction);
+      onPrediction?.(prediction);
+      onRouteResolved?.(route, prediction);
+    } catch (err) {
+      setRouteInfo(err instanceof Error ? err.message : "Failed to resolve route");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Card
+      title="Route risk predictor"
+      subtitle="Mapbox routing + Signal4 historic crash risk"
+    >
+      <form onSubmit={handlePredict} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <AddressAutocomplete
+            label="Origin"
+            placeholder="Start typing an address…"
+            value={origin}
+            onChange={(v) => {
+              setOrigin(v);
+              setOriginCoord(null);
+            }}
+            onSelect={setOriginCoord}
+            required
+          />
+          <AddressAutocomplete
+            label="Destination"
+            placeholder="Start typing an address…"
+            value={destination}
+            onChange={(v) => {
+              setDestination(v);
+              setDestCoord(null);
+            }}
+            onSelect={setDestCoord}
+            proximity={originCoord ? { lat: originCoord.lat, lng: originCoord.lng } : undefined}
+            required
+          />
+          <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          <div className="space-y-2">
+            <Select
+              label="Departure time"
+              value={timePreset}
+              onChange={(e) => setTimePreset(e.target.value)}
+              options={DEPARTURE_TIME_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.hint ? `${o.label} — ${o.hint}` : o.label,
+              }))}
+              required
+            />
+            {timePreset === "custom" && (
+              <Input
+                label="Custom departure time"
+                type="time"
+                value={customTime}
+                onChange={(e) => setCustomTime(e.target.value)}
+                required
+              />
+            )}
+          </div>
+        </div>
+
+        <Button type="submit" disabled={loading || (!stateReport && crashes.length === 0)}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+          Predict route risk
+        </Button>
+
+        {routeInfo && <p className="text-xs text-slate-500">{routeInfo}</p>}
+
+        {crashes.length === 0 && !stateReport && (
+          <p className="text-xs text-amber-600">
+            Import the Florida Traffic Safety Report (PDF) or Signal4 crash CSV to enable predictions.
+          </p>
+        )}
+        {stateReport && crashes.length === 0 && (
+          <p className="text-xs text-emerald-600">
+            Statewide Signal4 report loaded — predictions use Florida day-of-week and emphasis-area patterns.
+          </p>
+        )}
+        {!isMapboxConfigured() && (
+          <p className="text-xs text-slate-500">
+            Add <code>NEXT_PUBLIC_MAPBOX_TOKEN</code> to draw routes on the map and geocode addresses.
+          </p>
+        )}
+      </form>
+
+      {result && (
+        <div className="mt-5 space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`rounded-full border px-3 py-1 text-sm font-semibold capitalize ${RISK_STYLES[result.risk_level]}`}>
+              {result.risk_level} risk
+            </span>
+            <span className="text-sm text-slate-500">Score: {result.risk_score}/100</span>
+            <span className="text-sm text-slate-500">{result.nearby_crash_count} nearby historic crashes</span>
+          </div>
+          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{result.explanation}</p>
+        </div>
+      )}
+    </Card>
+  );
+}

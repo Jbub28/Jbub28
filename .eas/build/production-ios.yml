@@ -1,0 +1,43 @@
+build:
+  name: SafeRoute Nav iOS production
+  steps:
+    - eas/checkout
+    - eas/install_node_modules
+    - run:
+        name: Build Next.js static export
+        command: npm run build:ios
+    - run:
+        name: Sync Capacitor iOS project
+        command: npx cap sync ios
+    - eas/resolve_apple_team_id_from_credentials:
+        id: resolve_apple_team_id
+    - eas/configure_ios_credentials
+    - eas/generate_gymfile_from_template:
+        inputs:
+          scheme: App
+          credentials: ${ eas.job.secrets.buildCredentials }
+          template: |
+            suppress_xcode_output(true)
+            clean(true)
+            project("ios/App/App.xcodeproj")
+            scheme("<%- SCHEME %>")
+            <% if (BUILD_CONFIGURATION) { %>
+            configuration("<%- BUILD_CONFIGURATION %>")
+            <% } %>
+            export_options({
+            method: "<%- EXPORT_METHOD %>",
+            provisioningProfiles: {<% _.forEach(PROFILES, function(profile) { %>
+                "<%- profile.BUNDLE_ID %>" => "<%- profile.UUID %>",<% }); %>
+            }
+            })
+            export_xcargs "OTHER_CODE_SIGN_FLAGS=\"--keychain <%- KEYCHAIN_PATH %>\""
+            disable_xcpretty(true)
+            buildlog_path("<%- LOGS_DIRECTORY %>")
+            output_directory("<%- OUTPUT_DIRECTORY %>")
+    - run:
+        name: Place Gymfile in Fastlane working directory
+        command: cp ios/Gymfile ios/App/Gymfile
+    - eas/run_fastlane:
+        inputs:
+          working_directory: ios/App
+    - eas/find_and_upload_build_artifacts

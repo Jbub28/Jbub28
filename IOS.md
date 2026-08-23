@@ -35,6 +35,19 @@ In Xcode:
 
 ## App Store / TestFlight
 
+### Option A — EAS Build (cloud, no Mac required)
+
+See **[EAS.md](./EAS.md)** for full setup. Quick start:
+
+```bash
+npm install --global eas-cli
+eas login
+eas build:configure
+eas build --platform ios --profile production
+```
+
+### Option B — Xcode on your Mac
+
 1. In Xcode: **Product → Archive**
 2. **Distribute App → App Store Connect**
 3. Upload and submit for TestFlight or review

@@ -63,6 +63,14 @@ export interface AddressSuggestion {
   kind?: "poi" | "address" | "place" | "locality";
   category?: string;
   shortName?: string;
+  /** Street address without business name */
+  address?: string;
+  /** Distance from user in meters (Search Box API) */
+  distanceMeters?: number;
+  /** Mapbox Search Box ID — requires retrieve call for coordinates */
+  mapboxId?: string;
+  /** True when coordinates must be fetched via retrieve */
+  sessionRequired?: boolean;
 }
 
 function mapFeature(f: GeocodeFeature): AddressSuggestion {
@@ -107,12 +115,18 @@ export async function searchAddressSuggestions(
   return dedupeSuggestions(data.features.map(mapFeature));
 }
 
-/** Business & POI-first search for destination field. */
+/** Business & POI-first search for destination field (Mapbox Search Box API). */
 export async function searchDestinationSuggestions(
   query: string,
   proximity?: MapboxCoord,
-  limit = 10
+  limit = 8,
+  sessionToken?: string
 ): Promise<AddressSuggestion[]> {
+  const { suggestNearbyPlaces } = await import("./search-box");
+  const { suggestions } = await suggestNearbyPlaces(query, proximity, sessionToken, limit);
+  if (suggestions.length > 0) return suggestions;
+
+  // Fallback to legacy geocoding if Search Box returns nothing
   if (!query.trim() || query.trim().length < 2) return [];
   if (!isMapboxConfigured()) return [];
 
@@ -121,18 +135,11 @@ export async function searchDestinationSuggestions(
     ? `&proximity=${proximity.lng},${proximity.lat}`
     : "&proximity=-82.45,27.95";
 
-  const [poiData, placeData] = await Promise.all([
-    mapboxFetch<GeocodeResponse>(
-      `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=poi${prox}&limit=${limit}`
-    ).catch(() => ({ features: [] } as GeocodeResponse)),
-    mapboxFetch<GeocodeResponse>(
-      `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=place,address,locality${prox}&limit=${Math.ceil(limit / 2)}`
-    ).catch(() => ({ features: [] } as GeocodeResponse)),
-  ]);
+  const data = await mapboxFetch<GeocodeResponse>(
+    `/geocoding/v5/mapbox.places/${encoded}.json?country=US&autocomplete=true&types=poi,place,address${prox}&limit=${limit}`
+  ).catch(() => ({ features: [] } as GeocodeResponse));
 
-  const poi = poiData.features.map(mapFeature);
-  const places = placeData.features.map(mapFeature);
-  return dedupeSuggestions([...poi, ...places]).slice(0, limit);
+  return dedupeSuggestions(data.features.map(mapFeature));
 }
 
 export async function geocodeAddress(

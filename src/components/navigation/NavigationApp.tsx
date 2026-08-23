@@ -463,7 +463,7 @@ export function NavigationApp({
             <div>
               <h1 className="text-xl font-bold">Where to?</h1>
               <p className="mt-1 text-sm text-slate-400">
-                GPS navigation with Signal4 crash-risk awareness
+                Search a store or business — pick from nearby locations
               </p>
             </div>
 

@@ -4,20 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import type { AreaRiskScore, CrashEvent, HighRiskCorridor, RoutePrediction } from "@/lib/types/crash";
 import { extractPatternInsights } from "@/lib/risk/scoring";
 import {
-  fetchCorridors,
-  fetchCrashes,
   fetchLatestAreaRiskScore,
   fetchRoutePredictions,
   getStorageMode,
   getUserId,
 } from "@/lib/supabase/storage";
 import type { Signal4StateReport } from "@/lib/types/signal4-report";
-import {
-  ensureStateReport,
-  fetchStateReport,
-} from "@/lib/supabase/state-report";
+import { ensureStateReport } from "@/lib/supabase/state-report";
+import { useSignal4LiveFeed } from "@/hooks/useSignal4LiveFeed";
 import { StateReportCard } from "./StateReportCard";
 import { DataImport } from "./DataImport";
+import { Signal4LiveFeed } from "./Signal4LiveFeed";
 import type { RouteGeometry } from "@/lib/mapbox/client";
 import { MapCard } from "./MapCard";
 import { RiskScoreCard } from "./RiskScoreCard";
@@ -29,8 +26,16 @@ import { MapPin, History, Database, Navigation } from "lucide-react";
 import Link from "next/link";
 
 export function Dashboard() {
-  const [crashes, setCrashes] = useState<CrashEvent[]>([]);
-  const [corridors, setCorridors] = useState<HighRiskCorridor[]>([]);
+  const {
+    crashes,
+    corridors,
+    analytics,
+    loading: liveLoading,
+    syncing,
+    error: liveError,
+    refresh: refreshLive,
+  } = useSignal4LiveFeed({ enabled: true });
+
   const [score, setScore] = useState<AreaRiskScore | null>(null);
   const [predictions, setPredictions] = useState<RoutePrediction[]>([]);
   const [userId, setUserId] = useState("");
@@ -45,22 +50,17 @@ export function Dashboard() {
     try {
       const uid = await getUserId();
       setUserId(uid);
-      const [c, r, s, p, report] = await Promise.all([
-        fetchCrashes("signal4"),
-        fetchCorridors("signal4"),
+      const [s, p] = await Promise.all([
         fetchLatestAreaRiskScore("signal4"),
         fetchRoutePredictions(),
-        fetchStateReport(uid),
       ]);
-      setCrashes(c);
-      setCorridors(r);
       setScore(s);
       setPredictions(p);
-      setStateReport(report);
+      await refreshLive();
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshLive]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,26 +75,11 @@ export function Dashboard() {
         if (cancelled) return;
         setStateReport(report);
 
-        let c = await fetchCrashes("signal4");
-        const shouldSeed =
-          typeof window !== "undefined" &&
-          new URLSearchParams(window.location.search).has("demo") &&
-          c.length === 0;
-
-        if (shouldSeed) {
-          const { seedSignal4SampleData } = await import("@/lib/seed-signal4");
-          await seedSignal4SampleData();
-          c = await fetchCrashes("signal4");
-        }
-
-        const [r, s, p] = await Promise.all([
-          fetchCorridors("signal4"),
+        const [s, p] = await Promise.all([
           fetchLatestAreaRiskScore("signal4"),
           fetchRoutePredictions(),
         ]);
         if (cancelled) return;
-        setCrashes(c);
-        setCorridors(r);
         setScore(s);
         setPredictions(p);
       } catch (error) {
@@ -121,9 +106,9 @@ export function Dashboard() {
               Route Risk Insights
             </h1>
             <p className="text-sm text-slate-500">
-              Powered by Signal4 Analytics · Florida report loaded
-              {crashes.length > 0 && ` · ${crashes.length} crash points`}
-              {storageMode === "local" && " · local storage"}
+              Live Signal4 Analytics · Florida statewide
+              {crashes.length > 0 && ` · ${crashes.length} map points`}
+              {storageMode === "local" && " · local cache"}
             </p>
           </div>
           <Link
@@ -135,20 +120,28 @@ export function Dashboard() {
           </Link>
         </div>
         <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-          Import historic crash data from{" "}
+          Crash analytics stream live from{" "}
           <a href="https://signal4analytics.com" className="text-emerald-600 underline" target="_blank" rel="noopener noreferrer">
             Signal4 Analytics
-          </a>{" "}
-          to map high-risk corridors and predict whether a future route is low, medium, or high risk.
+          </a>
+          . Map serious-injury and fatal crash points, identify high-risk corridors, and score routes — no CSV required.
         </p>
       </header>
 
-      {loading && !stateReport ? (
+      {loading && liveLoading && !stateReport ? (
         <div className="flex h-40 items-center justify-center text-sm text-slate-500">
           Loading dashboard…
         </div>
       ) : (
         <>
+          <Signal4LiveFeed
+            analytics={analytics}
+            loading={liveLoading}
+            syncing={syncing}
+            error={liveError}
+            onRefresh={() => void refreshLive()}
+          />
+
           <RoutePredictor
             userId={userId}
             crashes={crashes}
@@ -212,13 +205,12 @@ export function Dashboard() {
             <div className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-400">
               <Database className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
               <p>
-                Crash data comes from{" "}
+                Live crash map points and statewide totals are pulled from the public{" "}
                 <a href="https://signal4analytics.com" className="text-emerald-600 underline" target="_blank" rel="noopener noreferrer">
                   Signal4 Analytics
-                </a>
-                , Florida&apos;s statewide crash mapping platform (UF GeoPlan Center / FDOT).
-                Download CSV exports via Event Analysis and upload them here. Future versions can
-                layer in TECO fleet accident data alongside Signal4 records.
+                </a>{" "}
+                dashboard (UF GeoPlan Center / FDOT), updated daily from FLHSMV. Optional CSV/PDF
+                uploads can supplement the live feed with detailed historic exports.
               </p>
             </div>
           </Card>

@@ -140,8 +140,8 @@ export function DataImport({ onImportComplete }: DataImportProps) {
 
   return (
     <Card
-      title="Import Signal4 Analytics crash data"
-      subtitle="Upload crash exports from Event Analysis at signal4analytics.com"
+      title="Optional: upload Signal4 exports"
+      subtitle="Live analytics are already streaming — use this only for detailed CSV/PDF exports"
       action={
         <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
           <Database className="h-3 w-3" />
@@ -151,13 +151,13 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     >
       <div className="space-y-4">
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Import from{" "}
+          The app already pulls live crash map data from{" "}
           <a href="https://signal4analytics.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-emerald-600 underline">
             Signal4 Analytics
             <ExternalLink className="h-3 w-3" />
           </a>
-          : upload the <strong>Florida Traffic Safety Report (PDF)</strong> for statewide patterns,
-          or <strong>Crash Tables (CSV)</strong> from Event Analysis for location-specific data.
+          . Optionally upload a <strong>Florida Traffic Safety Report (PDF)</strong> or{" "}
+          <strong>Crash Tables (CSV)</strong> from Event Analysis for richer historic detail.
         </p>
 
         <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-emerald-300 bg-emerald-50/50 px-4 py-3 text-sm transition-colors hover:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40">

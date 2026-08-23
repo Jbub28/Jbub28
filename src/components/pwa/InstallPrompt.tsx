@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, Share, X } from "lucide-react";
+import { isNativeApp } from "@/lib/native/platform";
 
 const DISMISS_KEY = "saferoute_install_dismissed";
 
@@ -26,6 +27,7 @@ function isStandaloneMode(): boolean {
 export function InstallPrompt() {
   const [dismissed, setDismissed] = useState(() => {
     if (typeof window === "undefined") return true;
+    if (isNativeApp()) return true;
     if (isStandaloneMode()) return true;
     if (!isMobileUa()) return true;
     return Boolean(localStorage.getItem(DISMISS_KEY));

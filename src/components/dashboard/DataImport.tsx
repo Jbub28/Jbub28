@@ -79,21 +79,13 @@ export function DataImport({ onImportComplete }: DataImportProps) {
     setStatus(null);
     try {
       const userId = await getUserId();
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("userId", userId);
+      const { parseSignal4ReportPdf } = await import("@/lib/parsers/signal4-report-pdf");
+      const report = await parseSignal4ReportPdf(file, userId);
 
-      const res = await fetch("/api/import-signal4-report", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Failed to parse PDF");
-
-      await saveStateReport(data.report);
+      await saveStateReport(report);
       setStatus({
         type: "success",
-        message: `Imported Florida Traffic Safety Report (data through ${data.report.data_through}). Route predictions now use statewide patterns.`,
+        message: `Imported Florida Traffic Safety Report (data through ${report.data_through}). Route predictions now use statewide patterns.`,
       });
       onImportComplete();
     } catch (err) {

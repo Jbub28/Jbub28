@@ -6,10 +6,22 @@
     "dev": "next dev -H 0.0.0.0",
     "dev:prod": "next build && next start -H 0.0.0.0 -p 3000",
     "build": "next build",
+    "build:ios": "CAPACITOR_BUILD=1 next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cap:sync": "npm run build:ios && npx cap sync ios",
+    "cap:open": "npx cap open ios",
+    "ios": "npm run cap:sync && npm run cap:open"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/geolocation": "^8.2.2",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@supabase/supabase-js": "^2.110.0",
     "date-fns": "^4.4.0",
     "leaflet": "^1.9.4",
@@ -17,6 +29,7 @@
     "mapbox-gl": "^3.25.0",
     "next": "16.2.10",
     "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "^6.2.108",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-leaflet": "^5.0.0",
@@ -25,6 +38,7 @@
     "uuid": "^14.0.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.21",
     "@types/mapbox-gl": "^3.4.1",

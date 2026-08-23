@@ -1,0 +1,31 @@
+build:
+  name: SafeRoute Nav iOS simulator
+  steps:
+    - eas/checkout
+    - eas/install_node_modules
+    - run:
+        name: Build Next.js static export
+        command: npm run build:ios
+    - run:
+        name: Sync Capacitor iOS project
+        command: npx cap sync ios
+    - eas/generate_gymfile_from_template:
+        inputs:
+          scheme: App
+          template: |
+            suppress_xcode_output(true)
+            clean(true)
+            project("ios/App/App.xcodeproj")
+            scheme("<%- SCHEME %>")
+            derived_data_path("<%- DERIVED_DATA_PATH %>")
+            skip_package_ipa(true)
+            skip_archive(true)
+            destination("<%- SCHEME_SIMULATOR_DESTINATION %>")
+            disable_xcpretty(true)
+            buildlog_path("<%- LOGS_DIRECTORY %>")
+    - run:
+        name: Place Gymfile in Fastlane working directory
+        command: cp ios/Gymfile ios/App/Gymfile
+    - eas/run_fastlane:
+        inputs:
+          working_directory: ios/App

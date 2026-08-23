@@ -5,26 +5,26 @@ import { Building2, Loader2, MapPin, Navigation, Store } from "lucide-react";
 import { formatDistance } from "@/lib/geo";
 import {
   createSearchSession,
-  NEARBY_CATEGORIES,
   resolvePlaceSelection,
-  searchNearbyCategory,
   suggestNearbyPlaces,
-  type PlaceCategory,
 } from "@/lib/mapbox/search-box";
 import {
   isMapboxConfigured,
   type AddressSuggestion,
   type MapboxCoord,
 } from "@/lib/mapbox/client";
+import { SmartDestinationChips } from "@/components/ui/SmartDestinationChips";
+import type { SmartDestination } from "@/lib/navigation/smart-suggestions";
 
 interface DestinationSearchProps {
-  label?: string;
   value: string;
   onChange: (value: string) => void;
   onSelect?: (suggestion: AddressSuggestion) => void;
   placeholder?: string;
   required?: boolean;
   proximity?: MapboxCoord;
+  smartDestinations?: SmartDestination[];
+  hideLabel?: boolean;
 }
 
 function SuggestionIcon({ kind, category }: { kind?: string; category?: string }) {
@@ -36,13 +36,14 @@ function SuggestionIcon({ kind, category }: { kind?: string; category?: string }
 }
 
 export function DestinationSearch({
-  label = "Destination",
   value,
   onChange,
   onSelect,
-  placeholder = "Search store, business, or address…",
+  placeholder = "Where to?",
   required,
   proximity,
+  smartDestinations = [],
+  hideLabel = true,
 }: DestinationSearchProps) {
   const listId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -52,8 +53,7 @@ export function DestinationSearch({
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [mode, setMode] = useState<"search" | "category">("search");
-  const [activeCategory, setActiveCategory] = useState<PlaceCategory | null>(null);
+  const [activeSmartId, setActiveSmartId] = useState<string | null>(null);
 
   const resetSession = useCallback(() => {
     sessionRef.current = createSearchSession();
@@ -64,13 +64,11 @@ export function DestinationSearch({
       if (!isMapboxConfigured() || query.trim().length < 2) {
         setSuggestions([]);
         setOpen(false);
-        setMode("search");
         return;
       }
 
       setLoading(true);
-      setMode("search");
-      setActiveCategory(null);
+      setActiveSmartId(null);
       try {
         const { suggestions: results } = await suggestNearbyPlaces(
           query,
@@ -91,34 +89,10 @@ export function DestinationSearch({
     [proximity]
   );
 
-  const fetchCategory = useCallback(
-    async (category: PlaceCategory) => {
-      if (!isMapboxConfigured()) return;
-      setLoading(true);
-      setMode("category");
-      setActiveCategory(category);
-      resetSession();
-      try {
-        const results = await searchNearbyCategory(category, proximity, 8);
-        setSuggestions(results);
-        setOpen(results.length > 0);
-        setActiveIndex(-1);
-        onChange(NEARBY_CATEGORIES.find((c) => c.id === category)?.label ?? category);
-      } catch {
-        setSuggestions([]);
-        setOpen(false);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [proximity, onChange, resetSession]
-  );
-
   useEffect(() => {
-    if (mode === "category") return;
     const timer = setTimeout(() => fetchSuggestions(value), 280);
     return () => clearTimeout(timer);
-  }, [value, fetchSuggestions, mode]);
+  }, [value, fetchSuggestions]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -144,9 +118,23 @@ export function DestinationSearch({
       if (suggestion.lat && suggestion.lng) onSelect?.(suggestion);
     } finally {
       setResolving(false);
-      setMode("search");
-      setActiveCategory(null);
+      setActiveSmartId(null);
     }
+  }
+
+  function pickSmartDestination(dest: SmartDestination) {
+    setActiveSmartId(dest.id);
+    onChange(dest.label);
+    onSelect?.({
+      label: dest.label,
+      shortName: dest.shortName,
+      lat: dest.lat,
+      lng: dest.lng,
+      category: dest.category,
+      kind: "poi",
+    });
+    setSuggestions([]);
+    setOpen(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -167,33 +155,14 @@ export function DestinationSearch({
   }
 
   const inputId = "destination-search";
-  const showCategories = !value.trim() || value.trim().length < 2;
+  const showSmartChips = !value.trim() || value.trim().length < 2;
 
   return (
-    <div ref={wrapperRef} className="relative space-y-2">
-      <label htmlFor={inputId} className="block">
-        <span className="text-sm font-medium text-slate-300">{label}</span>
-      </label>
-
-      {/* Quick category chips — like GPS "Gas nearby", "Food nearby" */}
-      {showCategories && (
-        <div className="flex flex-wrap gap-1.5">
-          {NEARBY_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => void fetchCategory(cat.id)}
-              className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
-                activeCategory === cat.id
-                  ? "border-emerald-500 bg-emerald-950/60 text-emerald-200"
-                  : "border-slate-600 bg-slate-800/60 text-slate-300 hover:border-emerald-600 hover:text-emerald-300"
-              }`}
-            >
-              <span className="mr-1">{cat.icon}</span>
-              {cat.label}
-            </button>
-          ))}
-        </div>
+    <div ref={wrapperRef} className="relative space-y-3">
+      {!hideLabel && (
+        <label htmlFor={inputId} className="block">
+          <span className="text-sm font-medium text-slate-300">Destination</span>
+        </label>
       )}
 
       <div className="relative">
@@ -202,8 +171,7 @@ export function DestinationSearch({
           type="text"
           value={value}
           onChange={(e) => {
-            setMode("search");
-            setActiveCategory(null);
+            setActiveSmartId(null);
             onChange(e.target.value);
           }}
           onFocus={() => {
@@ -218,26 +186,30 @@ export function DestinationSearch({
           aria-expanded={open}
           aria-controls={listId}
           aria-autocomplete="list"
-          className="w-full rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 pr-9 text-sm text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+          className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 pr-10 text-base text-slate-100 placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         />
         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
           {loading || resolving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Store className="h-4 w-4" />
+            <MapPin className="h-5 w-5" />
           )}
         </div>
       </div>
+
+      {showSmartChips && smartDestinations.length > 0 && (
+        <SmartDestinationChips
+          destinations={smartDestinations}
+          onSelect={pickSmartDestination}
+          activeId={activeSmartId}
+        />
+      )}
 
       {open && suggestions.length > 0 && (
         <div className="absolute z-50 mt-1 w-full">
           <p className="mb-1 flex items-center gap-1 px-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
             <Navigation className="h-3 w-3" />
-            {mode === "category" && activeCategory
-              ? `Nearby ${NEARBY_CATEGORIES.find((c) => c.id === activeCategory)?.label ?? "places"}`
-              : proximity
-                ? "Nearby results"
-                : "Results"}
+            {proximity ? "Nearby results" : "Results"}
           </p>
           <ul
             id={listId}

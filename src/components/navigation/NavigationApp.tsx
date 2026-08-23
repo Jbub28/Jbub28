@@ -30,6 +30,8 @@ import { useConnectivity } from "@/hooks/useConnectivity";
 import { useDrivingBehavior } from "@/hooks/useDrivingBehavior";
 import { assessDrivingBehavior } from "@/lib/driving/behavior";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useSmartDestinations } from "@/hooks/useSmartDestinations";
+import { recordTrip } from "@/lib/navigation/trip-history";
 import { DestinationSearch } from "@/components/ui/DestinationSearch";
 import { Button } from "@/components/ui/Button";
 import { TurnBanner } from "./TurnBanner";
@@ -44,7 +46,6 @@ import {
   ArrowLeft,
   BarChart3,
   Loader2,
-  LocateFixed,
   MapPin,
   Navigation,
   X,
@@ -74,8 +75,6 @@ export function NavigationApp({
   const [phase, setPhase] = useState<NavPhase>("search");
   const [destination, setDestination] = useState("");
   const [destCoord, setDestCoord] = useState<AddressSuggestion | null>(null);
-  const [originLabel, setOriginLabel] = useState("My location");
-  const [originCoord, setOriginCoord] = useState<MapboxCoord | null>(null);
   const [route, setRoute] = useState<NavigationRoute | null>(null);
   const [prediction, setPrediction] = useState<RoutePrediction | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,6 +93,7 @@ export function NavigationApp({
   });
 
   const geo = useGeolocation({ onSample: onGpsSample });
+  const smartDestinations = useSmartDestinations(phase === "search");
   const connectivity = useConnectivity();
   const { notifications, push, dismiss } = useNotifications();
 
@@ -165,10 +165,9 @@ export function NavigationApp({
     });
 
   const resolveOrigin = useCallback(async (): Promise<MapboxCoord> => {
-    if (originCoord) return originCoord;
     const pos = geo.position ?? (await geo.getCurrentPosition());
     return { lat: pos.lat, lng: pos.lng, label: "My location" };
-  }, [originCoord, geo]);
+  }, [geo]);
 
   const buildRoute = useCallback(async () => {
     if (!destination.trim()) return;
@@ -224,7 +223,6 @@ export function NavigationApp({
         });
       }
 
-      setOriginCoord(origin);
       setRoute(navRoute);
       setPrediction(risk);
       setPhase("preview");
@@ -237,10 +235,18 @@ export function NavigationApp({
 
   const startNavigation = useCallback(() => {
     if (!route) return;
+    const dest = destCoord ?? {
+      label: route.destination.label ?? destination.trim(),
+      shortName: (route.destination.label ?? destination).split(",")[0].trim(),
+      lat: route.destination.lat,
+      lng: route.destination.lng,
+      category: undefined,
+    };
+    recordTrip(dest);
     setPhase("navigating");
     lastSpokenStep.current = -1;
     geo.startWatching();
-  }, [route, geo]);
+  }, [route, destCoord, destination, geo]);
 
   const stopNavigation = useCallback(() => {
     geo.stopWatching();
@@ -252,6 +258,11 @@ export function NavigationApp({
     setDestCoord(null);
     lastSpokenStep.current = -1;
   }, [geo, resetSamples]);
+
+  useEffect(() => {
+    if (phase !== "search") return;
+    geo.startWatching();
+  }, [phase, geo.startWatching]);
 
   const reroute = useCallback(async () => {
     if (!route || !geo.position || reroutingRef.current) return;
@@ -273,7 +284,6 @@ export function NavigationApp({
         const fallback = await fetchNavigationRoute(origin, route.destination);
         if (fallback) {
           setRoute(fallback);
-          setOriginCoord(origin);
         }
         return;
       }
@@ -289,7 +299,6 @@ export function NavigationApp({
       }
 
       setRoute(result.route);
-      setOriginCoord(origin);
       clearDismissal();
       lastSpokenStep.current = -1;
     } finally {
@@ -436,7 +445,7 @@ export function NavigationApp({
         <div className="absolute inset-0">
           <NavigationMap
             route={route}
-            userPosition={geo.position ?? originCoord}
+            userPosition={geo.position}
             userHeading={geo.heading}
             routeProgressIndex={progress?.routeIndex ?? 0}
             followUser={phase === "navigating"}
@@ -462,14 +471,15 @@ export function NavigationApp({
           <div className="mx-auto w-full max-w-lg space-y-4 rounded-2xl bg-slate-900/95 p-5 shadow-2xl backdrop-blur">
             <div>
               <h1 className="text-xl font-bold">Where to?</h1>
-              <p className="mt-1 text-sm text-slate-400">
-                Search a store or business — pick from nearby locations
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2.5 text-sm text-slate-300">
-              <LocateFixed className="h-4 w-4 shrink-0 text-emerald-400" />
-              <span className="truncate">{originLabel}</span>
+              {geo.error ? (
+                <p className="mt-1 text-sm text-amber-400">{geo.error}</p>
+              ) : (
+                <p className="mt-1 text-sm text-slate-400">
+                  {geo.position
+                    ? "Routes start from your current location"
+                    : "Getting your location…"}
+                </p>
+              )}
             </div>
 
             <DestinationSearch
@@ -480,6 +490,7 @@ export function NavigationApp({
               }}
               onSelect={setDestCoord}
               proximity={geo.position ? { lat: geo.position.lat, lng: geo.position.lng } : undefined}
+              smartDestinations={smartDestinations}
               required
             />
 
@@ -488,7 +499,7 @@ export function NavigationApp({
             <Button
               type="button"
               className="w-full"
-              disabled={loading || !destination.trim()}
+              disabled={loading || !destination.trim() || !geo.position}
               onClick={buildRoute}
             >
               {loading ? (
@@ -498,22 +509,6 @@ export function NavigationApp({
               )}
               Get directions
             </Button>
-
-            <button
-              type="button"
-              className="w-full text-center text-xs text-slate-500 hover:text-slate-300"
-              onClick={async () => {
-                try {
-                  const pos = await geo.getCurrentPosition();
-                  setOriginCoord({ lat: pos.lat, lng: pos.lng, label: "My location" });
-                  setOriginLabel("My location (GPS locked)");
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "GPS unavailable");
-                }
-              }}
-            >
-              Refresh my location
-            </button>
           </div>
         </div>
       )}

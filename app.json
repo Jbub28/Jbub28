@@ -4,6 +4,11 @@
     "slug": "saferoute-nav",
     "ios": {
       "bundleIdentifier": "com.saferoute.nav"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0218b930-10e9-4886-b868-0e8eef980e6d"
+      }
     }
   }
 }

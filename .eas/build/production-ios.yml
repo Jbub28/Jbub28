@@ -3,6 +3,7 @@ build:
   steps:
     - eas/checkout
     - eas/install_node_modules
+    - eas/resolve_build_config
     - run:
         name: Build Next.js static export
         command: npm run build:ios

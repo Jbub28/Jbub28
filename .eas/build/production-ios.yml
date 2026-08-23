@@ -20,7 +20,7 @@ build:
           template: |
             suppress_xcode_output(true)
             clean(true)
-            project("App/App.xcodeproj")
+            project("App.xcodeproj")
             scheme("<%- SCHEME %>")
             <% if (BUILD_CONFIGURATION) { %>
             configuration("<%- BUILD_CONFIGURATION %>")
@@ -37,7 +37,7 @@ build:
             output_directory("<%- OUTPUT_DIRECTORY %>")
     - run:
         name: Place Gymfile in Fastlane working directory
-        command: cp ios/Gymfile ios/App/Gymfile
+        command: cp ios/Gymfile ios/App/Gymfile && rm ios/Gymfile
     - eas/run_fastlane:
         inputs:
           working_directory: ios/App

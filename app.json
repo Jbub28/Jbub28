@@ -2,16 +2,8 @@
   "expo": {
     "name": "SafeRoute Nav",
     "slug": "saferoute-nav",
-    "version": "0.1.0",
-    "orientation": "portrait",
     "ios": {
-      "bundleIdentifier": "com.saferoute.nav",
-      "buildNumber": "1"
-    },
-    "extra": {
-      "eas": {
-        "projectId": "REPLACE_AFTER_EAS_INIT"
-      }
+      "bundleIdentifier": "com.saferoute.nav"
     }
   }
 }

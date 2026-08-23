@@ -5,9 +5,12 @@ import type { NavigationRoute } from "@/lib/mapbox/client";
 import type { CrashEvent } from "@/lib/types/crash";
 import type { RerouteRecommendation, RouteHazard } from "@/lib/types/hazard";
 import { buildHazardCatalog, getHazardsAlongRoute } from "@/lib/risk/hazards";
+import { findCrashesAlongPolyline } from "@/lib/risk/route-buffer";
 import { evaluateRerouteNeed } from "@/lib/risk/reroute-advisor";
 import type { CurrentWeather } from "@/lib/types/weather";
 import type { LatLng } from "@/lib/geo";
+
+const EMPTY_HAZARDS: RouteHazard[] = [];
 
 interface UseRouteHazardMonitorOptions {
   enabled: boolean;
@@ -26,7 +29,7 @@ export function useRouteHazardMonitor({
   route,
   routeProgressIndex,
   crashes,
-  externalHazards = [],
+  externalHazards = EMPTY_HAZARDS,
   currentWeather = null,
   pollIntervalMs = 12000,
 }: UseRouteHazardMonitorOptions) {
@@ -34,6 +37,7 @@ export function useRouteHazardMonitor({
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const [previousHazards, setPreviousHazards] = useState<RouteHazard[]>([]);
   const prevHazardsRef = useRef<RouteHazard[]>([]);
+  const hazardsAheadRef = useRef<RouteHazard[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -41,18 +45,28 @@ export function useRouteHazardMonitor({
     return () => clearInterval(timer);
   }, [enabled, pollIntervalMs]);
 
+  const routeCrashes = useMemo(() => {
+    if (!route || crashes.length === 0) return crashes;
+    // Only scan crashes near the route — avoids processing thousands statewide.
+    return findCrashesAlongPolyline(crashes, route.coordinates, 800).map((r) => r.item);
+  }, [route, crashes]);
+
   const hazardsAhead = useMemo(() => {
     if (!enabled || !route) return [];
-    const catalog = buildHazardCatalog(crashes, externalHazards);
+    const catalog = buildHazardCatalog(routeCrashes, externalHazards);
     return getHazardsAlongRoute(catalog, route.coordinates, 500, routeProgressIndex);
     // tick triggers re-scan on interval
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, route, routeProgressIndex, crashes, externalHazards, tick]);
+  }, [enabled, route, routeProgressIndex, routeCrashes, externalHazards, tick]);
 
+  hazardsAheadRef.current = hazardsAhead;
+
+  // Snapshot previous hazards only on poll tick — not every render.
   useEffect(() => {
+    if (!enabled || tick === 0) return;
     setPreviousHazards(prevHazardsRef.current);
-    prevHazardsRef.current = hazardsAhead;
-  }, [hazardsAhead, tick]);
+    prevHazardsRef.current = hazardsAheadRef.current;
+  }, [enabled, tick]);
 
   const recommendation = useMemo((): RerouteRecommendation | null => {
     if (!enabled || !position || !route) return null;
@@ -61,7 +75,7 @@ export function useRouteHazardMonitor({
       position,
       route,
       routeProgressIndex,
-      crashes,
+      crashes: routeCrashes,
       externalHazards,
       previousHazards,
       currentWeather,
@@ -74,7 +88,7 @@ export function useRouteHazardMonitor({
     position,
     route,
     routeProgressIndex,
-    crashes,
+    routeCrashes,
     externalHazards,
     dismissedId,
     previousHazards,

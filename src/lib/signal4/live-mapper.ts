@@ -35,10 +35,13 @@ function stableReportNumber(point: Signal4EventPoint): string {
 export function mapSignal4EventPoints(
   points: Signal4EventPoint[],
   userId: string,
-  syncedAt: string
+  syncedAt: string,
+  year = new Date().getFullYear()
 ): CrashEvent[] {
   const seen = new Set<string>();
   const crashes: CrashEvent[] = [];
+  // YTD snapshot date — not "right now", so points aren't treated as live incidents.
+  const ytdReferenceDate = `${year}-07-01T12:00:00.000Z`;
 
   for (const point of points) {
     if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
@@ -50,7 +53,6 @@ export function mapSignal4EventPoints(
     const fatalities = point.attributes.fatalityCnt ?? 0;
     const injuries = point.attributes.serInjuryCnt ?? 0;
     const severity = inferSeverity(point);
-    const isActive = fatalities > 0 || injuries > 0;
 
     crashes.push({
       id: uuidv5(reportNumber, LIVE_NAMESPACE),
@@ -58,7 +60,7 @@ export function mapSignal4EventPoints(
       data_source: "signal4",
       import_source: "signal4_analytics",
       report_number: reportNumber,
-      crash_datetime: syncedAt,
+      crash_datetime: ytdReferenceDate,
       latitude: point.y,
       longitude: point.x,
       severity,
@@ -78,8 +80,7 @@ export function mapSignal4EventPoints(
         source: "signal4_live",
         live_feed: true,
         synced_at: syncedAt,
-        is_active: isActive,
-        hazard_status: isActive ? "active" : "historic",
+        hazard_status: "historic",
         public_dashboard: true,
       },
     });

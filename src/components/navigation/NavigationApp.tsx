@@ -9,6 +9,7 @@ import { predictRouteRisk } from "@/lib/risk/prediction";
 import { evaluateRouteOverviewRisks } from "@/lib/risk/reroute-advisor";
 import { summarizeRouteRiskZones } from "@/lib/risk/route-heatmap";
 import { buildHazardCatalog, getHazardsAlongRoute } from "@/lib/risk/hazards";
+import { findCrashesAlongPolyline } from "@/lib/risk/route-buffer";
 import {
   fetchNavigationRoute,
   fetchSafetyReroute,
@@ -112,14 +113,16 @@ export function NavigationApp({
 
   const routeOverview = useMemo(() => {
     if (!route) return null;
-    const overview = evaluateRouteOverviewRisks(route, crashes);
-    const zones = summarizeRouteRiskZones(crashes, route.coordinates);
+    const nearRoute = findCrashesAlongPolyline(crashes, route.coordinates, 800).map((r) => r.item);
+    const overview = evaluateRouteOverviewRisks(route, nearRoute);
+    const zones = summarizeRouteRiskZones(nearRoute, route.coordinates);
     return { ...overview, zones };
   }, [route, crashes]);
 
   const previewHazards = useMemo(() => {
     if (!route) return [];
-    return getHazardsAlongRoute(buildHazardCatalog(crashes), route.coordinates, 600).slice(0, 15);
+    const nearRoute = findCrashesAlongPolyline(crashes, route.coordinates, 600).map((r) => r.item);
+    return getHazardsAlongRoute(buildHazardCatalog(nearRoute), route.coordinates, 600).slice(0, 15);
   }, [route, crashes]);
 
   const weatherMonitor = useWeatherMonitor({

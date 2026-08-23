@@ -48,7 +48,7 @@ export async function syncSignal4LiveFeed(userId: string): Promise<Signal4LiveCa
     fetchSignal4Totals(year),
   ]);
 
-  const crashes = mapSignal4EventPoints(map.eventPoints ?? [], userId, syncedAt);
+  const crashes = mapSignal4EventPoints(map.eventPoints ?? [], userId, syncedAt, year);
   const parsedTotals = parseSignal4Totals(totals);
 
   if (crashes.length === 0) {

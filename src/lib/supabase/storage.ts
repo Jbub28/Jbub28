@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { ensureAuthSession, useSupabaseBackend } from "./auth";
 import { getSupabaseClient, isSupabaseConfigured } from "./client";
 import type {
   AreaRiskScore,
@@ -49,6 +50,9 @@ export function getStorageMode(): "supabase" | "local" {
 export async function getUserId(): Promise<string> {
   const supabase = getSupabaseClient();
   if (supabase) {
+    const authUserId = await ensureAuthSession();
+    if (authUserId) return authUserId;
+
     const { data } = await supabase.auth.getUser();
     if (data.user?.id) return data.user.id;
   }
@@ -58,10 +62,10 @@ export async function getUserId(): Promise<string> {
 export async function fetchCrashes(
   dataSource: DataSource = "signal4"
 ): Promise<CrashEvent[]> {
-  const supabase = getSupabaseClient();
   const userId = await getUserId();
 
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { data, error } = await supabase
       .from("crash_events")
       .select("*")
@@ -82,9 +86,8 @@ export async function fetchCrashes(
 }
 
 export async function saveCrashes(crashes: CrashEvent[]): Promise<void> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { error } = await supabase.from("crash_events").upsert(crashes);
     if (error) throw error;
     return;
@@ -99,10 +102,10 @@ export async function saveCrashes(crashes: CrashEvent[]): Promise<void> {
 export async function fetchCorridors(
   dataSource: DataSource = "signal4"
 ): Promise<HighRiskCorridor[]> {
-  const supabase = getSupabaseClient();
   const userId = await getUserId();
 
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { data, error } = await supabase
       .from("high_risk_corridors")
       .select("*")
@@ -120,9 +123,8 @@ export async function fetchCorridors(
 }
 
 export async function saveCorridors(corridors: HighRiskCorridor[]): Promise<void> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { error } = await supabase.from("high_risk_corridors").upsert(corridors);
     if (error) throw error;
     return;
@@ -135,9 +137,8 @@ export async function saveCorridors(corridors: HighRiskCorridor[]): Promise<void
 }
 
 export async function saveAreaRiskScore(score: AreaRiskScore): Promise<void> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { error } = await supabase.from("area_risk_scores").insert(score);
     if (error) throw error;
     return;
@@ -151,10 +152,10 @@ export async function saveAreaRiskScore(score: AreaRiskScore): Promise<void> {
 export async function fetchLatestAreaRiskScore(
   dataSource: DataSource = "signal4"
 ): Promise<AreaRiskScore | null> {
-  const supabase = getSupabaseClient();
   const userId = await getUserId();
 
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { data, error } = await supabase
       .from("area_risk_scores")
       .select("*")
@@ -177,9 +178,8 @@ export async function fetchLatestAreaRiskScore(
 export async function saveRoutePrediction(
   prediction: RoutePrediction
 ): Promise<void> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { error } = await supabase.from("route_predictions").insert(prediction);
     if (error) throw error;
     return;
@@ -191,10 +191,10 @@ export async function saveRoutePrediction(
 }
 
 export async function fetchRoutePredictions(): Promise<RoutePrediction[]> {
-  const supabase = getSupabaseClient();
   const userId = await getUserId();
 
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { data, error } = await supabase
       .from("route_predictions")
       .select("*")
@@ -217,10 +217,10 @@ export async function logImport(
   status: "success" | "error",
   errorMessage?: string
 ): Promise<void> {
-  const supabase = getSupabaseClient();
   const userId = await getUserId();
 
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     await supabase.from("import_logs").insert({
       user_id: userId,
       import_source: source,

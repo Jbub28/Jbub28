@@ -1,12 +1,12 @@
+import { useSupabaseBackend } from "./auth";
 import { getSupabaseClient } from "./client";
 import type { Signal4StateReport } from "@/lib/types/signal4-report";
 
 const STORAGE_KEY = "prrp_signal4_report";
 
 export async function saveStateReport(report: Signal4StateReport): Promise<void> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { error } = await supabase.from("signal4_state_reports").upsert({
       id: report.id,
       user_id: report.user_id,
@@ -26,9 +26,8 @@ export async function saveStateReport(report: Signal4StateReport): Promise<void>
 }
 
 export async function fetchStateReport(userId: string): Promise<Signal4StateReport | null> {
-  const supabase = getSupabaseClient();
-
-  if (supabase) {
+  if (await useSupabaseBackend()) {
+    const supabase = getSupabaseClient()!;
     const { data, error } = await supabase
       .from("signal4_state_reports")
       .select("report_data")

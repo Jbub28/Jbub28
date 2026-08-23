@@ -20,7 +20,7 @@ build:
           template: |
             suppress_xcode_output(true)
             clean(true)
-            project("ios/App/App.xcodeproj")
+            project("App/App.xcodeproj")
             scheme("<%- SCHEME %>")
             <% if (BUILD_CONFIGURATION) { %>
             configuration("<%- BUILD_CONFIGURATION %>")

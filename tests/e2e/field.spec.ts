@@ -113,7 +113,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
 
-  await page.goto(`/briefs/${briefId}/closeout`);
+  await page.getByRole("link", { name: "Post-job review" }).click();
   await expect(page.getByRole("heading", { name: "Post-job review" })).toBeVisible();
   await expect(page.getByText(/Lincoln substation/)).toBeVisible();
 

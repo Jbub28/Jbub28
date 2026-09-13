@@ -206,6 +206,7 @@ export function BriefWizard({ id }: { id: string }) {
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
         nextLabel={step === STEPS.length - 1 ? "Stay here" : "Next"}
+        briefId={id}
       >
         <p className="text-xl">{STEPS[step].question}</p>
         {voiceSchema ? (

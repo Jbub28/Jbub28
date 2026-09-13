@@ -27,6 +27,7 @@ export function FieldChrome(props: {
   onStop: () => void;
   onRebrief: () => void;
   nextLabel?: string;
+  briefId?: string;
   children: React.ReactNode;
   errorSummary?: string[];
 }) {
@@ -83,6 +84,14 @@ export function FieldChrome(props: {
           <Link href="/briefs" className="underline">
             My briefs
           </Link>
+          {props.briefId ? (
+            <>
+              {" · "}
+              <Link href={`/briefs/${props.briefId}/closeout`} className="underline">
+                Post-job review
+              </Link>
+            </>
+          ) : null}
         </p>
       </div>
     </div>

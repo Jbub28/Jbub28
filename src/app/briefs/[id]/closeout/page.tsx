@@ -12,17 +12,32 @@ export default function CloseoutPage() {
   const [form, setForm] = useState<Record<string, any>>({});
   const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
   const [jrb, setJrb] = useState<any>(null);
+  const [locationStatus, setLocationStatus] = useState<"loading" | "ready" | "missing">("loading");
   const schema = schemaForStep("closeout")!;
   useEffect(() => {
+    setLocationStatus("loading");
     fetch(`/api/jrbs/${params.id}`)
       .then((r) => r.json())
-      .then((d) => setJrb(d.jrb ?? null))
-      .catch(() => setJrb(null));
+      .then((d) => {
+        if (d.jrb) {
+          setJrb(d.jrb);
+          setLocationStatus("ready");
+        } else {
+          setJrb(null);
+          setLocationStatus("missing");
+        }
+      })
+      .catch(() => {
+        setJrb(null);
+        setLocationStatus("missing");
+      });
   }, [params.id]);
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 py-8">
       <h1 className="text-3xl font-bold">Post-job review</h1>
       <p>This is not used to score people.</p>
+      {locationStatus === "loading" ? <p>Loading job location…</p> : null}
+      {locationStatus === "missing" ? <p>Job Location is not available for this brief.</p> : null}
       {jrb ? <JobLocationSummary jrb={jrb} /> : null}
       <PageVoiceAssistant
         schema={schema}

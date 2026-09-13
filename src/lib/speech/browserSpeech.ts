@@ -28,8 +28,9 @@ export function joinSpokenText(existing: string, spoken: string): string {
   return `${current} ${incoming}`;
 }
 
-export function getSpeechRecognitionConstructor(win: SpeechWindow): (new () => SpeechRecognitionLike) | null {
-  return win.SpeechRecognition ?? win.webkitSpeechRecognition ?? null;
+export function getSpeechRecognitionConstructor(win: object): (new () => SpeechRecognitionLike) | null {
+  const speechWindow = win as SpeechWindow;
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
 }
 
 export function speechSupportMessage(input: {

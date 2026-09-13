@@ -48,6 +48,7 @@ test("briefing fields can be filled by talking", async ({ page }) => {
             resultIndex: 0,
             results: [{ isFinal: true, 0: { transcript: "WO 4411 at Maple Street" } }],
           });
+          this.onend?.();
         });
       }
       stop() {
@@ -68,10 +69,10 @@ test("briefing fields can be filled by talking", async ({ page }) => {
   await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Talk to fill Work order number" })).toBeVisible();
   await page.getByRole("button", { name: "Talk to fill Work order number" }).click();
-  await expect(page.getByLabel("Work order number")).toHaveValue(/WO 4411 at Maple Street/);
+  await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue(/WO 4411 at Maple Street/);
 
-  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.getByRole("button", { name: "Start microphone" })).toBeVisible();
   await page.getByRole("button", { name: "Start microphone" }).click();
-  await expect(page.getByLabel("Work description")).toHaveValue(/WO 4411 at Maple Street/);
+  await expect(page.getByRole("textbox", { name: "Work description" })).toHaveValue(/WO 4411 at Maple Street/);
 });

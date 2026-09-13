@@ -15,6 +15,7 @@ export async function buildReadiness(versionId: string): Promise<ReadinessResult
       acknowledgments: true,
       questions: true,
       jobSteps: true,
+      briefingAssessment: true,
       exposures: {
         include: {
           exposure: true,
@@ -29,16 +30,17 @@ export async function buildReadiness(versionId: string): Promise<ReadinessResult
 
   const present = version.exposures.filter((e) => e.presence === Presence.present);
   const input: ReadinessInput = {
-    workIdentified: Boolean(version.workDescriptionEdited || version.taskSelections.some((t) => t.confirmed)),
+    workIdentified: Boolean(version.workDescriptionEdited || version.taskSelections.some((t) => t.confirmed) || version.briefingTranscript),
     eeiTasksConfirmed: version.taskSelections.some((t) => t.confirmed),
-    conditionsReviewed: version.conditions.some((c) => c.planMatchesField !== null),
-    highEnergyReviewed: version.exposures.length > 0,
-    sifReviewed: present.every((e) => Boolean(e.sifOutcome) || e.crewConfirmed),
+    conditionsReviewed: version.conditions.some((c) => c.planMatchesField !== null) || Boolean(version.briefingScreenCompletedAt),
+    highEnergyReviewed: version.exposures.length > 0 || Boolean(version.highEnergyReviewedAt),
+    sifReviewed: present.length === 0 || present.every((e) => Boolean(e.sifOutcome) || e.crewConfirmed),
     briefingSubjects: {
-      hazards: present.length > 0 || version.exposures.some((e) => e.presence !== Presence.need_help),
-      procedures: version.jobSteps.some((s) => Boolean(s.workProcedure)),
-      specialPrecautions: version.jobSteps.some((s) => Boolean(s.specialPrecaution)),
+      hazards: version.briefingAssessment?.hazardsAddressed || present.length > 0 || version.exposures.some((e) => e.presence !== Presence.need_help),
+      procedures: version.briefingAssessment?.proceduresAddressed || version.jobSteps.some((s) => Boolean(s.workProcedure)),
+      specialPrecautions: version.briefingAssessment?.precautionsAddressed || version.jobSteps.some((s) => Boolean(s.specialPrecaution)),
       energyControls:
+        version.briefingAssessment?.energyControlsAddressed ||
         present.length === 0 ||
         present.every(
           (e) =>
@@ -59,10 +61,10 @@ export async function buildReadiness(versionId: string): Promise<ReadinessResult
               notUsedReasonRecorded: e.notUsed.length > 0,
             }).complete,
         ),
-      ppe: version.jobSteps.some((s) => Boolean(s.ppeNotes)),
+      ppe: version.briefingAssessment?.ppeAddressed || version.jobSteps.some((s) => Boolean(s.ppeNotes)),
       eicIdentified: Boolean(version.jrb.employeeInChargeId),
       crewIdentified: version.crewMembers.length > 0,
-      conditions: version.conditions.some((c) => c.planMatchesField !== null),
+      conditions: version.conditions.some((c) => c.planMatchesField !== null) || Boolean(version.briefingScreenCompletedAt),
     },
     crewBriefingComplete:
       version.crewMembers.length > 0 &&

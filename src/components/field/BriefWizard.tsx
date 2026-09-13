@@ -1,45 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Field, FieldChrome, BigButton, STEPS, voiceMark } from "./FieldChrome";
-import { PageVoiceAssistant } from "./PageVoiceAssistant";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Field, FieldChrome, BigButton, STEPS } from "./FieldChrome";
 import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLocation";
-import { DIRECT_CONTROL_NOT_USED_REASONS, REBRIEF_REASONS, VERIFICATION_METHODS, WORK_CLASSIFICATIONS } from "@/lib/domain/controls";
-import { evaluateAlternativeControls } from "@/lib/domain/alternativeControls";
-import { PLANNING_NOTICE, READY_NOTICE } from "@/lib/domain/readiness";
+import { REBRIEF_REASONS } from "@/lib/domain/controls";
+import { READY_NOTICE } from "@/lib/domain/readiness";
 import { formatGps, formatJobLocation, locationFromRecord, persistableLocation } from "@/lib/domain/jobLocation";
 import { saveDraftLocal } from "@/lib/offline/store";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { joinSpokenText } from "@/lib/speech/browserSpeech";
+import { extractBriefing, analyzeRebriefDelta, extractStopWorkTalk } from "@/lib/conversation/extractBriefing";
+import type { BriefingCatalog, BriefingExtraction, FollowUpQuestion } from "@/lib/conversation/types";
+import { applyVoicePrefill } from "@/lib/voice/applyPrefill";
 import { schemaForStep } from "@/lib/voice/pageSchemas";
-import type { VoiceSuggestion } from "@/lib/voice/types";
-
-const PREDEPARTURE = [
-  ["job_packet", "Job Packet Review"],
-  ["route_travel", "Route/Travel Plan Discussion"],
-  ["ppe_needs", "PPE Needs"],
-  ["boom", "Boom Inspection/Operation Verified"],
-  ["circle", "Circle of Safety/Spotter Required?"],
-  ["traffic", "Traffic Control Needs"],
-  ["tools_insp", "Tools & Equipment Inspection"],
-  ["route_back", "Route/Backing Discussion"],
-  ["tools_sec", "Tools & Equipment Secured"],
-  ["no_load", "No Substantial Material Loading Required"],
-];
-const WALKDOWN = [
-  ["walking", "Walking/Working Surfaces"],
-  ["truck", "Truck/Equipment Positioning"],
-  ["contractor", "Contractor Activity"],
-  ["plants", "Plants/Animals/Insects"],
-  ["spotters", "Use of Spotters"],
-  ["ug", "U/G Utilities Marked"],
-  ["public", "Public Safety Concerns"],
-  ["ttc", "Temporary Traffic Control/Flagger"],
-  ["night", "Night Time Work"],
-  ["security", "Security Concerns"],
-  ["chock", "Wheels Chocked"],
-  ["health", "Health Concerns"],
-  ["outrigger", "Outrigger Cribbing/Pads"],
-];
-const ENV = ["Heat", "Cold", "Wind", "Rain", "Snow", "Ice", "Fog", "Other"];
+import type { ProposedChange } from "@/lib/voice/types";
 
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
@@ -53,25 +27,19 @@ export function BriefWizard({ id }: { id: string }) {
   const [data, setData] = useState<any>(null);
   const [catalog, setCatalog] = useState<any>(null);
   const [saveState, setSaveState] = useState("Saved on Device");
-  const [help, setHelp] = useState<string | null>(null);
   const [dialog, setDialog] = useState<"stop" | "rebrief" | null>(null);
   const [form, setForm] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<string[]>([]);
+  const [extraction, setExtraction] = useState<BriefingExtraction | null>(null);
+  const [proposed, setProposed] = useState<ProposedChange[]>([]);
+  const [followAnswer, setFollowAnswer] = useState("");
   const [matches, setMatches] = useState<any>(null);
   const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
-
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
   const loc = locationFromRecord(jrb ?? {});
   const { gpsStatus, capture } = useOptionalGps((lat, lng) => {
-    setForm((f) => ({
-      ...f,
-      gpsCoordinates: formatGps(lat, lng),
-      gpsLatitude: lat,
-      gpsLongitude: lng,
-      gpsPermissionGranted: true,
-      gpsCapturedAt: new Date().toISOString(),
-    }));
+    setForm((f) => ({ ...f, gpsCoordinates: formatGps(lat, lng), gpsLatitude: lat, gpsLongitude: lng, gpsPermissionGranted: true }));
   });
 
   const refresh = useCallback(async () => {
@@ -97,100 +65,82 @@ export function BriefWizard({ id }: { id: string }) {
       setData(next);
       await saveDraftLocal(id, next);
       setSaveState("Synchronized");
+      return next;
     } catch (e) {
       setSaveState("Sync Error");
       setErrors([e instanceof Error ? e.message : "Save failed"]);
     }
   };
 
-  useEffect(() => {
-    const t = setInterval(() => {
-      if (form && Object.keys(form).length) saveDraftLocal(id, { form }).catch(() => undefined);
-    }, 5000);
-    return () => clearInterval(t);
-  }, [form, id]);
-
-  const helpFor = (term: string) => catalog?.help?.find((h: any) => h.term === term);
-
-  const presentExposures = version?.exposures?.filter((e: any) => e.presence === "present") ?? [];
-  const climb = version?.taskSelections?.some((t: any) => /climb pole/i.test(t.task?.exactName ?? ""));
-  const stepKey = STEPS[step]?.key ?? "start";
-  const voiceContext = {
-    workTypes: catalog?.workTypes ?? [],
-    exposures: (catalog?.exposures ?? []).map((e: any) => ({
-      id: e.id,
-      label: e.formLabelExact ?? e.dcInventoryLabelExact ?? e.energyFamily,
-    })),
-    presentExposureFields: presentExposures.map((e: any) => ({
-      src: `${e.exposureId}-src`,
-      who: `${e.exposureId}-who`,
-      out: `${e.exposureId}-out`,
-      label: e.exposure?.formLabelExact ?? e.exposure?.dcInventoryLabelExact ?? "High Energy",
-    })),
-    ppe: catalog?.ppe ?? [],
-    extraFields: presentExposures.flatMap((e: any) => [
-      { key: `${e.id}_residual`, label: "Remaining exposure", type: "textarea" as const, safety: "prefill" as const, aliases: ["remaining exposure"] },
-      { key: `${e.id}_stop`, label: "Stop-work trigger", type: "textarea" as const, safety: "prefill" as const, aliases: ["stop-work trigger", "stop work"] },
-      { key: `${e.id}_why`, label: "Explain", type: "textarea" as const, safety: "prefill" as const, aliases: ["explain"] },
-      ...(e.directControlSelections ?? []).map((sel: any) => ({
-        key: `${sel.id}_owner`,
-        label: "Person responsible",
-        type: "text" as const,
-        safety: "prefill" as const,
-        aliases: ["person responsible", "responsible"],
+  const briefingCatalog: BriefingCatalog = (() => {
+    const byControl = new Map<string, { id: string; exactName: string; exposureIds: string[] }>();
+    for (const e of catalog?.exposures ?? []) {
+      for (const m of e.mappings ?? []) {
+        const dc = m.directControl;
+        if (!dc) continue;
+        const cur = byControl.get(dc.id) ?? { id: String(dc.id), exactName: String(dc.exactName), exposureIds: [] as string[] };
+        cur.exposureIds.push(String(e.id));
+        byControl.set(dc.id, cur);
+      }
+    }
+    return {
+      exposures: (catalog?.exposures ?? []).map((e: any) => ({
+        id: e.id,
+        key: e.key,
+        label: e.formLabelExact ?? e.dcInventoryLabelExact ?? e.key,
+        energyFamily: e.energyFamily,
       })),
-    ]),
-  };
-  const voiceSchema = catalog ? schemaForStep(stepKey, voiceContext) : null;
-  const voiceCurrent: Record<string, unknown> = {
-    ...form,
-    workOrderNumber: form.workOrderNumber ?? jrb?.workOrderNumber ?? "",
-    jobLocation: form.jobLocation ?? loc.jobLocation,
-    streetAddress: form.streetAddress ?? loc.streetAddress,
-    locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
-    gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
-    supervisorName: form.supervisorName ?? jrb?.supervisor?.displayName ?? "",
-    crewText: form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "",
-    contractorInvolved: form.contractorInvolved ?? jrb?.contractorInvolved,
-    contractorCompany: form.contractorCompany ?? jrb?.contractorCompany ?? "",
-    emergencyAccess: form.emergencyAccess ?? jrb?.emergencyAccess ?? "",
-    communicationMethod: form.communicationMethod ?? jrb?.communicationMethod ?? "",
-    edited: form.edited ?? version?.workDescriptionEdited ?? "",
-  };
+      directControls: [...byControl.values()],
+      ppe: catalog?.ppe ?? [],
+    };
+  })();
 
-  const applyVoice = (updates: Record<string, unknown>, meta: { transcript: string; appliedKeys: string[]; preservedKeys: string[] }) => {
+  const applyExtraction = async (result: BriefingExtraction, current: Record<string, unknown>) => {
+    setExtraction(result);
+    const startSchema = schemaForStep("start")!;
+    const fills = Object.entries(result.location)
+      .filter(([, v]) => v)
+      .map(([key, value]) => ({ key, label: key, value: String(value), confidence: "high" as const, evidence: String(value) }));
+    if (result.crewNames.length) {
+      fills.push({ key: "crewText", label: "Crew members", value: result.crewNames.join("\n"), confidence: "high", evidence: "crew" });
+    }
+    const applied = applyVoicePrefill({
+      schema: startSchema,
+      current,
+      extraction: { transcript: result.transcript, fills, suggestions: [], skipped: [], provider: result.provider, model: result.model },
+    });
+    setProposed(applied.proposedChanges);
+    setVoiceKeys(Object.keys(applied.updates));
     setForm((f) => ({
       ...f,
-      ...updates,
-      original: typeof updates.edited === "string" ? f.original || meta.transcript : f.original,
-      speechProvider: typeof updates.edited === "string" ? "browser" : f.speechProvider,
-      voiceTranscripts: { ...(f.voiceTranscripts ?? {}), [stepKey]: meta.transcript },
+      ...applied.updates,
+      edited: result.workDescription ?? f.edited,
+      original: result.transcript,
+      circuitNumber: result.location.circuitNumber ?? f.circuitNumber,
     }));
-    setVoiceKeys(meta.appliedKeys);
-    window.setTimeout(() => setVoiceKeys((keys) => keys.filter((k) => !meta.appliedKeys.includes(k))), 12_000);
+    await patch("saveBriefing", { extraction: result });
+    if (result.workDescription) {
+      try {
+        const workTypeCode = catalog?.workTypes?.find((w: any) => w.id === (form.workTypeId ?? jrb?.workTypeId))?.code ?? jrb?.workType?.code;
+        if (workTypeCode) {
+          const res = await api("/api/ai/match-tasks", {
+            method: "POST",
+            body: JSON.stringify({ workTypeCode, text: result.workDescription, originalTranscript: result.transcript, versionId: version?.id }),
+          });
+          setMatches(res);
+        }
+      } catch {
+        /* library still available */
+      }
+    }
   };
 
-  const confirmVoiceSuggestion = (suggestion: VoiceSuggestion) => {
-    if (!catalog) return;
-    if (suggestion.key === "exposurePresence") {
-      void patch("setExposure", { exposureId: suggestion.value, presence: "present" });
-      return;
-    }
-    if (suggestion.key === "workTypeId") {
-      const wt = catalog.workTypes.find((w: any) => w.id === suggestion.value);
-      setForm((f) => ({ ...f, workTypeId: suggestion.value, workTypeCode: wt?.code }));
-      return;
-    }
-    if (suggestion.key === "workClassification") {
-      setForm((f) => ({ ...f, workClassification: suggestion.value }));
-      return;
-    }
-    setForm((f) => ({ ...f, [suggestion.key]: suggestion.value }));
-  };
+  const saveStart = () => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
 
-  if (!jrb || !catalog) {
-    return <p className="p-6 text-xl">Loading the job brief…</p>;
-  }
+  if (!jrb || !catalog) return <p className="p-6 text-xl">Loading the job brief…</p>;
+
+  const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
+  const eicName = jrb.employeeInCharge?.displayName ?? "Employee in Charge";
 
   return (
     <>
@@ -201,29 +151,19 @@ export function BriefWizard({ id }: { id: string }) {
         errorSummary={errors}
         onBack={() => setStep((s) => Math.max(0, s - 1))}
         onNext={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-            onSave={() => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) })}
-        onHelp={() => setHelp("eei")}
+        onSave={() => saveStart()}
+        onHelp={() => undefined}
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
         nextLabel={step === STEPS.length - 1 ? "Stay here" : "Next"}
         briefId={id}
       >
         <p className="text-xl">{STEPS[step].question}</p>
-        {voiceSchema ? (
-          <PageVoiceAssistant
-            schema={voiceSchema}
-            context={voiceContext}
-            currentValues={voiceCurrent}
-            onApply={applyVoice}
-            onConfirmSuggestion={confirmVoiceSuggestion}
-          />
-        ) : (
-          <p className="text-sm">This page is review and confirmation. Talk does not fill or approve it.</p>
-        )}
 
         {step === 0 && (
           <div className="space-y-4">
             <p className="text-lg">JRB {jrb.jrbNumber} · {jrb.status.replaceAll("_", " ")}</p>
+            {jrb.status === "stop_work_active" ? <ResumeStopWork id={id} onDone={refresh} /> : null}
             <JobLocationFields
               values={{
                 jobLocation: form.jobLocation ?? loc.jobLocation,
@@ -233,576 +173,487 @@ export function BriefWizard({ id }: { id: string }) {
               }}
               highlights={voiceKeys}
               gpsStatus={gpsStatus}
-              onChange={(key, value) => setForm({ ...form, [key]: value, gpsPermissionGranted: key === "gpsCoordinates" ? false : form.gpsPermissionGranted })}
+              onChange={(key, value) => setForm({ ...form, [key]: value })}
               onOptionalGps={capture}
             />
-            <Field id="wo" label="Work order number" highlight={voiceMark(voiceKeys, "workOrderNumber")} value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
-            <fieldset className="space-y-2">
-              <legend className="text-lg font-bold">Work Type</legend>
-              {catalog.workTypes.map((wt: any) => (
-                <BigButton key={wt.id} selected={(form.workTypeId ?? jrb.workTypeId) === wt.id} onClick={() => setForm({ ...form, workTypeId: wt.id, workTypeCode: wt.code })}>
-                  {wt.exactName}
+            <JobTalk
+              catalog={briefingCatalog}
+              currentValues={{
+                jobLocation: form.jobLocation ?? loc.jobLocation,
+                streetAddress: form.streetAddress ?? loc.streetAddress,
+                gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
+                locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+                crewText: form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "",
+              }}
+              proposed={proposed}
+              onProposedUsed={(change) => {
+                setForm((f) => ({ ...f, [change.key]: change.proposed }));
+                setProposed((list) => list.filter((item) => item.key !== change.key));
+              }}
+              onExtracted={(result, current) => applyExtraction(result, current)}
+              extraction={extraction}
+            />
+            {extraction?.workDescription ? <p className="text-lg"><span className="font-bold">The work: </span>{extraction.workDescription}</p> : null}
+            {followUps.length ? (
+              <div className="space-y-2 rounded-2xl border-2 border-yellow-300 bg-[#2a1d00] p-4">
+                <p className="text-lg font-bold">{followUps[0].question}</p>
+                <p className="text-sm">{followUps[0].reason}</p>
+                <Field id="follow" label="Answer" textarea value={followAnswer} onChange={setFollowAnswer} />
+                <BigButton
+                  onClick={async () => {
+                    const combined = `${extraction?.transcript ?? ""} ${followAnswer}`.trim();
+                    const next = extractBriefing({ transcript: combined, catalog: briefingCatalog });
+                    setFollowAnswer("");
+                    await applyExtraction(next, {
+                      jobLocation: form.jobLocation ?? loc.jobLocation,
+                      streetAddress: form.streetAddress ?? loc.streetAddress,
+                      locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+                      gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
+                    });
+                  }}
+                >
+                  Use this answer
                 </BigButton>
-              ))}
-            </fieldset>
-            <fieldset className="space-y-2">
-              <legend className="text-lg font-bold">Work Classification — you must confirm this</legend>
-              {WORK_CLASSIFICATIONS.map((c) => (
-                <BigButton key={c.value} selected={(form.workClassification ?? jrb.workClassification) === c.value} onClick={() => setForm({ ...form, workClassification: c.value, workClassificationConfirmed: true })}>
-                  {c.label}
-                </BigButton>
-              ))}
-              <p className="text-sm">Suggested for Crew Review — the app does not make a legal determination.</p>
-            </fieldset>
-            <Field id="eic" label="Employee in Charge" value={jrb.employeeInCharge?.displayName ?? ""} />
-            <Field id="sup" label="Supervisor" highlight={voiceMark(voiceKeys, "supervisorName")} value={form.supervisorName ?? jrb.supervisor?.displayName ?? ""} onChange={(v) => setForm({ ...form, supervisorName: v })} />
-            <Field id="crew" label="Crew members (one per line)" textarea highlight={voiceMark(voiceKeys, "crewText")} value={form.crewText ?? version.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
-            <label className="flex items-center gap-3 text-lg">
-              <input type="checkbox" className="size-8" checked={Boolean(form.contractorInvolved ?? jrb.contractorInvolved)} onChange={(e) => setForm({ ...form, contractorInvolved: e.target.checked })} />
-              Contractor involvement
-            </label>
-            {(form.contractorInvolved ?? jrb.contractorInvolved) ? (
-              <Field id="co" label="Contractor company" highlight={voiceMark(voiceKeys, "contractorCompany")} value={form.contractorCompany ?? jrb.contractorCompany ?? ""} onChange={(v) => setForm({ ...form, contractorCompany: v })} />
+              </div>
             ) : null}
-            <Field id="em" label="Emergency access information" textarea highlight={voiceMark(voiceKeys, "emergencyAccess")} value={form.emergencyAccess ?? jrb.emergencyAccess ?? ""} onChange={(v) => setForm({ ...form, emergencyAccess: v })} />
-            <Field id="comm" label="Communication method" highlight={voiceMark(voiceKeys, "communicationMethod")} value={form.communicationMethod ?? jrb.communicationMethod ?? ""} onChange={(v) => setForm({ ...form, communicationMethod: v })} />
-            <BigButton onClick={async () => {
-              const names = String(form.crewText ?? "").split("\n").map((n) => n.trim()).filter(Boolean);
-              await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
-              await patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
-              setStep(1);
-            }}>Save and continue</BigButton>
+            {matches?.result?.suggestions?.length ? (
+              <div className="space-y-2">
+                <p className="font-bold text-yellow-300">Suggested EEI task — confirm it yourself</p>
+                {matches.result.suggestions.map((s: any) => (
+                  <article key={s.taskId} className="rounded-xl bg-[#121a2b] p-3">
+                    <p className="font-bold">{s.exactTaskName}</p>
+                    <p className="text-sm">{s.explanation}</p>
+                    <BigButton onClick={() => patch("confirmTask", { taskId: s.taskId })}>Confirm this task</BigButton>
+                  </article>
+                ))}
+              </div>
+            ) : null}
+            <Field id="wo" label="Work order number" value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
+            <Field id="ckt" label="Circuit" value={form.circuitNumber ?? extraction?.location.circuitNumber ?? jrb.circuitNumber ?? ""} onChange={(v) => setForm({ ...form, circuitNumber: v })} />
+            <Field id="eic" label="Worker in Charge" value={eicName} />
+            <Field id="crew" label="Crew members (one per line)" textarea value={form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
+            <BigButton
+              onClick={async () => {
+                const names = String(form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "").split("\n").map((n) => n.trim()).filter(Boolean);
+                await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
+                await saveStart();
+                if (extraction) await patch("saveBriefing", { extraction, markStartComplete: true });
+                setStep(1);
+              }}
+            >
+              Continue
+            </BigButton>
           </div>
         )}
 
         {step === 1 && (
-          <WorkStep
-            jrb={jrb}
-            version={version}
-            catalog={catalog}
-            form={form}
-            setForm={setForm}
-            matches={matches}
-            setMatches={setMatches}
-            patch={patch}
-            voiceKeys={voiceKeys}
-          />
+          <div className="space-y-4">
+            {jrb.status === "stop_work_active" ? (
+              <ResumeStopWork id={id} onDone={refresh} />
+            ) : null}
+            {followUps.length ? (
+              <div className="space-y-2 rounded-2xl border-2 border-yellow-300 bg-[#2a1d00] p-4">
+                <p className="text-lg font-bold">{followUps[0].question}</p>
+                <p className="text-sm">{followUps[0].reason}</p>
+                <Field id="follow-2" label="Answer" textarea value={followAnswer} onChange={setFollowAnswer} />
+                <BigButton
+                  onClick={async () => {
+                    const combined = `${extraction?.transcript ?? ""} ${followAnswer}`.trim();
+                    const next = extractBriefing({ transcript: combined, catalog: briefingCatalog });
+                    setFollowAnswer("");
+                    await applyExtraction(next, {
+                      jobLocation: form.jobLocation ?? loc.jobLocation,
+                      streetAddress: form.streetAddress ?? loc.streetAddress,
+                      locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+                      gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
+                    });
+                  }}
+                >
+                  Use this answer
+                </BigButton>
+              </div>
+            ) : null}
+            <h2 className="text-xl font-bold">What can seriously hurt or kill us?</h2>
+            {(extraction?.highEnergy ?? []).length === 0 ? (
+              <p>Nothing from the talk was clear enough to show as High Energy. Add what you see, or go back and talk through the job.</p>
+            ) : (
+              extraction!.highEnergy.map((he) => (
+                <article key={he.exposureId} className="rounded-2xl bg-[#121a2b] p-4">
+                  <p className="text-xl font-bold">{he.label}</p>
+                  <p className="text-sm">Identified from talk — not confirmed until you say it can hurt us.</p>
+                  <p className="text-sm">Heard: {he.evidence}</p>
+                </article>
+              ))
+            )}
+            <h2 className="text-xl font-bold">How are we controlling it?</h2>
+            {(extraction?.controls ?? []).map((c, i) => (
+              <article key={`${c.text}-${i}`} className="rounded-xl bg-[#121a2b] p-3">
+                <p className="font-bold">{c.text}</p>
+                <p className="text-sm">{c.origin === "ai_suggested" ? "Suggested from the Direct Control Inventory" : "Identified from the conversation"}</p>
+                {c.catalogName && c.catalogName !== c.text ? <p className="text-sm">Inventory name: {c.catalogName}</p> : null}
+              </article>
+            ))}
+            {extraction?.ppe?.length ? <p><span className="font-bold">PPE heard: </span>{extraction.ppe.join(", ")}</p> : null}
+            <p className="text-sm">EnergyGuard does not decide that work is safe. You confirm what the crew will actually use. Suggested inventory items are not confirmed until you say so.</p>
+            {followUps.length ? (
+              <p className="rounded-xl bg-[#2a1d00] p-3">Answer the follow-up before confirming controls. EnergyGuard will not mark a control confirmed for you.</p>
+            ) : (
+              <BigButton
+                onClick={async () => {
+                  if (extraction?.highEnergy.length) {
+                    await patch("crewConfirmBriefing", {
+                      exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
+                      controls: extraction.controls
+                        .filter((c) => c.catalogId && c.origin === "ai_suggested")
+                        .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName })),
+                    });
+                  } else {
+                    await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+                  }
+                  setStep(2);
+                }}
+              >
+                This is what we briefed
+              </BigButton>
+            )}
+          </div>
         )}
 
         {step === 2 && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Before You Leave</h2>
-            {PREDEPARTURE.map(([key, label]) => (
-              <label key={key} className={`flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg ${voiceMark(voiceKeys, `pd_${key}`) ? "ring-2 ring-yellow-300" : ""}`}>
-                <input type="checkbox" className="size-8" checked={Boolean(form[`pd_${key}`])} onChange={(e) => setForm({ ...form, [`pd_${key}`]: e.target.checked })} />
-                {label}
-              </label>
-            ))}
-            <h2 className="text-xl font-bold">Environment</h2>
-            {ENV.map((c) => (
-              <label key={c} className={`flex items-center gap-3 text-lg ${voiceMark(voiceKeys, "env") ? "ring-2 ring-yellow-300" : ""}`}>
-                <input type="checkbox" className="size-8" checked={(form.env ?? []).includes(c)} onChange={(e) => {
-                  const cur = new Set(form.env ?? []);
-                  e.target.checked ? cur.add(c) : cur.delete(c);
-                  setForm({ ...form, env: [...cur] });
-                }} />
-                {c}
-              </label>
-            ))}
-            <h2 className="text-xl font-bold">Jobsite walkdown</h2>
-            {WALKDOWN.map(([key, label]) => (
-              <label key={key} className={`flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg ${voiceMark(voiceKeys, `wd_${key}`) ? "ring-2 ring-yellow-300" : ""}`}>
-                <input type="checkbox" className="size-8" checked={Boolean(form[`wd_${key}`])} onChange={(e) => setForm({ ...form, [`wd_${key}`]: e.target.checked })} />
-                {label}
-              </label>
-            ))}
-            <p className="text-lg font-bold">Does the plan from before we left still match what we see?</p>
-            <BigButton selected={form.planMatchesField === true} onClick={() => setForm({ ...form, planMatchesField: true })}>Yes, it matches</BigButton>
-            <BigButton selected={form.planMatchesField === false} onClick={() => setForm({ ...form, planMatchesField: false })}>No — we need to reassess</BigButton>
-            {form.planMatchesField === false ? (
-              <Field id="diff" label="What changed?" textarea highlight={voiceMark(voiceKeys, "materialDifferenceNotes")} value={form.materialDifferenceNotes ?? ""} onChange={(v) => setForm({ ...form, materialDifferenceNotes: v })} />
+            {jrb.status === "stop_work_active" ? (
+              <ResumeStopWork id={id} onDone={refresh} />
             ) : null}
-            <BigButton onClick={() => patch("saveConditions", {
-              planMatchesField: form.planMatchesField,
-              materialDifferenceNotes: form.materialDifferenceNotes,
-              environmental: (form.env ?? []).map((choice: string) => ({ choice })),
-              predeparture: PREDEPARTURE.map(([itemKey, labelExact]) => ({ itemKey, labelExact, discussed: Boolean(form[`pd_${itemKey}`]) })),
-              walkdown: WALKDOWN.map(([itemKey, labelExact]) => ({ itemKey, labelExact, observed: Boolean(form[`wd_${itemKey}`]) })),
-            })}>Save conditions</BigButton>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="space-y-4">
-            <button type="button" className="text-lg underline" onClick={() => setHelp("high-energy")}>What is High Energy?</button>
-            <p className="text-sm">Suggested High Energy appears only when an approved task mapping exists. None is published. Add what you see.</p>
-            {catalog.exposures.map((exp: any) => {
-              const current = version.exposures?.find((e: any) => e.exposureId === exp.id);
-              return (
-                <article key={exp.id} className="rounded-2xl bg-[#121a2b] p-4">
-                  <div className="flex gap-3">
-                    {exp.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={exp.icon.storagePath} alt="" width={72} height={88} />
-                    ) : null}
-                    <div>
-                      <h2 className="text-xl font-bold">{exp.formLabelExact ?? exp.dcInventoryLabelExact}</h2>
-                      <p className="text-sm">{exp.energyFamily}</p>
-                      {exp.icon?.isPlaceholder ? <p className="text-sm">Placeholder icon — no source art extracted.</p> : null}
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {(["present", "not_present", "not_applicable", "need_help"] as const).map((p) => (
-                      <BigButton key={p} selected={current?.presence === p} onClick={() => patch("setExposure", { exposureId: exp.id, presence: p })}>
-                        {p.replaceAll("_", " ")}
-                      </BigButton>
-                    ))}
-                  </div>
-                  {current?.presence === "present" ? (
-                    <div className="mt-3 space-y-2">
-                      <Field id={`${exp.id}-src`} label="What energy could reach someone?" highlight={voiceMark(voiceKeys, `${exp.id}-src`)} value={form[`${exp.id}-src`] ?? current.energySource ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-src`]: v })} />
-                      <Field id={`${exp.id}-who`} label="Who could be in the path?" highlight={voiceMark(voiceKeys, `${exp.id}-who`)} value={form[`${exp.id}-who`] ?? current.personsExposed ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-who`]: v })} />
-                      <Field id={`${exp.id}-out`} label="What serious outcome could occur?" highlight={voiceMark(voiceKeys, `${exp.id}-out`)} value={form[`${exp.id}-out`] ?? current.sifOutcome ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-out`]: v })} />
-                      <button type="button" className="underline" onClick={() => setHelp("sclm")}>Help: Serious Injury or Fatality Potential (SCLM)</button>
-                      <BigButton onClick={() => patch("setExposure", {
-                        exposureId: exp.id,
-                        presence: "present",
-                        energySource: form[`${exp.id}-src`],
-                        personsExposed: form[`${exp.id}-who`],
-                        sifOutcome: form[`${exp.id}-out`],
-                        crewConfirmed: true,
-                      })}>Crew confirms this exposure</BigButton>
-                    </div>
-                  ) : null}
-                </article>
-              );
-            })}
-          </div>
-        )}
-
-        {step === 4 && (
-          <ControlsStep
-            presentExposures={presentExposures}
-            catalog={catalog}
-            form={form}
-            setForm={setForm}
-            patch={patch}
-            setHelp={setHelp}
-            voiceKeys={voiceKeys}
-          />
-        )}
-
-        {step === 5 && (
-          <div className="space-y-4">
-            {["Setup", "Tasks", "Cleanup"].map((phase) => (
-              <Field key={phase} id={`step-${phase}`} label={`${phase} steps`} textarea highlight={voiceMark(voiceKeys, `step_${phase}`)} value={form[`step_${phase}`] ?? ""} onChange={(v) => setForm({ ...form, [`step_${phase}`]: v })} />
+            <article className="rounded-2xl bg-[#121a2b] p-4">
+              <h2 className="text-lg font-bold">Job</h2>
+              <p>{extraction?.workDescription || version?.workDescriptionEdited || "Needs attention"}</p>
+              <h2 className="mt-3 text-lg font-bold">Location</h2>
+              <p>{formatJobLocation({ ...loc, ...form, ...jrb })}</p>
+              <h2 className="mt-3 text-lg font-bold">What can seriously hurt or kill us</h2>
+              <p>{(extraction?.highEnergy ?? []).map((h) => h.label).join("; ") || "None confirmed from talk"}</p>
+              <h2 className="mt-3 text-lg font-bold">Critical / Direct Controls</h2>
+              <p>{(extraction?.controls ?? []).map((c) => c.text).join("; ") || "Review required"}</p>
+              {extraction?.ppe?.length ? <p className="mt-2"><span className="font-bold">PPE: </span>{extraction.ppe.join(", ")}</p> : null}
+            </article>
+            <h2 className="text-lg font-bold">OSHA briefing subjects</h2>
+            {[
+              ["Hazards associated with the job", extraction?.osha.hazardsAddressed || version?.briefingAssessment?.hazardsAddressed],
+              ["Work procedures involved", extraction?.osha.proceduresAddressed || version?.briefingAssessment?.proceduresAddressed],
+              ["Special precautions", extraction?.osha.precautionsAddressed || version?.briefingAssessment?.precautionsAddressed],
+              ["Energy-source controls", extraction?.osha.energyControlsAddressed || version?.briefingAssessment?.energyControlsAddressed],
+              ["PPE requirements", extraction?.osha.ppeAddressed || version?.briefingAssessment?.ppeAddressed],
+            ].map(([label, ok]) => (
+              <p key={String(label)} className="rounded-xl bg-[#121a2b] p-3">{ok ? "Addressed in the briefing" : "Needs attention"} — {label}</p>
             ))}
-            <Field id="proc" label="Work procedures" textarea highlight={voiceMark(voiceKeys, "workProcedure")} value={form.workProcedure ?? ""} onChange={(v) => setForm({ ...form, workProcedure: v })} />
-            <Field id="prec" label="Special precautions" textarea highlight={voiceMark(voiceKeys, "specialPrecaution")} value={form.specialPrecaution ?? ""} onChange={(v) => setForm({ ...form, specialPrecaution: v })} />
-            <Field id="energy" label="Energy-source control" textarea highlight={voiceMark(voiceKeys, "energySourceControl")} value={form.energySourceControl ?? ""} onChange={(v) => setForm({ ...form, energySourceControl: v })} />
-            <h2 className="text-xl font-bold">PPE — confirm what applies</h2>
-            {catalog.ppe.map((p: any) => (
-              <label key={p.id} className={`flex items-center gap-3 text-lg ${voiceMark(voiceKeys, p.exactName) ? "ring-2 ring-yellow-300" : ""}`}>
-                <input type="checkbox" className="size-8" checked={(form.ppe ?? []).includes(p.exactName)} onChange={(e) => {
-                  const cur = new Set(form.ppe ?? []);
-                  e.target.checked ? cur.add(p.exactName) : cur.delete(p.exactName);
-                  setForm({ ...form, ppe: [...cur] });
-                }} />
-                {p.exactName}
-              </label>
-            ))}
-            {climb ? (
-              <div className="rounded-xl border-2 border-yellow-300 p-4">
-                <h2 className="text-xl font-bold">Pole climbing</h2>
-                <p className="font-bold">{catalog.questions.find((q: any) => q.key === "pole_warning")?.promptExact}</p>
-                {["pole_visual", "pole_hammer", "pole_screwdriver", "pole_rocking", "pole_passed", "pole_can_test"].map((k) => (
-                  <label key={k} className="mt-2 flex items-center gap-3">
-                    <input type="checkbox" className="size-8" checked={Boolean(form[k])} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} />
-                    {catalog.questions.find((q: any) => q.key === k)?.promptExact}
-                  </label>
+            {data.readiness?.gaps?.length ? (
+              <div className="space-y-2">
+                {data.readiness.gaps.map((g: any) => (
+                  <p key={g.code + g.message} className="rounded-xl bg-[#2a1d00] p-3">{g.message} Next: {g.nextAction}</p>
                 ))}
               </div>
-            ) : null}
-            <BigButton onClick={() => patch("saveJobSteps", {
-              steps: ["Setup", "Tasks", "Cleanup"].map((phase, i) => ({
-                sequence: i + 1,
-                phase,
-                description: form[`step_${phase}`] ?? phase,
-                workProcedure: form.workProcedure,
-                specialPrecaution: form.specialPrecaution,
-                energySourceControl: form.energySourceControl,
-                ppeNotes: (form.ppe ?? []).join(", "),
-                stopWorkTrigger: "Any worker may stop the work.",
-              })),
-            })}>Save job steps</BigButton>
-          </div>
-        )}
-
-        {step === 6 && (
-          <div className="space-y-3">
-            <p>{PLANNING_NOTICE}</p>
-            {[
-              ["Hazards Covered", presentExposures.length > 0 || version.exposures?.length],
-              ["Work Procedures Covered", version.jobSteps?.some((s: any) => s.workProcedure)],
-              ["Special Precautions Covered", version.jobSteps?.some((s: any) => s.specialPrecaution)],
-              ["Energy Controls Covered", version.jobSteps?.some((s: any) => s.energySourceControl) || presentExposures.some((e: any) => e.directControlSelections?.length)],
-              ["PPE Covered", version.jobSteps?.some((s: any) => s.ppeNotes)],
-              ["Employee in Charge Identified", Boolean(jrb.employeeInChargeId)],
-              ["Crew Identified", version.crewMembers?.length > 0],
-              ["Conditions Reviewed", version.conditions?.length > 0],
-            ].map(([label, ok]) => (
-              <p key={String(label)} className="rounded-xl bg-[#121a2b] p-3 text-lg">
-                <span className="font-bold">{ok ? "Complete" : "Needs Attention"} — </span>
-                {label}
-                {!ok ? (
-                  <button type="button" className="ml-2 underline" onClick={() => setStep(ok ? step : 3)}>
-                    Edit
-                  </button>
-                ) : null}
-              </p>
-            ))}
-            <p className="font-bold">Ready for Crew Briefing: {data.readiness?.status}</p>
-          </div>
-        )}
-
-        {step === 7 && (
-          <div className="space-y-3">
-            <Section title="Job Location" onEdit={() => setStep(0)}>{formatJobLocation({ ...loc, ...form, ...jrb })}</Section>
-            <Section title="Work description" onEdit={() => setStep(1)}>{version.workDescriptionEdited || "Needs Attention"}</Section>
-            <Section title="Confirmed EEI tasks" onEdit={() => setStep(1)}>
-              {version.taskSelections?.filter((t: any) => t.confirmed).map((t: any) => t.task.exactName).join("; ") || "Needs Attention"}
-            </Section>
-            <Section title="High Energy" onEdit={() => setStep(3)}>
-              {presentExposures.map((e: any) => e.exposure.formLabelExact ?? e.exposure.dcInventoryLabelExact).join("; ") || "None marked Present"}
-            </Section>
-            <Section title="Controls" onEdit={() => setStep(4)}>
-              {presentExposures.map((e: any) => e.directControlSelections?.map((s: any) => s.directControl.exactName).join(", ")).join("; ") || "Review Required"}
-            </Section>
-            <p className="text-lg">Status: {data.readiness?.status}</p>
-          </div>
-        )}
-
-        {step === 8 && (
-          <div className="space-y-4">
-            {["The Work", "What Can Seriously Hurt or Kill Us", "Direct Controls", "Work Steps", "PPE", "Emergency Plan", "Stop-Work Triggers"].map((card) => (
-              <article key={card} className="rounded-2xl bg-[#121a2b] p-4 text-xl font-bold">{card}</article>
-            ))}
-            <Field id="q" label="Question or concern" textarea highlight={voiceMark(voiceKeys, "question")} value={form.question ?? ""} onChange={(v) => setForm({ ...form, question: v })} />
-            <BigButton onClick={() => form.question && patch("addQuestion", { question: form.question, raisedBy: form.raisedBy, resolved: false })}>Save question</BigButton>
+            ) : (
+              <p className="text-lg font-bold">{data.readiness?.status}</p>
+            )}
             <h2 className="text-xl font-bold">Crew acknowledgment</h2>
-            <p>I participated in the briefing, had a chance to ask questions, and understand my part of the job.</p>
-            <Field id="ackname" label="Name" highlight={voiceMark(voiceKeys, "ackName")} value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
+            <p>I participated in the briefing, understand Stop Work and that significant changes require a rebrief, and understand my part of the job.</p>
+            <Field id="ackname" label="Name" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
             <BigButton onClick={() => patch("acknowledge", { name: form.ackName, employer: "Electric Delivery" })}>Acknowledge this version</BigButton>
-            {(version.crewMembers ?? []).map((m: any) => (
-              <p key={m.id}>{m.name} {m.lateArrival ? "(arrived later)" : ""} — {version.acknowledgments?.some((a: any) => a.name === m.name) ? "Acknowledged" : "Needs Attention"}</p>
+            {(version?.crewMembers ?? []).map((m: any) => (
+              <p key={m.id}>{m.name} — {version.acknowledgments?.some((a: any) => a.name === m.name) ? "Acknowledged" : "Needs Attention"}</p>
             ))}
+            <BigButton
+              onClick={async () => {
+                try {
+                  const res = await api(`/api/jrbs/${id}/release`, { method: "POST", body: "{}" });
+                  setErrors([]);
+                  alert(res.notice ?? READY_NOTICE);
+                  await refresh();
+                } catch (e) {
+                  setErrors([e instanceof Error ? e.message : "Cannot release"]);
+                  await refresh();
+                }
+              }}
+            >
+              Release JRB for Work
+            </BigButton>
+            {jrb.status === "released_for_work" ? <p>{READY_NOTICE}</p> : null}
           </div>
-        )}
-
-        {step === 9 && (
-          <ReadyStep data={data} onRelease={async () => {
-            try {
-              const res = await api(`/api/jrbs/${id}/release`, { method: "POST", body: "{}" });
-              setErrors([]);
-              alert(res.notice ?? READY_NOTICE);
-              await refresh();
-            } catch (e) {
-              setErrors([e instanceof Error ? e.message : "Cannot release"]);
-              await refresh();
-            }
-          }} />
         )}
       </FieldChrome>
 
-      {help && (
-        <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="help-title">
-          <div className="w-full rounded-2xl bg-[#121a2b] p-5">
-            <h2 id="help-title" className="text-2xl font-bold">{helpFor(help)?.exactTerm ?? "Help"}</h2>
-            <p className="mt-2 text-lg">{helpFor(help)?.plainHelp}</p>
-            <p className="mt-2 text-sm">{helpFor(help)?.sourceNote}</p>
-            <button type="button" className="mt-4 w-full rounded-xl bg-[#ffd000] py-3 text-xl font-bold text-black" onClick={() => setHelp(null)}>Close</button>
-          </div>
-        </div>
-      )}
-
       {dialog && (
-        <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" role="dialog" aria-modal="true">
-          <form
-            className="w-full space-y-3 rounded-2xl bg-[#121a2b] p-5"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const path = dialog === "stop" ? "stop-work" : "rebrief";
-              await api(`/api/jrbs/${id}/${path}`, { method: "POST", body: JSON.stringify({ reason: form.eventReason, explanation: form.eventExplain }) });
-              setDialog(null);
-              await refresh();
-            }}
-          >
-            <h2 className="text-2xl font-bold">{dialog === "stop" ? "Stop Work" : "Conditions Changed / Rebrief"}</h2>
-            <JobLocationSummary jrb={{ ...jrb, ...loc, ...form }} />
-            <p>This does not need supervisor permission to start.</p>
-            <label className="block text-lg font-bold" htmlFor="reason">Reason</label>
-            <select id="reason" className="w-full rounded-xl bg-[#070b14] p-3" value={form.eventReason ?? ""} onChange={(e) => setForm({ ...form, eventReason: e.target.value })}>
-              <option value="">Choose</option>
-              {(dialog === "rebrief" ? REBRIEF_REASONS : ["Immediate danger", "Control failed", "New hazard", "Other"]).map((r) => (
-                <option key={r}>{r}</option>
-              ))}
-            </select>
-            <Field id="ex" label="Explain" textarea value={form.eventExplain ?? ""} onChange={(v) => setForm({ ...form, eventExplain: v })} />
-            <button type="submit" className="w-full rounded-xl bg-[#ffd000] py-3 text-xl font-bold text-black">Confirm</button>
-            <button type="button" className="w-full rounded-xl bg-[#1b2740] py-3 text-xl font-bold" onClick={() => setDialog(null)}>Cancel</button>
-          </form>
-        </div>
+        <EventDialog
+          kind={dialog}
+          id={id}
+          form={form}
+          setForm={setForm}
+          jrb={{ ...jrb, ...loc, ...form }}
+          catalog={briefingCatalog}
+          originalTranscript={extraction?.transcript || version?.briefingTranscript || ""}
+          onClose={() => setDialog(null)}
+          onDone={async (delta) => {
+            setDialog(null);
+            if (delta?.newExposures?.length) {
+              setExtraction((prev) => {
+                if (!prev) return prev;
+                const extra = (delta.newExposures ?? []).filter(
+                  (he) => !prev.highEnergy.some((p) => p.exposureId === he.exposureId),
+                );
+                return { ...prev, highEnergy: [...prev.highEnergy, ...extra], followUps: delta.followUps ?? prev.followUps };
+              });
+            } else if (delta?.followUps?.length) {
+              setExtraction((prev) => (prev ? { ...prev, followUps: delta.followUps ?? prev.followUps } : prev));
+            }
+            await refresh();
+          }}
+        />
       )}
     </>
   );
 }
 
-function Section({ title, children, onEdit }: { title: string; children: React.ReactNode; onEdit: () => void }) {
-  return (
-    <article className="rounded-xl bg-[#121a2b] p-4">
-      <div className="flex justify-between gap-2">
-        <h2 className="text-lg font-bold">{title}</h2>
-        <button type="button" className="underline" onClick={onEdit}>Edit</button>
-      </div>
-      <p>{children}</p>
-    </article>
-  );
-}
+function JobTalk(props: {
+  catalog: BriefingCatalog;
+  currentValues: Record<string, unknown>;
+  proposed: ProposedChange[];
+  onProposedUsed: (change: ProposedChange) => void;
+  onExtracted: (result: BriefingExtraction, current: Record<string, unknown>) => void;
+  extraction: BriefingExtraction | null;
+}) {
+  const sessionRef = useRef("");
+  const [transcript, setTranscript] = useState("");
+  const [interim, setInterim] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [typed, setTyped] = useState("");
+  const propsRef = useRef(props);
+  useEffect(() => {
+    propsRef.current = props;
+  });
+  const { listening, error, toggle, stop } = useSpeechToText({
+    onFinal: (spoken) => {
+      sessionRef.current = joinSpokenText(sessionRef.current, spoken);
+      setTranscript(sessionRef.current);
+      setInterim("");
+    },
+    onInterim: (spoken) => setInterim(spoken),
+    onSessionEnd: (spoken) => {
+      setTranscript(spoken);
+      sessionRef.current = spoken;
+      setBusy(true);
+      void runExtract(spoken).finally(() => setBusy(false));
+    },
+  });
 
-function WorkStep(props: any) {
-  const { jrb, version, form, setForm, matches, setMatches, patch, voiceKeys } = props;
-  const workTypeCode = jrb.workType?.code;
-  const match = async (text: string, followUpOption?: string) => {
-    const res = await api("/api/ai/match-tasks", {
-      method: "POST",
-      body: JSON.stringify({ workTypeCode, text, originalTranscript: form.original, versionId: version.id, followUpOption }),
-    });
-    setMatches(res);
-  };
+  async function runExtract(spoken: string) {
+    const current = propsRef.current;
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      try {
+        const res = await fetch("/api/ai/extract-briefing", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcript: spoken }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.result) {
+            current.onExtracted(data.result, current.currentValues);
+            return;
+          }
+        }
+      } catch {
+        /* local fallback */
+      }
+    }
+    current.onExtracted(extractBriefing({ transcript: spoken, catalog: current.catalog }), current.currentValues);
+  }
+
+  const visible = [transcript, interim].filter(Boolean).join(" ").trim();
   return (
-    <div className="space-y-4">
-      <BigButton selected={form.mode !== "library"} onClick={() => setForm({ ...form, mode: "voice" })}>Speak or Type the Work</BigButton>
-      <BigButton selected={form.mode === "library"} onClick={() => setForm({ ...form, mode: "library" })}>Select from the EEI Task Library</BigButton>
-      {form.mode !== "library" ? (
-        <>
-          <Field id="desc" label="Work description" textarea highlight={voiceMark(voiceKeys ?? [], "edited")} value={form.edited ?? version.workDescriptionEdited ?? ""} onChange={(v) => setForm({ ...form, edited: v })} />
-          <p className="text-sm">Talk fills this page from what you said. You can edit anything. Matching a task still needs Confirm.</p>
-          <div className="grid grid-cols-1 gap-2">
-            <BigButton onClick={() => patch("saveWork", { workDescriptionOriginal: form.original, workDescriptionEdited: form.edited, transcriptStatus: form.edited ? "ok" : "failed", speechProvider: form.speechProvider ?? "browser" }).then(() => match(form.edited))}>Use This Description</BigButton>
-            <BigButton onClick={() => setForm({ ...form, mode: "type" })}>Type Instead</BigButton>
-          </div>
-        </>
-      ) : (
-        <LibrarySearch workTypeCode={workTypeCode} onConfirm={(task: any) => patch("confirmTask", { taskId: task.id })} />
-      )}
-      {matches?.label ? <p className="font-bold text-yellow-300">{matches.label}</p> : null}
-      {matches?.result?.followUpQuestion ? (
+    <section className="space-y-3 rounded-2xl border-2 border-yellow-300 bg-[#121a2b] p-4">
+      <button
+        type="button"
+        className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+        aria-pressed={listening}
+        aria-label={listening ? "Stop talking" : "Talk through the job"}
+        onClick={() => {
+          if (listening) {
+            stop();
+            return;
+          }
+          sessionRef.current = "";
+          setTranscript("");
+          setInterim("");
+          toggle();
+        }}
+      >
+        {listening ? "Listening… Stop" : "Talk through the job"}
+      </button>
+      <p className="text-lg" role="status">{error ?? (listening ? "Listening..." : busy ? "Matching the discussion to the job…" : "Talk naturally. You can still type.")}</p>
+      {visible ? <p className="text-lg">{visible}</p> : null}
+      <Field id="type-job" label="Or type the job" textarea value={typed} onChange={setTyped} />
+      <BigButton
+        onClick={() => {
+          const spoken = typed.trim();
+          if (!spoken) return;
+          setTranscript(spoken);
+          setBusy(true);
+          void runExtract(spoken).finally(() => setBusy(false));
+        }}
+      >
+        Use typed briefing
+      </BigButton>
+      {props.proposed.length ? (
         <div className="space-y-2">
-          <p className="text-lg">{matches.result.followUpQuestion}</p>
-          {matches.result.followUpOptions.map((opt: string) => (
-            <BigButton key={opt} onClick={() => match(form.edited, opt)}>{opt}</BigButton>
+          <p className="font-bold text-yellow-300">Location already entered</p>
+          {props.proposed.map((change) => (
+            <div key={change.key} className="rounded-xl bg-[#3b2a00] p-3">
+              <p>Current: {change.current}</p>
+              <p>Heard: {change.proposed}</p>
+              <button type="button" className="mt-2 w-full rounded-xl bg-[#ffd000] py-2 text-lg font-bold text-black" onClick={() => props.onProposedUsed(change)}>
+                Use spoken {change.label}
+              </button>
+            </div>
           ))}
         </div>
       ) : null}
-      {matches?.result?.message ? <p>{matches.result.message}</p> : null}
-      {matches?.result?.suggestions?.map((s: any) => (
-        <article key={s.taskId} className="rounded-xl bg-[#121a2b] p-4">
-          <p className="text-sm">{s.workTypeExactName} · {s.activityExactName}</p>
-          <h3 className="text-xl font-bold">{s.exactTaskName}</h3>
-          <p>{s.explanation}</p>
-          <p className="font-bold">{s.confidence}</p>
-          <BigButton onClick={() => patch("confirmTask", { taskId: s.taskId })}>Confirm</BigButton>
-          <BigButton onClick={() => setForm({ ...form, mode: "library" })}>Choose Another Task</BigButton>
-        </article>
-      ))}
-      <BigButton onClick={() => setForm({ ...form, mode: "library" })}>Add Additional Task</BigButton>
-      <h3 className="font-bold">Confirmed tasks</h3>
-      {version.taskSelections?.filter((t: any) => t.confirmed).map((t: any) => (
-        <p key={t.id}>{t.task.activity.workType.exactName}: {t.task.exactName}</p>
-      ))}
+      {props.extraction && !listening ? (
+        <p className="text-sm">Filled from talk where it was clear. Nothing is confirmed until you say so.</p>
+      ) : null}
+    </section>
+  );
+}
+
+function EventDialog(props: {
+  kind: "stop" | "rebrief";
+  id: string;
+  form: Record<string, any>;
+  setForm: (f: Record<string, any>) => void;
+  jrb: any;
+  catalog: BriefingCatalog;
+  originalTranscript: string;
+  onClose: () => void;
+  onDone: (delta?: { newExposures?: BriefingExtraction["highEnergy"]; followUps?: FollowUpQuestion[] }) => void;
+}) {
+  const [talk, setTalk] = useState("");
+  return (
+    <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" role="dialog" aria-modal="true">
+      <form
+        className="w-full space-y-3 rounded-2xl bg-[#121a2b] p-5"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const path = props.kind === "stop" ? "stop-work" : "rebrief";
+          const spoken = talk || props.form.eventExplain;
+          if (props.kind === "stop") {
+            const extracted = extractStopWorkTalk(String(spoken ?? ""));
+            await api(`/api/jrbs/${props.id}/${path}`, {
+              method: "POST",
+              body: JSON.stringify({
+                reason: props.form.eventReason || extracted.reason,
+                explanation: extracted.explanation,
+                transcript: spoken,
+                affectedHazard: extracted.affectedHazard,
+              }),
+            });
+            props.onDone();
+          } else {
+            const delta = analyzeRebriefDelta(props.originalTranscript, String(spoken ?? ""), props.catalog);
+            await api(`/api/jrbs/${props.id}/${path}`, {
+              method: "POST",
+              body: JSON.stringify({
+                reason: props.form.eventReason || "Other",
+                explanation: spoken,
+                transcript: spoken,
+                delta,
+              }),
+            });
+            props.onDone(delta);
+          }
+        }}
+      >
+        <h2 className="text-2xl font-bold">{props.kind === "stop" ? "Stop Work" : "Conditions Changed / Rebrief"}</h2>
+        <JobLocationSummary jrb={props.jrb} />
+        <p>{props.kind === "rebrief" ? "What changed?" : "Talk through what happened. EnergyGuard cannot close Stop Work for you."}</p>
+        <EventTalk value={talk} onChange={setTalk} kind={props.kind} />
+        <label className="block text-lg font-bold" htmlFor="reason">Reason</label>
+        <select id="reason" className="w-full rounded-xl bg-[#070b14] p-3" value={props.form.eventReason ?? ""} onChange={(e) => props.setForm({ ...props.form, eventReason: e.target.value })}>
+          <option value="">Choose</option>
+          {(props.kind === "rebrief" ? REBRIEF_REASONS : ["Immediate danger", "Control failed", "New hazard", "Other"]).map((r) => (
+            <option key={r}>{r}</option>
+          ))}
+        </select>
+        <button type="submit" className="w-full rounded-xl bg-[#ffd000] py-3 text-xl font-bold text-black">Confirm</button>
+        <button type="button" className="w-full rounded-xl bg-[#1b2740] py-3 text-xl font-bold" onClick={props.onClose}>Cancel</button>
+      </form>
     </div>
   );
 }
 
-function LibrarySearch({ workTypeCode, onConfirm }: { workTypeCode: string; onConfirm: (t: any) => void }) {
-  const [q, setQ] = useState("");
-  const [tasks, setTasks] = useState<any[]>([]);
-  useEffect(() => {
-    const t = setTimeout(() => {
-      fetch(`/api/reference/tasks?workType=${workTypeCode}&q=${encodeURIComponent(q)}`)
-        .then((r) => r.json())
-        .then((d) => setTasks(d.tasks ?? []));
-    }, 200);
-    return () => clearTimeout(t);
-  }, [q, workTypeCode]);
+function EventTalk(props: { value: string; onChange: (v: string) => void; kind: "stop" | "rebrief" }) {
+  const sessionRef = useRef("");
+  const { listening, error, toggle, stop } = useSpeechToText({
+    onFinal: (spoken) => {
+      sessionRef.current = joinSpokenText(sessionRef.current, spoken);
+      props.onChange(sessionRef.current);
+    },
+    onSessionEnd: (spoken) => {
+      sessionRef.current = spoken;
+      props.onChange(spoken);
+    },
+  });
   return (
     <div className="space-y-2">
-      <Field id="search" label="Search the approved task library" value={q} onChange={setQ} />
-      {tasks.map((t) => (
-        <article key={t.id} className="rounded-xl bg-[#121a2b] p-3">
-          <p className="text-sm">{t.workType} · {t.activity}</p>
-          <p className="font-bold">{t.exactName}</p>
-          <BigButton onClick={() => onConfirm(t)}>Confirm</BigButton>
-        </article>
-      ))}
+      <button
+        type="button"
+        className={`min-h-16 w-full rounded-2xl px-4 py-4 text-xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+        aria-label={listening ? "Stop talking" : props.kind === "stop" ? "Talk through Stop Work" : "Talk through what changed"}
+        onClick={() => {
+          if (listening) {
+            stop();
+            return;
+          }
+          sessionRef.current = props.value;
+          toggle();
+        }}
+      >
+        {listening ? "Listening… Stop" : props.kind === "stop" ? "Talk through Stop Work" : "Talk through what changed"}
+      </button>
+      {error ? <p className="text-sm">{error}</p> : null}
+      <Field
+        id="event-talk"
+        label={props.kind === "stop" ? "What happened?" : "What changed?"}
+        textarea
+        value={props.value}
+        onChange={props.onChange}
+      />
     </div>
   );
 }
 
-function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp, voiceKeys = [] }: any) {
-  const [mapped, setMapped] = useState<Record<string, any[]>>({});
-  useEffect(() => {
-    presentExposures.forEach((exp: any) => {
-      fetch(`/api/reference/catalog?exposureId=${exp.exposureId}`)
-        .then((r) => r.json())
-        .then((d) => setMapped((m) => ({ ...m, [exp.id]: d.mappedDirectControls })));
-    });
-  }, [presentExposures]);
-  if (!presentExposures.length) return <p>No High Energy is marked Present. You can continue.</p>;
+function ResumeStopWork(props: { id: string; onDone: () => Promise<unknown> | unknown }) {
+  const [corrective, setCorrective] = useState("");
+  const [error, setError] = useState<string | null>(null);
   return (
-    <div className="space-y-6">
-      <button type="button" className="underline" onClick={() => setHelp("direct-control")}>What is a Direct Control?</button>
-      {presentExposures.map((exp: any) => {
-        const alt = evaluateAlternativeControls({
-          controls: (form[`${exp.id}_alts`] ?? []).map((c: any) => ({
-            category: catalog.categories.find((x: any) => x.id === c.categoryId)?.exactName,
-            owner: c.owner,
-            verificationMethod: c.verificationMethod,
-            isOther: c.isOther,
-            description: c.description,
-            howReducesExposure: c.howReducesExposure,
-            howComplements: c.howComplements,
-          })),
-          residualExposure: form[`${exp.id}_residual`],
-          stopWorkTrigger: form[`${exp.id}_stop`],
-          supervisorReviewed: Boolean(form[`${exp.id}_sup`]),
-          notUsedReasonRecorded: exp.notUsed?.length > 0,
-        });
-        return (
-          <article key={exp.id} className="rounded-2xl bg-[#121a2b] p-4">
-            <h2 className="text-xl font-bold">{exp.exposure.formLabelExact ?? exp.exposure.dcInventoryLabelExact}</h2>
-            <p className="text-sm">Showing Direct Controls mapped to this High Energy in the Logic View.</p>
-            {(mapped[exp.id] ?? []).map((dc: any) => (
-              <div key={dc.id} className="mt-3 rounded-xl bg-[#070b14] p-3">
-                <p className="font-bold">{dc.exactName}</p>
-                <p className="text-sm">{dc.notes}</p>
-                <p className="text-sm">Why: mapped to this High Energy in DC Inventory v1.</p>
-                <BigButton onClick={() => patch("selectDirectControl", { jrbExposureId: exp.id, directControlId: dc.id, personResponsible: form.owner })}>Select</BigButton>
-              </div>
-            ))}
-            {exp.directControlSelections?.map((sel: any) => (
-              <div key={sel.id} className="mt-3 border border-slate-500 p-3">
-                <p>Selected: {sel.directControl.exactName}</p>
-                <p>{sel.verifications?.some((v: any) => v.status === "verified") ? "Direct Control Verified" : "Control Plan Incomplete"}</p>
-                <label className="block">Verification method
-                  <select className="mt-1 w-full rounded-xl bg-[#070b14] p-3" value={form[`${sel.id}_vm`] ?? ""} onChange={(e) => setForm({ ...form, [`${sel.id}_vm`]: e.target.value })}>
-                    <option value="">Choose</option>
-                    {VERIFICATION_METHODS.map((m) => <option key={m}>{m}</option>)}
-                  </select>
-                </label>
-                <Field id={`${sel.id}-owner`} label="Person responsible" highlight={voiceMark(voiceKeys, `${sel.id}_owner`)} value={form[`${sel.id}_owner`] ?? ""} onChange={(v) => setForm({ ...form, [`${sel.id}_owner`]: v })} />
-                <BigButton onClick={() => patch("verifyDirectControl", { selectionId: sel.id, method: form[`${sel.id}_vm`], personResponsible: form[`${sel.id}_owner`] })}>Mark verified</BigButton>
-              </div>
-            ))}
-            <BigButton onClick={() => setForm({ ...form, [`${exp.id}_nouse`]: true })}>No Approved Direct Control Is Being Used</BigButton>
-            {form[`${exp.id}_nouse`] ? (
-              <div className="mt-2 space-y-2">
-                <p>Why is a Direct Control not being used?</p>
-                {DIRECT_CONTROL_NOT_USED_REASONS.map((r) => (
-                  <BigButton key={r} selected={form[`${exp.id}_reason`] === r} onClick={() => setForm({ ...form, [`${exp.id}_reason`]: r })}>{r}</BigButton>
-                ))}
-                <Field id={`${exp.id}-why`} label="Explain" textarea highlight={voiceMark(voiceKeys, `${exp.id}_why`)} value={form[`${exp.id}_why`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_why`]: v })} />
-                <BigButton onClick={() => patch("notUseDirectControl", { jrbExposureId: exp.id, reason: form[`${exp.id}_reason`], explanation: form[`${exp.id}_why`] })}>Save reason and open Alternative Controls</BigButton>
-              </div>
-            ) : null}
-            {(form[`${exp.id}_nouse`] || exp.notUsed?.length > 0) && (
-              <div className="mt-4 space-y-2">
-                <h3 className="text-lg font-bold">Alternative Control Framework</h3>
-                <p>{alt.liveStatus}</p>
-                {catalog.categories.map((cat: any) => (
-                  <div key={cat.id} className="rounded-xl bg-[#070b14] p-3">
-                    <p className="font-bold">{cat.exactName}</p>
-                    <p className="text-sm">{cat.definitionExact}</p>
-                    {cat.controls.map((c: any) => (
-                      <BigButton key={c.id} onClick={() => {
-                        const list = form[`${exp.id}_alts`] ?? [];
-                        setForm({ ...form, [`${exp.id}_alts`]: [...list, { categoryId: cat.id, description: c.exactName, catalogControlId: c.id }] });
-                      }}>{c.exactName}</BigButton>
-                    ))}
-                    <BigButton onClick={() => {
-                      const list = form[`${exp.id}_alts`] ?? [];
-                      setForm({ ...form, [`${exp.id}_alts`]: [...list, { categoryId: cat.id, isOther: true, description: "Other" }] });
-                    }}>Other in {cat.exactName}</BigButton>
-                  </div>
-                ))}
-                {(form[`${exp.id}_alts`] ?? []).map((c: any, i: number) => (
-                  <div key={i} className="border border-slate-600 p-2">
-                    <p>{c.description}</p>
-                    <Field id={`${exp.id}-o${i}`} label="Responsible owner" value={c.owner ?? ""} onChange={(v) => {
-                      const list = [...(form[`${exp.id}_alts`] ?? [])];
-                      list[i] = { ...list[i], owner: v };
-                      setForm({ ...form, [`${exp.id}_alts`]: list });
-                    }} />
-                    <Field id={`${exp.id}-v${i}`} label="Verification method" value={c.verificationMethod ?? ""} onChange={(v) => {
-                      const list = [...(form[`${exp.id}_alts`] ?? [])];
-                      list[i] = { ...list[i], verificationMethod: v };
-                      setForm({ ...form, [`${exp.id}_alts`]: list });
-                    }} />
-                  </div>
-                ))}
-                <Field id={`${exp.id}-res`} label="Remaining exposure" textarea highlight={voiceMark(voiceKeys, `${exp.id}_residual`)} value={form[`${exp.id}_residual`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_residual`]: v })} />
-                <Field id={`${exp.id}-sw`} label="Stop-work trigger" textarea highlight={voiceMark(voiceKeys, `${exp.id}_stop`)} value={form[`${exp.id}_stop`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_stop`]: v })} />
-                <label className="flex items-center gap-3">
-                  <input type="checkbox" className="size-8" checked={Boolean(form[`${exp.id}_sup`])} onChange={(e) => setForm({ ...form, [`${exp.id}_sup`]: e.target.checked })} />
-                  Supervisor review complete
-                </label>
-                <p>{alt.complete ? "Alternative Control Strategy Complete" : "Control Plan Incomplete"}</p>
-                <BigButton onClick={() => patch("saveAlternativeControls", {
-                  jrbExposureId: exp.id,
-                  controls: form[`${exp.id}_alts`],
-                  residualExposure: form[`${exp.id}_residual`],
-                  stopWorkTrigger: form[`${exp.id}_stop`],
-                  supervisorReviewed: form[`${exp.id}_sup`],
-                })}>Save Alternative Controls</BigButton>
-              </div>
-            )}
-          </article>
-        );
-      })}
-    </div>
-  );
-}
-
-function ReadyStep({ data, onRelease }: { data: any; onRelease: () => void }) {
-  const items = [
-    "Work Identified",
-    "EEI Tasks Confirmed",
-    "Conditions Reviewed",
-    "High Energy Reviewed",
-    "Serious Injury or Fatality Potential Reviewed",
-    "Direct Controls Verified",
-    "Alternative Control Strategy Complete when applicable",
-    "Minimum Briefing Subjects Addressed",
-    "Crew Briefing Complete",
-    "Questions Addressed",
-    "Required Approvals Complete",
-    "Data Synchronized",
-  ];
-  return (
-    <div className="space-y-3">
-      <JobLocationSummary jrb={data.jrb} />
-      <p className="text-2xl font-bold">{data.readiness?.status}</p>
-      {data.readiness?.banner ? <p className="rounded-xl border-2 border-yellow-300 p-3">{data.readiness.banner}</p> : null}
-      {data.readiness?.gaps?.map((g: any) => (
-        <p key={g.code + g.message} className="rounded-xl bg-[#2a1d00] p-3">
-          {g.message} Next: {g.nextAction}
-        </p>
-      ))}
-      <ul className="space-y-2">
-        {items.map((i) => <li key={i} className="rounded-xl bg-[#121a2b] p-3">{i}</li>)}
-      </ul>
-      <BigButton onClick={onRelease}>Release JRB for Work</BigButton>
-      {data.jrb.status === "released_for_work" ? <p>{READY_NOTICE}</p> : null}
+    <div className="space-y-2 rounded-2xl border-2 border-red-400 bg-[#2a0d0d] p-4">
+      <p className="text-lg font-bold">Stop Work is active</p>
+      <p className="text-sm">EnergyGuard cannot close this. The Worker in Charge decides when work may resume.</p>
+      <Field id="corrective" label="Corrective action" textarea value={corrective} onChange={setCorrective} />
+      {error ? <p role="alert">{error}</p> : null}
+      <BigButton
+        onClick={async () => {
+          try {
+            await api(`/api/jrbs/${props.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ action: "resumeStopWork", correctiveAction: corrective }),
+            });
+            setError(null);
+            await props.onDone();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Could not resume.");
+          }
+        }}
+      >
+        Work may resume
+      </BigButton>
     </div>
   );
 }

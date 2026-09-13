@@ -4,16 +4,9 @@ import Link from "next/link";
 import { ConnectionStatus } from "./ConnectionStatus";
 
 export const STEPS = [
-  { key: "start", label: "Start the Job Brief", question: "Who is working, and where?" },
-  { key: "work", label: "What Work Are We Doing?", question: "Tell us the work in your own words, or pick a task." },
-  { key: "conditions", label: "Jobsite Conditions", question: "Did we cover leaving and walking the job?" },
-  { key: "high-energy", label: "What Can Seriously Hurt or Kill Us?", question: "Which High Energy is present?" },
-  { key: "controls", label: "How Will We Control the Energy?", question: "How will we control each Present energy?" },
-  { key: "job-steps", label: "Job Steps and PPE", question: "What are the steps, precautions, and PPE?" },
-  { key: "completeness", label: "Briefing Subjects", question: "Did we cover the required subjects?" },
-  { key: "review", label: "Review the Job Plan", question: "Does this plan look right?" },
-  { key: "crew", label: "Brief the Crew", question: "Does anyone have a question or see something we missed?" },
-  { key: "ready", label: "Are We Ready to Start?", question: "Can we release this brief for work?" },
+  { key: "talk", label: "Talk Through the Job", question: "Tell us what we're doing, what can seriously hurt or kill us, and how we're going to control it." },
+  { key: "exposures", label: "What Can Kill Us", question: "What can seriously hurt us, and how are we controlling it?" },
+  { key: "ready", label: "Ready for Work", question: "Do we understand the job, the serious exposures, and the controls?" },
 ];
 
 export function FieldChrome(props: {

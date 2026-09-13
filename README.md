@@ -21,7 +21,7 @@ PostgreSQL can be local or `docker compose up -d db`.
 
 ## What is in this repo
 
-- Field wizard for the full JRB path, including voice/typed work, EEI task confirmation, High Energy, Direct Controls, Alternative Controls, crew briefing, Ready for Work gating, Stop Work, and rebrief versioning
+- Field wizard for a conversation-driven JRB: Talk through the job, High Energy / Direct Controls, Ready for Work, EEI task confirmation, Alternative Controls when needed, crew briefing, Ready for Work gating, Stop Work, rebrief versioning, and post-job closeout
 - Controlled-content import from `/reference` (EEI, Direct Control inventory, Job Briefing Form, Alternative Control resource)
 - Append-only audit events
 - Offline draft storage (IndexedDB) and PWA shell

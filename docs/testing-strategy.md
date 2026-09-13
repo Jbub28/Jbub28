@@ -5,7 +5,7 @@
 1. **Unit** — domain gating, Alternative Control rules, task matching, RBAC helpers, import validation (Vitest)
 2. **Integration** — API routes with mock auth and PostgreSQL (Vitest + Prisma test database)
 3. **Accessibility** — axe on key screens (Playwright)
-4. **End-to-end** — nine required scenarios (Playwright)
+4. **End-to-end** — conversational briefing, location, Stop Work, and accessibility (Playwright)
 
 ## Required coverage (automated)
 

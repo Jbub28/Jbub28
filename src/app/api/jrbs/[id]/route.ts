@@ -5,6 +5,8 @@ import { canWriteJrb } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
+import { persistBriefingConversation, persistExtractedLocation } from "@/lib/conversation/persistBriefing";
+import { BriefingExtractionSchema } from "@/lib/conversation/types";
 import { buildReadiness } from "@/lib/server/jrbReadiness";
 
 async function loadJrb(id: string) {
@@ -37,6 +39,9 @@ async function loadJrb(id: string) {
               alternativeControls: { include: { category: true } },
             },
           },
+          aiRecommendations: true,
+          briefingAssessment: true,
+          conversationSessions: { orderBy: { createdAt: "desc" }, take: 5, include: { facts: true } },
         },
       },
       stopWorkEvents: { orderBy: { createdAt: "desc" } },
@@ -345,6 +350,161 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       },
     });
     await writeAudit({ userId: user.id, action: "crew_acknowledgment", entityType: "jrb_acknowledgment", entityId: jrb.id, newValue: { name: body.name, version: version.versionNumber } });
+  }
+
+  if (action === "saveBriefing") {
+    const parsed = BriefingExtractionSchema.safeParse(body.extraction);
+    if (!parsed.success) return jsonError("Could not save that briefing. Type the job or talk again.", 400);
+    const extraction = parsed.data;
+    await persistBriefingConversation({
+      jrbId: id,
+      versionId: version.id,
+      userId: user.id,
+      extraction,
+      kind: body.kind ?? "briefing",
+    });
+    await persistExtractedLocation(jrb, extraction);
+    if (body.markStartComplete) {
+      await prisma.jrbVersion.update({
+        where: { id: version.id },
+        data: { briefingScreenCompletedAt: new Date() },
+      });
+      const existingCondition = await prisma.jrbCondition.findFirst({ where: { versionId: version.id } });
+      if (!existingCondition) {
+        await prisma.jrbCondition.create({
+          data: {
+            versionId: version.id,
+            planMatchesField: true,
+            materialDifferenceNotes: "Reviewed during the job briefing conversation.",
+            confirmedAt: new Date(),
+          },
+        });
+      }
+    }
+    if (body.markHighEnergyReviewed) {
+      await prisma.jrbVersion.update({
+        where: { id: version.id },
+        data: { highEnergyReviewedAt: new Date() },
+      });
+    }
+    if (extraction.workDescription) {
+      await prisma.jrbVersion.update({
+        where: { id: version.id },
+        data: {
+          workDescriptionEdited: extraction.workDescription,
+          workDescriptionOriginal: extraction.transcript,
+        },
+      });
+    }
+    const ppeNotes = extraction.ppe.join(", ");
+    const procedure = extraction.osha.evidence.procedures || extraction.workDescription || "";
+    const precaution = extraction.controls.filter((c) => c.origin === "ai_extracted").map((c) => c.text).join("; ");
+    const energy = extraction.osha.evidence.energyControls;
+    if (procedure || precaution || energy || ppeNotes) {
+      await prisma.jrbJobStep.deleteMany({ where: { versionId: version.id } });
+      await prisma.jrbJobStep.create({
+        data: {
+          versionId: version.id,
+          sequence: 1,
+          phase: "Tasks",
+          description: extraction.workDescription || "Job briefing conversation",
+          workProcedure: procedure || null,
+          specialPrecaution: precaution || null,
+          energySourceControl: energy || null,
+          ppeNotes: ppeNotes || null,
+          stopWorkTrigger: "Any worker may stop the work.",
+        },
+      });
+    }
+  }
+
+  if (action === "resumeStopWork") {
+    if (jrb.status !== "stop_work_active") return jsonError("Stop Work is not active on this job.", 400);
+    const corrective = String(body.correctiveAction ?? "").trim();
+    if (!corrective) return jsonError("Explain the corrective action before work resumes. EnergyGuard cannot close Stop Work for you.", 400);
+    const open = await prisma.stopWorkEvent.findFirst({
+      where: { jrbId: id, resolutionStatus: "open" },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!open) return jsonError("No open Stop Work event.", 400);
+    await prisma.stopWorkEvent.update({
+      where: { id: open.id },
+      data: {
+        resolutionStatus: "resolved",
+        resumedAt: new Date(),
+        correctiveAction: corrective,
+        rebriefOccurred: Boolean(body.rebriefOccurred),
+      },
+    });
+    await prisma.jrbRecord.update({
+      where: { id },
+      data: { status: body.rebriefOccurred ? "rebrief_required" : "in_progress", syncStatus: "synchronized" },
+    });
+    await writeAudit({
+      userId: user.id,
+      action: "stop_work_resume",
+      entityType: "stop_work_event",
+      entityId: open.id,
+      originalValue: { status: "open" },
+      newValue: { status: "resolved", correctiveAction: corrective },
+    });
+  }
+
+  if (action === "crewConfirmBriefing") {
+    const eicName = jrb.employeeInChargeId ? (await prisma.user.findUnique({ where: { id: jrb.employeeInChargeId } }))?.displayName ?? "Employee in Charge" : "Employee in Charge";
+    for (const item of body.exposures ?? []) {
+      const existing = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId: item.exposureId } });
+      const data = {
+        presence: Presence.present,
+        energySource: item.energySource,
+        sifOutcome: item.sifOutcome ?? "Could cause serious injury or fatality",
+        crewConfirmed: true,
+        confirmedAt: new Date(),
+      };
+      if (existing) await prisma.jrbExposure.update({ where: { id: existing.id }, data });
+      else await prisma.jrbExposure.create({ data: { versionId: version.id, exposureId: item.exposureId, ...data } });
+    }
+    for (const item of body.controls ?? []) {
+      if (!item.directControlId) continue;
+      const exp = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId: item.exposureId } });
+      if (!exp) continue;
+      const already = await prisma.jrbDirectControlSelection.findFirst({
+        where: { jrbExposureId: exp.id, directControlId: item.directControlId },
+      });
+      const selection = already ?? await prisma.jrbDirectControlSelection.create({
+        data: {
+          jrbExposureId: exp.id,
+          directControlId: item.directControlId,
+          planned: true,
+          inPlace: false,
+          checked: false,
+          personResponsible: item.personResponsible || eicName,
+        },
+      });
+      const verified = await prisma.directControlVerification.findFirst({ where: { selectionId: selection.id } });
+      if (!verified) {
+        await prisma.directControlVerification.create({
+          data: {
+            selectionId: selection.id,
+            method: "Crew confirmed during briefing",
+            personResponsible: item.personResponsible || eicName,
+            verifiedAt: new Date(),
+            status: "verified",
+          },
+        });
+      }
+    }
+    await prisma.jrbVersion.update({
+      where: { id: version.id },
+      data: { highEnergyReviewedAt: new Date() },
+    });
+    await writeAudit({
+      userId: user.id,
+      action: "crew_confirmed_briefing",
+      entityType: "jrb_version",
+      entityId: jrb.id,
+      newValue: { exposures: body.exposures, controls: body.controls },
+    });
   }
 
   if (action === "saveCloseout") {

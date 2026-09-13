@@ -23,7 +23,7 @@ test("Employee in Charge can create a draft JRB", async ({ page }) => {
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Stop Work" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Conditions Changed / Rebrief" })).toBeVisible();
 });
@@ -69,18 +69,18 @@ test("one Talk button prefills the current page from natural speech", async ({ p
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to fill this page" })).toHaveCount(1);
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Talk through the job" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: /Talk to fill Work order/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Talk to fill this page" }).click();
+  await page.getByRole("button", { name: "Talk through the job" }).click();
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(/Pole 1847/, { timeout: 10_000 });
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/);
   await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/John/);
   await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/Steve/);
   await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue("");
-  await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
-  await expect(page.getByText(/Filled from talk:/)).toBeVisible();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await expect(page.getByText(/Filled from talk/)).toBeVisible();
 });
 
 test("Job Location is first, GPS is optional, and typed location persists", async ({ page }) => {
@@ -88,7 +88,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
 
   const jobHeading = page.getByRole("heading", { name: "Job Location" }).first();
   const workOrder = page.getByRole("textbox", { name: "Work order number" });
@@ -124,8 +124,8 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await expect(page.getByText(/Lincoln substation/)).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
 
-  await page.getByRole("button", { name: "Save and continue" }).click();
-  await expect(page.getByText(/Step 2 of 10/)).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
 });
 
 test("Talk does not overwrite an existing Job Location without confirmation", async ({ page }) => {
@@ -165,10 +165,68 @@ test("Talk does not overwrite an existing Job Location without confirmation", as
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
   await page.getByRole("textbox", { name: "Job Location" }).fill("Substation gate");
-  await page.getByRole("button", { name: "Talk to fill this page" }).click();
+  await page.getByRole("button", { name: "Talk through the job" }).click();
   await expect(page.getByText("Location already entered")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue("Substation gate");
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/);
   await page.getByRole("button", { name: /Use spoken Job Location/ }).click();
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(/Pole 1847/);
+});
+
+test("typed incomplete high-energy briefing asks a control question and does not advance", async ({ page }) => {
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByRole("textbox", { name: "Or type the job" }).fill(
+    "We're replacing a transformer from the bucket with energized primary overhead.",
+  );
+  await page.getByRole("button", { name: "Use typed briefing" }).click();
+  await expect(page.getByText(/How will the crew prevent exposure/i)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "This is what we briefed" })).toHaveCount(0);
+});
+
+test("microphone permission denial still allows typing", async ({ page }) => {
+  await page.addInitScript(() => {
+    class FakeSpeechRecognition {
+      continuous = false;
+      interimResults = false;
+      lang = "";
+      onresult: ((event: unknown) => void) | null = null;
+      onerror: ((event: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        queueMicrotask(() => this.onerror?.({ error: "not-allowed" }));
+      }
+      stop() {}
+      abort() {}
+    }
+    Object.assign(window, {
+      SpeechRecognition: FakeSpeechRecognition,
+      webkitSpeechRecognition: FakeSpeechRecognition,
+    });
+  });
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByRole("button", { name: "Talk through the job" }).click();
+  await expect(page.getByText(/Microphone permission is needed to talk/)).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Or type the job" })).toBeVisible();
+});
+
+test("Stop Work talk captures cover-up failure and stays open", async ({ page }) => {
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByRole("button", { name: "Stop Work" }).click();
+  await page.getByRole("textbox", { name: "What happened?" }).fill(
+    "We stopped because the required cover-up could not be installed.",
+  );
+  await page.locator("#reason").selectOption("Control failed");
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await expect(page.getByText(/Stop Work is active/)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Work may resume" })).toBeVisible();
 });

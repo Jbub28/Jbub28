@@ -203,6 +203,9 @@ model JrbVersion {
   workDescriptionEdited      String?
   transcriptStatus           String?
   speechProvider             String?
+  briefingTranscript         String?
+  highEnergyReviewedAt       DateTime?
+  briefingScreenCompletedAt  DateTime?
   controlledLibrarySnapshot  Json?
   releasedAt                 DateTime?
   releasedById               String?
@@ -223,6 +226,8 @@ model JrbVersion {
   matchExceptions            TaskMatchException[]
   evidence                   EvidenceFile[]
   aiRecommendations          AiRecommendation[]
+  conversationSessions       ConversationSession[]
+  briefingAssessment         BriefingAssessment?
   @@unique([jrbId, versionNumber])
   @@map("jrb_versions")
 }
@@ -755,6 +760,8 @@ model RebriefEvent {
   fromVersion Int
   toVersion   Int
   userId      String
+  transcript  String?
+  delta       Json?
   createdAt   DateTime @default(now())
   @@map("rebrief_events")
 }
@@ -768,6 +775,11 @@ model StopWorkEvent {
   initiatingUserId   String
   relatedTaskOrStep  String?
   immediateCondition String?
+  correctiveAction   String?
+  affectedHazard     String?
+  transcript         String?
+  rebriefOccurred    Boolean @default(false)
+  resumedAt          DateTime?
   resolutionStatus   String @default("open")
   createdAt          DateTime @default(now())
   @@map("stop_work_events")
@@ -866,4 +878,59 @@ model ConfigurationSetting {
   key   String @unique
   value String
   @@map("configuration_settings")
+}
+
+model ConversationSession {
+  id            String   @id @default(uuid())
+  jrbId         String
+  versionId     String?
+  version       JrbVersion? @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  kind          String
+  transcript    String
+  segments      Json?
+  provider      String
+  model         String?
+  audioDiscarded Boolean @default(true)
+  userId        String?
+  createdAt     DateTime @default(now())
+  facts         ConversationFact[]
+  @@index([jrbId])
+  @@map("conversation_sessions")
+}
+
+model ConversationFact {
+  id             String   @id @default(uuid())
+  sessionId      String
+  session        ConversationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  jrbId          String
+  versionId      String?
+  category       String
+  key            String
+  label          String
+  value          Json
+  sourceSegment  String?
+  confidence     String
+  origin         String
+  displayOnJrb   Boolean  @default(false)
+  catalogId      String?
+  createdAt      DateTime @default(now())
+  @@index([jrbId, category])
+  @@index([versionId])
+  @@map("conversation_facts")
+}
+
+model BriefingAssessment {
+  id                         String   @id @default(uuid())
+  versionId                  String   @unique
+  version                    JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  hazardsAddressed           Boolean  @default(false)
+  proceduresAddressed        Boolean  @default(false)
+  precautionsAddressed       Boolean  @default(false)
+  energyControlsAddressed    Boolean  @default(false)
+  ppeAddressed               Boolean  @default(false)
+  evidence                   Json?
+  followUps                  Json?
+  updatedAt                  DateTime @updatedAt
+  createdAt                  DateTime @default(now())
+  @@map("briefing_assessments")
 }

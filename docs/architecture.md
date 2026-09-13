@@ -74,17 +74,7 @@ Safety workflow code must not import Azure or Entra SDKs directly.
 | `/sign-in` | Mock or Entra sign-in |
 | `/briefs` | My JRBs |
 | `/briefs/new` | Start the Job Brief |
-| `/briefs/[id]` | Resume current step |
-| `/briefs/[id]/start` | Step 1 |
-| `/briefs/[id]/work` | Step 2 voice/library |
-| `/briefs/[id]/conditions` | Step 3 |
-| `/briefs/[id]/high-energy` | Step 4 |
-| `/briefs/[id]/controls` | Step 5 |
-| `/briefs/[id]/job-steps` | Step 6 |
-| `/briefs/[id]/completeness` | Step 7 |
-| `/briefs/[id]/review` | Step 8 |
-| `/briefs/[id]/crew` | Step 9 |
-| `/briefs/[id]/ready` | Step 10 |
+| `/briefs/[id]` | Three-screen conversational JRB |
 | `/briefs/[id]/closeout` | Post-job |
 | `/admin` | Controlled content, imports, exceptions |
 | `/admin/audit` | Audit history (authorized roles) |

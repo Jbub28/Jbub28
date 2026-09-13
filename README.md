@@ -1,85 +1,45 @@
-# Route Risk Predictor
+# EnergyGuard JRB
 
-Predict whether a future route is **low, medium, or high risk** using historic crash data from [Signal4 Analytics](https://signal4analytics.com) — Florida's statewide crash mapping platform (UF GeoPlan Center / FDOT).
+Mobile-first Job Risk Briefing for Electric Delivery crews (Distribution, Transmission, Substation). This is a crew discussion tool. It is not an observation, scoring, or coaching application.
 
-## Features
-
-- **Signal4 crash import** — upload CSV exports from Event Analysis
-- **Historic crash map** — plot crashes by severity on an interactive map
-- **High-risk corridors** — identify locations with the most crashes
-- **Crash patterns** — severity, time of day, weather, speeding, distraction, alcohol
-- **Route predictor** — enter origin, destination, date, and time → risk forecast with plain-English explanation
-- **Supabase storage** — persist crashes, corridors, scores, and predictions
+A completed software check does not mean the work is safe. Workers keep stop-work authority. AI suggestions are labeled **Suggested for Crew Review**.
 
 ## Quick start
 
 ```bash
+cp .env.example .env
+# DATABASE_URL and AUTH_SESSION_SECRET are required
 npm install
+npx prisma migrate dev --name init
+npm run db:seed
 npm run dev
 ```
 
-Open http://localhost:3000 and click **Load sample Tampa crash data**, or visit `?demo=1`.
+Open http://localhost:3000 and sign in as `eic@energyguard.local` / `ChangeMe!LocalOnly`.
 
-## Importing Signal4 data
+PostgreSQL can be local or `docker compose up -d db`.
 
-1. Log in at [signal4analytics.com](https://signal4analytics.com) (account required for downloads)
-2. Go to **Event Analysis** → run a query for your area and time period
-3. Download **Crash Tables (CSV)**
-4. Upload the CSV in the app
+## What is in this repo
 
-The parser recognizes standard S4 fields: `Report Number`, `Crash Date and Time`, `Latitude`, `Longitude`, `S4 Crash Severity`, `On Street Road Highway`, `Light Condition`, `Weather Condition`, and contributing-factor flags.
+- Field wizard for the full JRB path, including voice/typed work, EEI task confirmation, High Energy, Direct Controls, Alternative Controls, crew briefing, Ready for Work gating, Stop Work, and rebrief versioning
+- Controlled-content import from `/reference` (EEI, Direct Control inventory, Job Briefing Form, Alternative Control resource)
+- Append-only audit events
+- Offline draft storage (IndexedDB) and PWA shell
+- Mock auth / speech / AI / storage adapters plus Azure-ready interfaces
 
-## Route prediction
+## Documentation
 
-Enter a future route (e.g. "Dale Mabry Hwy, Tampa" → "I-275 & Kennedy Blvd") with a date and time. The predictor:
+See `/docs` for product requirements, architecture, data model, workflow, accessibility, security, governance, import, AI/speech, offline sync, testing, deployment, source inventory, and exceptions.
 
-1. Finds historic crashes near the corridor from your Signal4 dataset
-2. Weights severity, fatalities, time-of-day match, speeding, distraction, and weather
-3. Returns **low / medium / high** risk with a plain-English explanation
+## Tests
 
-## Supabase setup
-
-1. Run migrations in `supabase/migrations/`
-2. Copy `.env.example` → `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```bash
+npm test
+npx playwright test
+npm run typecheck
+npm run lint
 ```
 
-## Architecture
+## Controlled content
 
-```
-src/lib/parsers/signal4-analytics.ts   CSV parser for S4 exports
-src/lib/risk/corridors.ts              High-risk corridor clustering
-src/lib/risk/scoring.ts                Area risk index from crash history
-src/lib/risk/prediction.ts             Route risk forecast engine
-src/lib/data/signal4-sample.ts         Sample Tampa crash data
-```
-
-Designed to expand with TECO fleet accident data alongside Signal4 records.
-
-## Data citation
-
-> Signal4 Lab, University of Florida. (n.d.). Signal4 Analytics Database. Retrieved [date], from https://signal4analytics.com.
-
-## Mapbox setup (routes on map)
-
-1. Create a free account at [mapbox.com](https://account.mapbox.com/)
-2. Copy your default public token
-3. Add to `.env.local`:
-
-```env
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_token_here
-```
-
-Mapbox enables:
-- **Address geocoding** (origin/destination → coordinates)
-- **Driving routes** drawn on the map (color-coded by risk level)
-- **Distance & duration** estimates
-
-Without a token, the app falls back to OpenStreetMap and keyword-based geocoding.
-
-## Tech stack
-
-Next.js 16 · TypeScript · Tailwind CSS · Supabase · Mapbox GL · Recharts
+Do not invent EEI tasks, High Energy icons, Direct Controls, or OSHA/PPE requirements. Unresolved source issues are listed in `/docs/assumptions-and-exceptions.md` and the admin Exceptions list.

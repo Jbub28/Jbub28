@@ -1,0 +1,8 @@
+Source: AIC 2024 Electric Job Safety Briefing Form (PDF conversion of xlsx)
+Form title: ELECTRIC JOB SAFETY BRIEFING FORM
+Form ID: F 5845 Stock # 37-41-377
+Effective/printed: Apr-2024
+Page: 2 — High Energy Hazards icon row
+Usage: Controlled High Energy icon assets for EnergyGuard JRB field display.
+Do not invent replacement artwork for these 13 extracted icons.
+Swinging load is present in DC Inventory_v1 columns but has no extractable icon on this form.

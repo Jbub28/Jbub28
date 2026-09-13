@@ -1,0 +1,245 @@
+{
+  "source": {
+    "filename": "AIC 2024 Electric Job Briefing Form.pdf",
+    "originalFilenameNoted": "AIC 2024 Electric Job Briefing Form.xlsx",
+    "formTitleExact": "ELECTRIC JOB SAFETY BRIEFING FORM",
+    "formId": "F 5845 Stock # 37-41-377",
+    "printed": "Apr-2024",
+    "pages": 2,
+    "xlsxWorksheetsNotAvailable": true,
+    "importDate": "2026-09-13T16:13:06.698083+00:00"
+  },
+  "level1BeforeYouLeave": [
+    "Job Packet Review",
+    "Boom Inspection/Operation Verified",
+    "Traffic Control Needs",
+    "Route/Backing Discussion",
+    "Route/Travel Plan Discussion",
+    "Circle of Safety/Spotter Required?",
+    "Tools & Equipment Inspection",
+    "Tools & Equipment Secured",
+    "PPE Needs",
+    "No Substantial Material Loading Required"
+  ],
+  "environmentalHazards": [
+    "Heat",
+    "Cold",
+    "Wind",
+    "Rain",
+    "Snow",
+    "Ice",
+    "Fog",
+    "Other"
+  ],
+  "locateFields": [
+    "JULIE #",
+    "Dig By/Expiration"
+  ],
+  "level2Walkdown": [
+    "Walking/Working Surfaces",
+    "Plants/Animals/Insects",
+    "Public Safety Concerns",
+    "Security Concerns",
+    "Health Concerns",
+    "Truck/Equipment Positioning",
+    "Use of Spotters",
+    "Temporary Traffic Control/Flagger",
+    "Wheels Chocked",
+    "Outrigger Cribbing/Pads",
+    "Contractor Activity",
+    "U/G Utilities Marked",
+    "Night Time Work"
+  ],
+  "level3Topics": [
+    "Three-Way Communication",
+    "Hold-Off",
+    "Truck Hold-Off",
+    "WPA",
+    "Clearance #",
+    "Out of Service",
+    "Restraint",
+    "Local Control",
+    "Hazard #",
+    "SAWS #",
+    "Energized Work",
+    "Designated Observer",
+    "4 Foot Primary/MAD",
+    "Cover-Up Barriers",
+    "Line/Equipment Tested",
+    "Equipment Grounding",
+    "Vehicle Grounding",
+    "High Voltage Testing",
+    "Paralleling/Phasing Guidelines",
+    "Cut-Outs/Insulators",
+    "Pole Handling/Critical Lifts",
+    "Aerial Lift Safety",
+    "Confined/Enclosed Space",
+    "Manholes/Vaults",
+    "Excavation - Use Soils Checklist",
+    "Task Specific Stretching",
+    "Other",
+    "Backfeed/Solar/Wind Sources",
+    "Personal Protection",
+    "Equipotential Grounding",
+    "Isolation Work Method",
+    "Insulation Work Method"
+  ],
+  "voltageChoices": [
+    "4KV",
+    "12KV",
+    "13.2KV",
+    "34KV",
+    "69KV",
+    "Secondary",
+    "Other"
+  ],
+  "poleClimbing": {
+    "questionExact": "Is pole climbing required?",
+    "testsExact": "Visual Inspection + Hammer Test (Sounding) + Screwdriver Test (Probing) + Rocking Test",
+    "warningExact": "Do not climb a pole that has failed any of the tests above or if the pole cannot be adequately tested"
+  },
+  "ppe": {
+    "discussedCheckboxExact": "Personal Protective Equipment Requirements Discussed",
+    "itemsExact": [
+      "Hard Hats",
+      "Safety Glasses (Dark/Clear)",
+      "High-Vis Apparel",
+      "Proper Footwear",
+      "Goggles/Face Shield",
+      "Gloves (Work/Cut Resistant)",
+      "Hearing Protection",
+      "PVD",
+      "Ice Cleats",
+      "Fall Protection Harness/SRL",
+      "Arc Flash Apparel",
+      "Rubber Insulating Gloves (or G/S) worn over long sleeve FR shirt",
+      "Other"
+    ]
+  },
+  "ergonomics": {
+    "questionExact": "Can the work be performed in the Power Zone (shoulder to mid-thigh level)?",
+    "ifNo": [
+      "Adjust the Work",
+      "Adjust Body Position",
+      "Rotate Job Tasks"
+    ]
+  },
+  "acknowledgementsExact": [
+    "Everyone understands that All Co-workers Have Stop Work Authority",
+    "Everyone understands that Substantial Changes in the Work or Work Environment Impacting Co-Worker Safety Require a Re-Brief",
+    "Everyone understands the Emergency Action Plan for this Worksite Including Roles & Responsibilities"
+  ],
+  "signInExact": "Sign In Sheet - Anyone working, or entering the jobsite must be briefed on the relevant hazards and sign to indicate this was completed",
+  "level4": [
+    "Post Job Review",
+    "WPA/Hold Orders Released",
+    "Travel Plan",
+    "Final Circle of Safety/Spotter",
+    "Grounds Removed",
+    "Cargo Securement",
+    "Use of Spotter at OC",
+    "No Issues During Job",
+    "Re-Brief Necessary? (explain)",
+    "Stop Work Authority Used (explain)"
+  ],
+  "level4PromptExact": "What went well? What needs improvement? Best Practices?",
+  "workerInChargeLabelExact": "Worker in Charge:",
+  "reviewedByLabelExact": "Reviewed By:",
+  "highEnergyIcons": [
+    {
+      "key": "suspended_load",
+      "formLabel": "Suspended Load",
+      "energyFamily": "Gravity",
+      "icon": "/controlled/high-energy/suspended-load.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "mobile_equipment_workers_on_foot",
+      "formLabel": "Mobile Equipment/Traffic with Workers on Foot",
+      "energyFamily": "Motion",
+      "icon": "/controlled/high-energy/mobile-equipment-workers-on-foot.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "motor_vehicle_over_30mph",
+      "formLabel": "Motor vehicle incident (occupant) \u2265 30 mph",
+      "energyFamily": "Motion",
+      "icon": "/controlled/high-energy/motor-vehicle-over-30mph.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "heavy_rotating_equipment",
+      "formLabel": "Heavy Rotating Equipment",
+      "energyFamily": "Mechanical",
+      "icon": "/controlled/high-energy/heavy-rotating-equipment.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "electrical_contact_50v",
+      "formLabel": "Electrical Contact with Source \u2265 50 Volts",
+      "energyFamily": "Electrical",
+      "icon": "/controlled/high-energy/electrical-contact-50v.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "fire_sustained_fuel",
+      "formLabel": "Fire with Sustained Fuel Source",
+      "energyFamily": "Temperature",
+      "icon": "/controlled/high-energy/fire-sustained-fuel.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "excavation_trench_5ft",
+      "formLabel": "Excavation or Trench \u2265 5'",
+      "energyFamily": "Pressure",
+      "icon": "/controlled/high-energy/excavation-trench-5ft.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "arc_flash",
+      "formLabel": "Arc Flash",
+      "energyFamily": "Electrical",
+      "icon": "/controlled/high-energy/arc-flash.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "explosion",
+      "formLabel": "Explosion",
+      "energyFamily": "Pressure",
+      "icon": "/controlled/high-energy/explosion.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "high_temperature_150f",
+      "formLabel": "High Temperature \u2265 150\u00b0F",
+      "energyFamily": "Temperature",
+      "icon": "/controlled/high-energy/high-temperature-150f.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "steam",
+      "formLabel": "Steam",
+      "energyFamily": "Temperature",
+      "icon": "/controlled/high-energy/steam.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "toxic_chemical_radiation",
+      "formLabel": "High Dose of Toxic Chemical or Radiation",
+      "energyFamily": "Chemical / Radiation",
+      "icon": "/controlled/high-energy/toxic-chemical-radiation.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    },
+    {
+      "key": "fall_from_elevation_4ft",
+      "formLabel": "Fall from Elevation \u2265 4'",
+      "energyFamily": "Gravity",
+      "icon": "/controlled/high-energy/fall-from-elevation-4ft.png",
+      "sourceLocation": "ELECTRIC JOB SAFETY BRIEFING FORM page 2, High Energy Hazards row"
+    }
+  ],
+  "doNotCopyIntoLogic": [
+    "4 Foot Primary/MAD is captured as a configurable briefing topic. Minimum approach distances are not generated by the application.",
+    "Voltage checkboxes (4KV, 12KV, etc.) are configurable job identifiers, not calculated technical limits."
+  ]
+}

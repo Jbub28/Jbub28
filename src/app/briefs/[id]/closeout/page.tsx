@@ -1,0 +1,47 @@
+"use client";
+
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { BigButton, Field } from "@/components/field/FieldChrome";
+
+export default function CloseoutPage() {
+  const params = useParams<{ id: string }>();
+  const [form, setForm] = useState<Record<string, any>>({});
+  return (
+    <main className="mx-auto max-w-xl space-y-4 px-4 py-8">
+      <h1 className="text-3xl font-bold">Post-job review</h1>
+      <p>This is not used to score people.</p>
+      {[
+        ["completed", "Post-job review completed"],
+        ["holdOrdersReleased", "Hold orders or WPA released when applicable"],
+        ["travelPlanReviewed", "Travel plan reviewed"],
+        ["finalCircleOfSafety", "Final Circle of Safety or spotter review"],
+        ["groundsRemoved", "Grounds removed when applicable"],
+        ["cargoSecured", "Cargo secured"],
+        ["spotterUseCompleted", "Spotter use completed when applicable"],
+        ["noIssues", "No issues during job"],
+        ["rebriefWasNecessary", "Rebrief was necessary"],
+        ["stopWorkUsed", "Stop-work authority was used"],
+      ].map(([k, label]) => (
+        <label key={k} className="flex items-center gap-3 text-lg">
+          <input type="checkbox" className="size-8" checked={Boolean(form[k])} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} />
+          {label}
+        </label>
+      ))}
+      <Field id="well" label="What went well?" textarea value={form.whatWentWell ?? ""} onChange={(v) => setForm({ ...form, whatWentWell: v })} />
+      <Field id="imp" label="What needs improvement?" textarea value={form.whatNeedsImprovement ?? ""} onChange={(v) => setForm({ ...form, whatNeedsImprovement: v })} />
+      <Field id="best" label="Best practices" textarea value={form.bestPractices ?? ""} onChange={(v) => setForm({ ...form, bestPractices: v })} />
+      <BigButton
+        onClick={async () => {
+          await fetch(`/api/jrbs/${params.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "saveCloseout", review: form }),
+          });
+        }}
+      >
+        Save closeout
+      </BigButton>
+    </main>
+  );
+}

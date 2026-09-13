@@ -34,6 +34,15 @@ yarn-error.log*
 .env*
 !.env.example
 
+# evidence uploads
+/uploads
+
+# playwright
+/test-results
+/playwright-report
+
+
+
 # vercel
 .vercel
 

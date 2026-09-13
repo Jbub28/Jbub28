@@ -112,7 +112,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await page.getByRole("textbox", { name: /Pole, structure, equipment/ }).fill("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
   await page.getByRole("button", { name: "Save Draft" }).click();
-  await expect(page.getByText(/Synchronized|Saved on Device/)).toBeVisible();
+  await expect(page.getByText("Synchronized")).toBeVisible();
   const briefUrl = page.url();
   const briefId = briefUrl.match(/\/briefs\/([^/?#]+)/)?.[1];
   expect(briefId).toBeTruthy();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { BrandMark } from "@/components/ui/AppHeader";
 
@@ -11,21 +11,34 @@ export const STEPS = [
   { key: "ready", label: "Ready for Work", question: "Do we understand the job, the serious exposures, and the controls?" },
 ];
 
-export function usePeekOpen(force = false) {
+export function usePeekOpen(force = false, options?: { trackFocus?: boolean; hoverDelayMs?: number }) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [focus, setFocus] = useState(false);
+  const hoverTimer = useRef<number | undefined>(undefined);
   return {
-    open: force || hover || pinned || focus,
+    open: force || hover || pinned || (options?.trackFocus ? focus : false),
     pinned,
     setPinned,
     bind: {
-      onMouseEnter: () => setHover(true),
-      onMouseLeave: () => setHover(false),
-      onFocusCapture: () => setFocus(true),
-      onBlurCapture: (event: React.FocusEvent<HTMLElement>) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocus(false);
+      onMouseEnter: () => {
+        window.clearTimeout(hoverTimer.current);
+        if (options?.hoverDelayMs) {
+          hoverTimer.current = window.setTimeout(() => setHover(true), options.hoverDelayMs);
+        } else {
+          setHover(true);
+        }
       },
+      onMouseLeave: () => {
+        window.clearTimeout(hoverTimer.current);
+        setHover(false);
+      },
+      onFocusCapture: options?.trackFocus ? () => setFocus(true) : undefined,
+      onBlurCapture: options?.trackFocus
+        ? (event: React.FocusEvent<HTMLElement>) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocus(false);
+          }
+        : undefined,
     },
   };
 }
@@ -70,7 +83,7 @@ export function FieldChrome(props: {
   const total = STEPS.length;
   const keyboardOpen = useKeyboardOpen();
   const [helpOpen, setHelpOpen] = useState(false);
-  const dock = usePeekOpen();
+  const dock = usePeekOpen(false, { hoverDelayMs: 250 });
   const help = props.helpText ?? STEPS[props.stepIndex]?.question;
 
   return (

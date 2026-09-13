@@ -665,7 +665,7 @@ function JobTalk(props: {
   }
 
   const visible = [transcript, interim].filter(Boolean).join(" ").trim();
-  const peek = usePeekOpen(listening || busy || Boolean(error));
+  const peek = usePeekOpen(listening || busy || Boolean(error), { trackFocus: true });
   return (
     <section
       className="eg-peek eg-card space-y-2 p-3"

@@ -44,7 +44,11 @@ export function TaskConfirm(props: {
   useEffect(() => {
     if (!props.workTypeCode) return;
     const q = query.trim();
-    const url = `/api/reference/tasks?workType=${encodeURIComponent(props.workTypeCode)}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+    if (q.length < 2) {
+      setLibrary([]);
+      return;
+    }
+    const url = `/api/reference/tasks?workType=${encodeURIComponent(props.workTypeCode)}&q=${encodeURIComponent(q)}`;
     const handle = window.setTimeout(() => {
       void fetch(url)
         .then((res) => (res.ok ? res.json() : { tasks: [] }))

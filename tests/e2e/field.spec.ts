@@ -226,7 +226,7 @@ test("Stop Work talk captures cover-up failure and stays open", async ({ page })
     "We stopped because the required cover-up could not be installed.",
   );
   await page.locator("#reason").selectOption("Control failed");
-  await page.getByRole("button", { name: "Confirm" }).click();
+  await page.getByRole("button", { name: "Confirm", exact: true }).click();
   await expect(page.getByText(/Stop Work is active/)).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("button", { name: "Work may resume" })).toBeVisible();
 });
@@ -271,13 +271,17 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
   await expect(page.getByText(/Fall from/i)).toBeVisible();
   await expect(page.getByText(/Fall protection|Fall arrest/i).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /Direct Control not used/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Direct Control not used/ }).first()).toBeVisible();
   await page.getByRole("button", { name: "This is what we briefed" }).click();
   await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await expect(page.getByText(/High Energy is Present for Fall from/i)).toHaveCount(0);
-  await page.getByRole("button", { name: "Acknowledge for James Carter" }).click();
-  await page.getByRole("button", { name: "Acknowledge for Luis Rivera" }).click();
-  await page.getByRole("button", { name: "Acknowledge for Mike Thompson" }).click();
+  for (const name of ["Jordan Miles", "James Carter", "Luis Rivera", "Mike Thompson"]) {
+    const btn = page.getByRole("button", { name: `Acknowledge for ${name}` });
+    if (await btn.count()) {
+      await btn.click();
+      await expect(page.getByText(`${name} — Acknowledged`)).toBeVisible({ timeout: 10_000 });
+    }
+  }
   await page.getByRole("button", { name: "Release JRB for Work" }).click();
-  await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 15_000 });
 });

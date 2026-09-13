@@ -4,7 +4,9 @@ The field path is nine briefing steps plus post-job closeout. Navigation shows �
 
 ## Step 1 — Start the Job Brief
 
-Capture identity, location, work type (Distribution / Transmission / Substation only), work classification (user-confirmed), Employee in Charge (defaults to signed-in user when that user may be EIC), supervisor, crew, contractor flags, emergency access, and communication method. JRB number is generated. Status starts as Draft.
+Job Location is first: primary Job Location, 911/street address, optional GPS coordinates, and a pole/structure/equipment identifier when it applies. GPS permission is never required; typing always works. Location is stored on the JRB record so it stays available through rebriefs, Stop Work, and post-job closeout. Talk on this page can prefill those fields from an address, coordinates, pole, structure, substation, or other recognizable work location. An existing location is not overwritten unless the employee accepts the spoken change.
+
+Also capture identity, work type (Distribution / Transmission / Substation only), work classification (user-confirmed), Employee in Charge (defaults to signed-in user when that user may be EIC), supervisor, crew, contractor flags, emergency access, and communication method. JRB number is generated. Status starts as Draft.
 
 ## Step 2 — What Work Are We Doing?
 

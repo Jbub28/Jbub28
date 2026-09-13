@@ -34,6 +34,8 @@ organizations, users, user_roles, operating_areas, crews, crew_memberships, cont
 
 ## Version retention
 
+Job Location lives on `jrb_records` (`jobLocation`, `streetAddress`, `locationIdentifier`, optional `gpsLatitude` / `gpsLongitude` / `gpsCapturedAt`, plus legacy `workLocation` and `addressOrCoordinates`). It is not versioned with rebriefs, so the same location remains available during Stop Work, Conditions Changed / Rebrief, and post-job closeout. GPS is optional and is never required to complete a JRB.
+
 `jrb_versions.controlledLibrarySnapshot` stores JSON of work-type, task, exposure, direct-control, and alternative-control version IDs. Historical reads use the snapshot, not only current lookup tables.
 
 ## Audit

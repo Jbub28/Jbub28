@@ -4,7 +4,7 @@ AI is a recommendation assistant. Every result is labeled **Suggested for Crew R
 
 ## Conversational page voice
 
-Each applicable JRB step has **one Talk button**. The worker describes the page in natural language. The app transcribes, extracts structured values for **fields on the current step only**, and prefills empty fields. Typed values are never silently overwritten. Voice never advances the wizard.
+Each applicable JRB step has **one Talk button**. The worker describes the page in natural language. The app transcribes, extracts structured values for **fields on the current step only**, and prefills empty fields. Typed values are never silently overwritten. On Start the Job Brief, spoken addresses, GPS coordinates, pole/structure/equipment identifiers, substations, and other recognizable work locations prefill Job Location fields. If a location field already has a value, the app shows the proposed spoken change and waits for an explicit tap. Voice never advances the wizard.
 
 Flow:
 
@@ -22,7 +22,7 @@ Components:
 | Browser Web Speech API | Client transcription (`useSpeechToText`) |
 | `SpeechProvider` | Server mock/Azure transcribe adapter |
 | `extractPageFields` / `AiProvider.extractPageFields` | Structured extraction against the current page schema |
-| `applyVoicePrefill` | Merge without overwrite; drop `never` actions |
+| `applyVoicePrefill` | Merge without overwrite; location changes need an explicit tap; drop `never` actions |
 
 Low confidence: the value is left blank (or offered as **Suggested for Crew Review**). The app does not invent details.
 

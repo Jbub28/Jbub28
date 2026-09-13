@@ -50,8 +50,16 @@ export type ExtractionResult = {
   model: string;
 };
 
+export type ProposedChange = {
+  key: string;
+  label: string;
+  current: string;
+  proposed: string;
+};
+
 export type PrefillApplyResult = {
   updates: Record<string, unknown>;
   appliedKeys: string[];
   preservedKeys: string[];
+  proposedChanges: ProposedChange[];
 };

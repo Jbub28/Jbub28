@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Field, FieldChrome, BigButton, STEPS, voiceMark } from "./FieldChrome";
 import { PageVoiceAssistant } from "./PageVoiceAssistant";
+import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLocation";
 import { DIRECT_CONTROL_NOT_USED_REASONS, REBRIEF_REASONS, VERIFICATION_METHODS, WORK_CLASSIFICATIONS } from "@/lib/domain/controls";
 import { evaluateAlternativeControls } from "@/lib/domain/alternativeControls";
 import { PLANNING_NOTICE, READY_NOTICE } from "@/lib/domain/readiness";
+import { formatGps, formatJobLocation, locationFromRecord, persistableLocation } from "@/lib/domain/jobLocation";
 import { saveDraftLocal } from "@/lib/offline/store";
 import { schemaForStep } from "@/lib/voice/pageSchemas";
 import type { VoiceSuggestion } from "@/lib/voice/types";
@@ -60,6 +62,17 @@ export function BriefWizard({ id }: { id: string }) {
 
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
+  const loc = locationFromRecord(jrb ?? {});
+  const { gpsStatus, capture } = useOptionalGps((lat, lng) => {
+    setForm((f) => ({
+      ...f,
+      gpsCoordinates: formatGps(lat, lng),
+      gpsLatitude: lat,
+      gpsLongitude: lng,
+      gpsPermissionGranted: true,
+      gpsCapturedAt: new Date().toISOString(),
+    }));
+  });
 
   const refresh = useCallback(async () => {
     const [j, c] = await Promise.all([api(`/api/jrbs/${id}`), api("/api/reference/catalog")]);
@@ -132,8 +145,10 @@ export function BriefWizard({ id }: { id: string }) {
   const voiceCurrent: Record<string, unknown> = {
     ...form,
     workOrderNumber: form.workOrderNumber ?? jrb?.workOrderNumber ?? "",
-    addressOrCoordinates: form.addressOrCoordinates ?? jrb?.addressOrCoordinates ?? "",
-    workLocation: form.workLocation ?? jrb?.workLocation ?? "",
+    jobLocation: form.jobLocation ?? loc.jobLocation,
+    streetAddress: form.streetAddress ?? loc.streetAddress,
+    locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+    gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
     supervisorName: form.supervisorName ?? jrb?.supervisor?.displayName ?? "",
     crewText: form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "",
     contractorInvolved: form.contractorInvolved ?? jrb?.contractorInvolved,
@@ -186,7 +201,7 @@ export function BriefWizard({ id }: { id: string }) {
         errorSummary={errors}
         onBack={() => setStep((s) => Math.max(0, s - 1))}
         onNext={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-        onSave={() => patch("saveStart", form)}
+            onSave={() => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) })}
         onHelp={() => setHelp("eei")}
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
@@ -208,9 +223,19 @@ export function BriefWizard({ id }: { id: string }) {
         {step === 0 && (
           <div className="space-y-4">
             <p className="text-lg">JRB {jrb.jrbNumber} · {jrb.status.replaceAll("_", " ")}</p>
+            <JobLocationFields
+              values={{
+                jobLocation: form.jobLocation ?? loc.jobLocation,
+                streetAddress: form.streetAddress ?? loc.streetAddress,
+                gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
+                locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+              }}
+              highlights={voiceKeys}
+              gpsStatus={gpsStatus}
+              onChange={(key, value) => setForm({ ...form, [key]: value, gpsPermissionGranted: key === "gpsCoordinates" ? false : form.gpsPermissionGranted })}
+              onOptionalGps={capture}
+            />
             <Field id="wo" label="Work order number" highlight={voiceMark(voiceKeys, "workOrderNumber")} value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
-            <Field id="loc" label="911 address or coordinates" highlight={voiceMark(voiceKeys, "addressOrCoordinates")} value={form.addressOrCoordinates ?? jrb.addressOrCoordinates ?? ""} onChange={(v) => setForm({ ...form, addressOrCoordinates: v })} />
-            <Field id="wl" label="Work location" highlight={voiceMark(voiceKeys, "workLocation")} value={form.workLocation ?? jrb.workLocation ?? ""} onChange={(v) => setForm({ ...form, workLocation: v })} />
             <fieldset className="space-y-2">
               <legend className="text-lg font-bold">Work Type</legend>
               {catalog.workTypes.map((wt: any) => (
@@ -243,7 +268,7 @@ export function BriefWizard({ id }: { id: string }) {
             <BigButton onClick={async () => {
               const names = String(form.crewText ?? "").split("\n").map((n) => n.trim()).filter(Boolean);
               await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
-              await patch("saveStart", form);
+              await patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
               setStep(1);
             }}>Save and continue</BigButton>
           </div>
@@ -441,6 +466,7 @@ export function BriefWizard({ id }: { id: string }) {
 
         {step === 7 && (
           <div className="space-y-3">
+            <Section title="Job Location" onEdit={() => setStep(0)}>{formatJobLocation({ ...loc, ...form, ...jrb })}</Section>
             <Section title="Work description" onEdit={() => setStep(1)}>{version.workDescriptionEdited || "Needs Attention"}</Section>
             <Section title="Confirmed EEI tasks" onEdit={() => setStep(1)}>
               {version.taskSelections?.filter((t: any) => t.confirmed).map((t: any) => t.task.exactName).join("; ") || "Needs Attention"}
@@ -511,6 +537,7 @@ export function BriefWizard({ id }: { id: string }) {
             }}
           >
             <h2 className="text-2xl font-bold">{dialog === "stop" ? "Stop Work" : "Conditions Changed / Rebrief"}</h2>
+            <JobLocationSummary jrb={{ ...jrb, ...loc, ...form }} />
             <p>This does not need supervisor permission to start.</p>
             <label className="block text-lg font-bold" htmlFor="reason">Reason</label>
             <select id="reason" className="w-full rounded-xl bg-[#070b14] p-3" value={form.eventReason ?? ""} onChange={(e) => setForm({ ...form, eventReason: e.target.value })}>
@@ -762,6 +789,7 @@ function ReadyStep({ data, onRelease }: { data: any; onRelease: () => void }) {
   ];
   return (
     <div className="space-y-3">
+      <JobLocationSummary jrb={data.jrb} />
       <p className="text-2xl font-bold">{data.readiness?.status}</p>
       {data.readiness?.banner ? <p className="rounded-xl border-2 border-yellow-300 p-3">{data.readiness.banner}</p> : null}
       {data.readiness?.gaps?.map((g: any) => (

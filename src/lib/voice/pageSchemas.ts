@@ -55,9 +55,11 @@ export function schemaForStep(stepKey: string, ctx: VoiceSchemaContext = {}): Pa
         stepKey,
         title: "Start the Job Brief",
         fields: [
+          { key: "jobLocation", label: "Job Location", type: "text", safety: "prefill", aliases: ["job location", "substation"] },
+          { key: "streetAddress", label: "911/street address", type: "text", safety: "prefill", aliases: ["address", "911", "street"] },
+          { key: "gpsCoordinates", label: "GPS coordinates", type: "text", safety: "prefill", aliases: ["coordinates", "gps"] },
+          { key: "locationIdentifier", label: "Pole, structure, or equipment", type: "text", safety: "prefill", aliases: ["pole", "pole number", "structure", "structure number", "equipment", "tower"] },
           { key: "workOrderNumber", label: "Work order number", type: "text", safety: "prefill", aliases: ["work order", "wo"] },
-          { key: "addressOrCoordinates", label: "911 address or coordinates", type: "text", safety: "prefill", aliases: ["address", "911"] },
-          { key: "workLocation", label: "Work location", type: "text", safety: "prefill", aliases: ["location", "pole"] },
           { key: "supervisorName", label: "Supervisor", type: "text", safety: "prefill", aliases: ["supervisor"] },
           { key: "crewText", label: "Crew members", type: "stringList", safety: "prefill", aliases: ["crew", "working"] },
           { key: "contractorInvolved", label: "Contractor involvement", type: "boolean", safety: "prefill", aliases: ["contractor"] },

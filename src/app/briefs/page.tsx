@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConnectionStatus } from "@/components/field/ConnectionStatus";
+import { formatJobLocation } from "@/lib/domain/jobLocation";
 
 export default function BriefsPage() {
   const [jrbs, setJrbs] = useState<any[]>([]);
@@ -27,6 +28,7 @@ export default function BriefsPage() {
             <Link href={`/briefs/${j.id}`} className="block rounded-2xl bg-[#121a2b] p-4">
               <p className="text-xl font-bold">{j.jrbNumber}</p>
               <p>{j.status.replaceAll("_", " ")} · {j.workType?.exactName}</p>
+              <p className="text-sm">{formatJobLocation(j)}</p>
             </Link>
           </li>
         ))}

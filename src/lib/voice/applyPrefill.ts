@@ -1,4 +1,5 @@
-import type { ExtractionResult, PageVoiceSchema, PrefillApplyResult } from "./types";
+import type { ExtractionResult, PageVoiceSchema, PrefillApplyResult, ProposedChange } from "./types";
+import { LOCATION_FIELD_KEYS } from "@/lib/domain/jobLocation";
 
 function isFilled(value: unknown): boolean {
   if (value === undefined || value === null) return false;
@@ -16,7 +17,9 @@ export function applyVoicePrefill(input: {
   const updates: Record<string, unknown> = {};
   const appliedKeys: string[] = [];
   const preservedKeys: string[] = [];
+  const proposedChanges: ProposedChange[] = [];
   const byKey = new Map(input.schema.fields.map((f) => [f.key, f]));
+  const locationKeys = new Set<string>(LOCATION_FIELD_KEYS);
 
   for (const fill of input.extraction.fills) {
     const def = byKey.get(fill.key);
@@ -76,6 +79,16 @@ export function applyVoicePrefill(input: {
     }
 
     if (isFilled(input.current[fill.key])) {
+      const currentText = String(input.current[fill.key] ?? "").trim();
+      const proposedText = Array.isArray(fill.value) ? fill.value.join("\n") : String(fill.value);
+      if (locationKeys.has(fill.key) && proposedText && proposedText !== currentText) {
+        proposedChanges.push({
+          key: fill.key,
+          label: def.label,
+          current: currentText,
+          proposed: proposedText,
+        });
+      }
       preservedKeys.push(fill.key);
       continue;
     }
@@ -84,7 +97,7 @@ export function applyVoicePrefill(input: {
     appliedKeys.push(fill.key);
   }
 
-  return { updates, appliedKeys, preservedKeys };
+  return { updates, appliedKeys, preservedKeys, proposedChanges };
 }
 
 export const FORBIDDEN_VOICE_ACTIONS = [

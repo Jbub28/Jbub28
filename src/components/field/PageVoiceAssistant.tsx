@@ -6,7 +6,7 @@ import { joinSpokenText } from "@/lib/speech/browserSpeech";
 import { applyVoicePrefill } from "@/lib/voice/applyPrefill";
 import { extractPageFields } from "@/lib/voice/extractPageFields";
 import type { VoiceSchemaContext } from "@/lib/voice/pageSchemas";
-import type { ExtractionResult, PageVoiceSchema, VoiceSuggestion } from "@/lib/voice/types";
+import type { ExtractionResult, PageVoiceSchema, ProposedChange, VoiceSuggestion } from "@/lib/voice/types";
 
 async function extractForPage(stepKey: string, transcript: string, schema: PageVoiceSchema, context: VoiceSchemaContext): Promise<ExtractionResult> {
   if (typeof navigator !== "undefined" && navigator.onLine) {
@@ -37,6 +37,7 @@ export function PageVoiceAssistant(props: {
     preservedKeys: string[];
     suggestions: VoiceSuggestion[];
     extraction: ExtractionResult;
+    proposedChanges: ProposedChange[];
   }) => void;
   onConfirmSuggestion?: (suggestion: VoiceSuggestion) => void;
 }) {
@@ -48,6 +49,7 @@ export function PageVoiceAssistant(props: {
   const [transcript, setTranscript] = useState("");
   const [interim, setInterim] = useState("");
   const [extraction, setExtraction] = useState<ExtractionResult | null>(null);
+  const [proposed, setProposed] = useState<ProposedChange[]>([]);
   const [busy, setBusy] = useState(false);
   const { listening, error, toggle, stop } = useSpeechToText({
     onFinal: (spoken) => {
@@ -69,12 +71,14 @@ export function PageVoiceAssistant(props: {
             current: current.currentValues,
             extraction: result,
           });
+          setProposed(applied.proposedChanges);
           current.onApply(applied.updates, {
             transcript: spoken,
             appliedKeys: applied.appliedKeys,
             preservedKeys: applied.preservedKeys,
             suggestions: result.suggestions,
             extraction: result,
+            proposedChanges: applied.proposedChanges,
           });
         })
         .finally(() => setBusy(false));
@@ -99,6 +103,7 @@ export function PageVoiceAssistant(props: {
           setTranscript("");
           setInterim("");
           setExtraction(null);
+          setProposed([]);
           toggle();
         }}
       >
@@ -123,6 +128,43 @@ export function PageVoiceAssistant(props: {
           {extraction.skipped.length > 0 ? (
             <p>{extraction.skipped.map((s) => s.reason).join(" ")}</p>
           ) : null}
+        </div>
+      ) : null}
+      {proposed.length ? (
+        <div className="space-y-2">
+          <p className="font-bold text-yellow-300">Location already entered</p>
+          {proposed.map((change) => (
+            <div key={change.key} className="rounded-xl bg-[#3b2a00] p-3">
+              <p className="font-bold">{change.label}</p>
+              <p className="text-sm">Current: {change.current}</p>
+              <p className="text-sm">Heard: {change.proposed}</p>
+              <button
+                type="button"
+                className="mt-2 w-full rounded-xl bg-[#ffd000] py-2 text-lg font-bold text-black"
+                onClick={() => {
+                  props.onApply({ [change.key]: change.proposed }, {
+                    transcript: transcript,
+                    appliedKeys: [change.key],
+                    preservedKeys: [],
+                    suggestions: [],
+                    extraction: extraction ?? {
+                      transcript,
+                      fills: [],
+                      suggestions: [],
+                      skipped: [],
+                      provider: "local-page-extractor",
+                      model: "deterministic-v1",
+                    },
+                    proposedChanges: [],
+                  });
+                  setProposed((list) => list.filter((item) => item.key !== change.key));
+                }}
+              >
+                Use spoken {change.label}
+              </button>
+            </div>
+          ))}
+          <p className="text-sm">The current value stays unless you choose the spoken one.</p>
         </div>
       ) : null}
       {extraction?.suggestions.length ? (

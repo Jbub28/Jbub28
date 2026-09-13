@@ -171,11 +171,15 @@ model JrbRecord {
   hazardNumber            String?
   sawsNumber              String?
   locateTicketNumber      String?
+  jobLocation             String?
+  streetAddress           String?
+  locationIdentifier      String?
   addressOrCoordinates    String?
   workLocation            String?
   gpsLatitude             Float?
   gpsLongitude            Float?
   gpsPermissionGranted    Boolean   @default(false)
+  gpsCapturedAt           DateTime?
   contractorInvolved      Boolean   @default(false)
   contractorCompany       String?
   emergencyAccess         String?

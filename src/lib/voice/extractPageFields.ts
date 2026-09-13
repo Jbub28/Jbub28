@@ -42,17 +42,61 @@ function extractWorkOrder(text: string): { value: string; confidence: VoiceConfi
 }
 
 function extractPole(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
-  const m = text.match(/\bpole\s+(\d+[A-Za-z]?)\b/i);
+  const m = text.match(/\bpole(?:\s+number)?\s+(\d+[A-Za-z]?)\b/i);
   if (!m) return null;
   return { value: `Pole ${m[1]}`, confidence: "high", evidence: m[0] };
 }
 
+function extractLocationIdentifier(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const pole = extractPole(text);
+  if (pole) return pole;
+  const labeled = text.match(/\b(structure|tower|equipment|pad[- ]?mount|switchgear|riser)\s+([A-Za-z0-9-]{1,20})\b/i);
+  if (labeled) {
+    const kind = labeled[1].replace(/\s+/g, " ").replace(/^./, (c) => c.toUpperCase());
+    return { value: `${kind} ${labeled[2]}`, confidence: "high", evidence: labeled[0] };
+  }
+  return extractLabeled(text, ["structure number", "equipment number", "location identifier"]);
+}
+
+function extractGps(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const m = text.match(/\b(-?\d{1,3}\.\d{2,})\s*[, ]\s*(-?\d{1,3}\.\d{2,})\b/);
+  if (!m) return null;
+  const latitude = Number(m[1]);
+  const longitude = Number(m[2]);
+  if (Number.isNaN(latitude) || Number.isNaN(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+    return null;
+  }
+  return { value: `${latitude}, ${longitude}`, confidence: "high", evidence: m[0] };
+}
+
+function extractSubstation(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const m = text.match(/\b((?:[A-Za-z][A-Za-z0-9.'-]*\s+){0,4}substation)\b/i);
+  if (!m) return null;
+  const value = m[1].trim().replace(/\s+/g, " ").replace(/^(the)\s+/i, "");
+  if (/^substation$/i.test(value)) return { value: "Substation", confidence: "medium", evidence: m[0] };
+  return { value, confidence: "high", evidence: m[0] };
+}
+
+function extractJobLocation(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const labeled = extractLabeled(text, ["job location", "work location"]);
+  if (labeled) return labeled;
+  return extractSubstation(text);
+}
+
 function extractAddress(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const labeled = extractLabeled(text, ["911 address", "street address", "address"]);
+  if (
+    labeled &&
+    /\d/.test(labeled.value) &&
+    /\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct)\b/i.test(labeled.value)
+  ) {
+    return labeled;
+  }
   const m = text.match(
-    /\b(?:at|address(?:\s+is)?)\s+(\d{1,6}\s+[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][A-Za-z0-9]*){0,4}\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct))\b/i,
+    /\b(\d{1,6}\s+[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][A-Za-z0-9]*){0,4}\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct))\b/i,
   );
   if (!m) return null;
-  return { value: m[1].replace(/^(?:at)\s+/i, "").trim(), confidence: "high", evidence: m[0] };
+  return { value: m[1].trim(), confidence: "high", evidence: m[0] };
 }
 
 function extractLabeled(text: string, labels: string[]): { value: string; confidence: VoiceConfidence; evidence: string } | null {
@@ -185,14 +229,20 @@ function fillFor(field: PageFieldDef, text: string): ExtractedFill | VoiceSugges
     const hit = extractWorkOrder(text);
     return hit ? { key: field.key, label: field.label, ...hit } : null;
   }
-  if (field.key === "workLocation") {
-    const pole = extractPole(text);
-    const labeled = extractLabeled(text, ["work location", "location"]);
-    const hit = pole ?? labeled;
+  if (field.key === "locationIdentifier") {
+    const hit = extractLocationIdentifier(text);
     return hit ? { key: field.key, label: field.label, ...hit } : null;
   }
-  if (field.key === "addressOrCoordinates") {
+  if (field.key === "streetAddress" || field.key === "addressOrCoordinates") {
     const hit = extractAddress(text);
+    return hit ? { key: field.key, label: field.label, ...hit } : null;
+  }
+  if (field.key === "gpsCoordinates") {
+    const hit = extractGps(text);
+    return hit ? { key: field.key, label: field.label, ...hit } : null;
+  }
+  if (field.key === "jobLocation" || field.key === "workLocation") {
+    const hit = extractJobLocation(text);
     return hit ? { key: field.key, label: field.label, ...hit } : null;
   }
   if (field.key === "crewText") {
@@ -274,6 +324,23 @@ export function extractPageFields(input: { transcript: string; schema: PageVoice
       continue;
     }
     fills.push(result);
+  }
+
+  const hasJobLocationField = input.schema.fields.some((f) => f.key === "jobLocation");
+  if (hasJobLocationField && !fills.some((f) => f.key === "jobLocation")) {
+    const ident = fills.find((f) => f.key === "locationIdentifier");
+    const addr = fills.find((f) => f.key === "streetAddress");
+    const parts = [ident?.value, addr?.value].filter((v): v is string => typeof v === "string" && Boolean(v.trim()));
+    const composed = [...new Set(parts)].join(", ");
+    if (composed) {
+      fills.push({
+        key: "jobLocation",
+        label: "Job Location",
+        value: composed,
+        confidence: ident?.confidence ?? addr!.confidence,
+        evidence: ident?.evidence ?? addr?.evidence ?? composed,
+      });
+    }
   }
 
   return {

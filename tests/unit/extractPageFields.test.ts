@@ -11,9 +11,11 @@ describe("page field extraction", () => {
     const schema = schemaForStep("start");
     expect(schema).not.toBeNull();
     const result = extractPageFields({ transcript: EXAMPLE, schema: schema! });
-    const location = result.fills.find((f) => f.key === "workLocation");
+    const jobLocation = result.fills.find((f) => f.key === "jobLocation");
+    const identifier = result.fills.find((f) => f.key === "locationIdentifier");
     const crew = result.fills.find((f) => f.key === "crewText");
-    expect(location?.value).toBe("Pole 1847");
+    expect(identifier?.value).toBe("Pole 1847");
+    expect(jobLocation?.value).toBe("Pole 1847");
     expect(crew?.value).toEqual(["John", "Mike", "Steve"]);
     expect(result.fills.some((f) => f.key === "edited")).toBe(false);
     expect(result.fills.some((f) => f.key === "workOrderNumber")).toBe(false);
@@ -25,6 +27,17 @@ describe("page field extraction", () => {
     expect(result.fills).toHaveLength(1);
     expect(String(result.fills[0].value)).toMatch(/replacing a transformer/i);
     expect(String(result.fills[0].value)).not.toMatch(/John/);
+  });
+
+  it("extracts a street address, GPS pair, and substation as Job Location fields", () => {
+    const schema = schemaForStep("start")!;
+    const result = extractPageFields({
+      transcript: "Job location is Lincoln substation. Address is 500 Main Street. Coordinates 41.87810, -87.62980.",
+      schema,
+    });
+    expect(result.fills.find((f) => f.key === "jobLocation")?.value).toMatch(/Lincoln substation/i);
+    expect(result.fills.find((f) => f.key === "streetAddress")?.value).toMatch(/500 Main Street/i);
+    expect(String(result.fills.find((f) => f.key === "gpsCoordinates")?.value)).toMatch(/41\.8781/);
   });
 
   it("does not invent facts that were not said", () => {
@@ -63,11 +76,12 @@ describe("voice prefill merge", () => {
     const extraction = extractPageFields({ transcript: EXAMPLE, schema });
     const applied = applyVoicePrefill({
       schema,
-      current: { workLocation: "Substation gate", crewText: "" },
+      current: { jobLocation: "Substation gate", crewText: "" },
       extraction,
     });
-    expect(applied.updates.workLocation).toBeUndefined();
-    expect(applied.preservedKeys).toContain("workLocation");
+    expect(applied.updates.jobLocation).toBeUndefined();
+    expect(applied.preservedKeys).toContain("jobLocation");
+    expect(applied.proposedChanges.some((c) => c.key === "jobLocation" && c.proposed === "Pole 1847")).toBe(true);
     expect(applied.updates.crewText).toBe("John\nMike\nSteve");
   });
 

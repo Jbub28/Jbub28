@@ -97,7 +97,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   const workOrderBox = await workOrder.boundingBox();
   expect(jobBox?.y ?? 0).toBeLessThan(workOrderBox?.y ?? 0);
 
-  await expect(page.getByText(/GPS is optional/i)).toBeVisible();
+  await expect(page.getByText("Where is the work? GPS is optional")).toBeVisible();
   await page.getByRole("textbox", { name: "Job Location" }).fill("Lincoln substation");
   await page.getByRole("textbox", { name: "911/street address" }).fill("500 Main Street");
   await page.getByRole("textbox", { name: /Pole, structure, equipment/ }).fill("Pole 12");

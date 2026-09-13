@@ -2,15 +2,27 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { BigButton, Field } from "@/components/field/FieldChrome";
+import { BigButton, Field, voiceMark } from "@/components/field/FieldChrome";
+import { PageVoiceAssistant } from "@/components/field/PageVoiceAssistant";
+import { schemaForStep } from "@/lib/voice/pageSchemas";
 
 export default function CloseoutPage() {
   const params = useParams<{ id: string }>();
   const [form, setForm] = useState<Record<string, any>>({});
+  const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
+  const schema = schemaForStep("closeout")!;
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 py-8">
       <h1 className="text-3xl font-bold">Post-job review</h1>
       <p>This is not used to score people.</p>
+      <PageVoiceAssistant
+        schema={schema}
+        currentValues={form}
+        onApply={(updates, meta) => {
+          setForm((f) => ({ ...f, ...updates }));
+          setVoiceKeys(meta.appliedKeys);
+        }}
+      />
       {[
         ["completed", "Post-job review completed"],
         ["holdOrdersReleased", "Hold orders or WPA released when applicable"],
@@ -28,9 +40,9 @@ export default function CloseoutPage() {
           {label}
         </label>
       ))}
-      <Field id="well" label="What went well?" textarea value={form.whatWentWell ?? ""} onChange={(v) => setForm({ ...form, whatWentWell: v })} />
-      <Field id="imp" label="What needs improvement?" textarea value={form.whatNeedsImprovement ?? ""} onChange={(v) => setForm({ ...form, whatNeedsImprovement: v })} />
-      <Field id="best" label="Best practices" textarea value={form.bestPractices ?? ""} onChange={(v) => setForm({ ...form, bestPractices: v })} />
+      <Field id="well" label="What went well?" textarea highlight={voiceMark(voiceKeys, "whatWentWell")} value={form.whatWentWell ?? ""} onChange={(v) => setForm({ ...form, whatWentWell: v })} />
+      <Field id="imp" label="What needs improvement?" textarea highlight={voiceMark(voiceKeys, "whatNeedsImprovement")} value={form.whatNeedsImprovement ?? ""} onChange={(v) => setForm({ ...form, whatNeedsImprovement: v })} />
+      <Field id="best" label="Best practices" textarea highlight={voiceMark(voiceKeys, "bestPractices")} value={form.bestPractices ?? ""} onChange={(v) => setForm({ ...form, bestPractices: v })} />
       <BigButton
         onClick={async () => {
           await fetch(`/api/jrbs/${params.id}`, {

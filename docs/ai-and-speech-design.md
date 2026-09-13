@@ -2,51 +2,66 @@
 
 AI is a recommendation assistant. Every result is labeled **Suggested for Crew Review** with Accept, Edit, Reject, or Select Another.
 
-## Speech
+## Conversational page voice
+
+Each applicable JRB step has **one Talk button**. The worker describes the page in natural language. The app transcribes, extracts structured values for **fields on the current step only**, and prefills empty fields. Typed values are never silently overwritten. Voice never advances the wizard.
+
+Flow:
+
+1. Talk → **Listening...**
+2. Live / completed transcript on the page
+3. Speech ends → page-field extraction
+4. Prefill + brief highlight (“Filled from talk”)
+5. Worker edits anything; safety confirmations stay manual
+
+Components:
+
+| Piece | Role |
+|-------|------|
+| `PageVoiceAssistant` | One Talk control, transcript, highlights, suggestion chips |
+| Browser Web Speech API | Client transcription (`useSpeechToText`) |
+| `SpeechProvider` | Server mock/Azure transcribe adapter |
+| `extractPageFields` / `AiProvider.extractPageFields` | Structured extraction against the current page schema |
+| `applyVoicePrefill` | Merge without overwrite; drop `never` actions |
+
+Low confidence: the value is left blank (or offered as **Suggested for Crew Review**). The app does not invent details.
+
+### Voice must not
+
+Acknowledge, certify a control, select Ready for Work, sign for someone, submit/release a JRB, close Stop Work, attest Direct Controls are adequate, auto-confirm a High Energy presence, auto-confirm a task, or auto-confirm work classification. Those require an explicit tap on the existing control.
+
+If the worker names a checkbox, PPE item, or High Energy that exists on this page, the app may prefill or suggest it. Suggestion chips still need a tap.
+
+## Speech providers
 
 Interface: `SpeechProvider.transcribe(input)`.
 
 | Provider | Use |
 |----------|-----|
-| `mock` | Returns fixture or echo text for local/dev/tests |
-| `browser` | Web Speech API in the client; server stores the posted transcript |
+| `mock` | Echo/fixture text for server tests |
+| `browser` | Web Speech API in the client (field Talk) |
 | `azure` | Azure AI Speech adapter (`AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`) |
 
-Field Talk buttons and the work-description microphone use the **browser Web Speech API** in the client. Recognized words are appended to whatever is already in the box. Typed fallback is always available. The UI does not post a canned mock phrase instead of listening.
+Store original transcript per step (`voiceTranscripts`) plus work-description original/edited. Raw audio is discarded unless `AUDIO_RETENTION_ENABLED=true`.
 
-Workflow: request microphone permission → show recording → stop → transcript → user edits → Use This Description / Record Again / Type Instead.
-
-Store original transcript separately from edited description, plus transcription status and provider. Raw audio is discarded unless `AUDIO_RETENTION_ENABLED=true`.
-
-`/api/speech/transcribe` remains for the mock/Azure adapters and tests. Azure is used only when `SPEECH_PROVIDER=azure`.
-
-Offline: typed entry remains available. If transcription needs connectivity, the UI says so.
-
-Never auto-submit AI-derived records. Never discard typed/recorded work without warning.
+Offline: typed entry remains. Extraction can run locally. If the microphone needs a connection, the UI says so.
 
 ## Task matching
 
 Interface: `AiProvider.matchTasks({ workType, text, approvedTasks, approvedSynonyms })`.
 
-Local matcher:
+Voice may fill the work description. Matching still runs only after **Use This Description**. The user must Confirm a task.
 
-- Restrict to selected work type and **active** tasks
-- Score exact task name, activity name, approved synonyms, work-method tokens
-- Return at most three suggestions with Strong Match / Possible Match / More Information Needed
-- Never invent a task name
-- Pole work: Distribution vs Transmission exact tasks as specified
-- Ambiguous “pole” without a verb → one follow-up question from the approved list
+## Page extraction
 
-Azure OpenAI adapter, when enabled, may only rank IDs from the approved list. If the model returns an unknown name, it is dropped and logged as an error.
+Interface: `AiProvider.extractPageFields({ transcript, schema })`.
 
-## Other AI uses
-
-Incomplete-field hints, plain-language summary from **confirmed** JRB data, rebrief suggestion when configured change flags are set, unmatched-term routing to admin review.
+Local/mock: deterministic extractor (`local-page-extractor`). Azure OpenAI, when configured, can replace the extractor body without changing the wizard. `/api/ai/extract-page-fields` rebuilds the schema from `stepKey` (it does not trust a client-supplied schema).
 
 ## Forbidden
 
-Invent tasks, icons, Direct Controls, OSHA rules, or PPE. Confirm a task. Approve a control strategy. Call Alternative Controls Direct Controls. Make a legal classification. Declare work safe. Replace the EIC or qualified-person judgment. Change confirmed values without the user. Remove stop-work. Score employees.
+Invent tasks, icons, Direct Controls, OSHA rules, or PPE. Confirm a task. Approve a control strategy. Call Alternative Controls Direct Controls. Make a legal classification. Declare work safe. Replace the EIC or qualified-person judgment. Change confirmed values without the user. Remove stop-work. Score employees. Auto-advance the JRB.
 
 ## Persistence
 
-`ai_recommendations` stores input, original transcript, suggestion, model/provider, confidence, controlled records considered, user decision, confirmed result, timestamp, error status.
+`ai_recommendations` stores task-match input, original transcript, suggestion, model/provider, confidence, controlled records considered, user decision, confirmed result, timestamp, error status. Page extracts are audit-logged as `voice_page_extract`.

@@ -27,7 +27,9 @@ export function useSpeechToText(options: Options) {
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
   const becomeIdle = useCallback(() => {
     recRef.current = null;
@@ -113,7 +115,7 @@ export function useSpeechToText(options: Options) {
       rec.start();
       listeningRef.current = true;
       setListening(true);
-      setStatus("Recording is active. Speak now.");
+      setStatus("Listening...");
     } catch {
       if (activeSession?.rec === rec) activeSession = null;
       recRef.current = null;

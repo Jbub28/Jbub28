@@ -34,7 +34,7 @@ export default function SignInPage() {
           else window.location.assign("/briefs");
         }}
       >
-        <Field id="email" label="Email" value={email} onChange={setEmail} voice={false} />
+        <Field id="email" label="Email" value={email} onChange={setEmail} />
         <label className="block space-y-1" htmlFor="password">
           <span className="text-lg font-bold">Password</span>
           <input id="password" type="password" className="w-full rounded-xl border-2 border-slate-500 bg-[#121a2b] px-3 py-3 text-lg" value={password} onChange={(e) => setPassword(e.target.value)} />

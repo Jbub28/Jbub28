@@ -33,7 +33,7 @@ test("sign-in does not offer talk to text on credentials", async ({ page }) => {
   await expect(page.getByRole("button", { name: /^Talk/ })).toHaveCount(0);
 });
 
-test("briefing fields can be filled by talking", async ({ page }) => {
+test("one Talk button prefills the current page from natural speech", async ({ page }) => {
   await page.addInitScript(() => {
     class FakeSpeechRecognition {
       continuous = false;
@@ -46,7 +46,10 @@ test("briefing fields can be filled by talking", async ({ page }) => {
         queueMicrotask(() => {
           this.onresult?.({
             resultIndex: 0,
-            results: [{ isFinal: true, 0: { transcript: "WO 4411 at Maple Street" } }],
+            results: [{
+              isFinal: true,
+              0: { transcript: "We are replacing a transformer at pole 1847. John, Mike, and Steve are working. We'll use a bucket truck and there is energized overhead primary." },
+            }],
           });
           this.onend?.();
         });
@@ -67,12 +70,14 @@ test("briefing fields can be filled by talking", async ({ page }) => {
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
   await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Talk to fill Work order number" })).toBeVisible();
-  await page.getByRole("button", { name: "Talk to fill Work order number" }).click();
-  await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue(/WO 4411 at Maple Street/);
+  await expect(page.getByRole("button", { name: "Talk to fill this page" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /Talk to fill Work order/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Start microphone" })).toBeVisible();
-  await page.getByRole("button", { name: "Start microphone" }).click();
-  await expect(page.getByRole("textbox", { name: "Work description" })).toHaveValue(/WO 4411 at Maple Street/);
+  await page.getByRole("button", { name: "Talk to fill this page" }).click();
+  await expect(page.getByRole("textbox", { name: "Work location" })).toHaveValue(/Pole 1847/, { timeout: 10_000 });
+  await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/John/);
+  await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/Steve/);
+  await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue("");
+  await expect(page.getByText(/Step 1 of 10/)).toBeVisible();
+  await expect(page.getByText(/Filled from talk:/)).toBeVisible();
 });

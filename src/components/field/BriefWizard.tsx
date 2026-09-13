@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Field, FieldChrome, BigButton, STEPS } from "./FieldChrome";
+import { Field, FieldChrome, BigButton, STEPS, voiceMark } from "./FieldChrome";
+import { PageVoiceAssistant } from "./PageVoiceAssistant";
 import { DIRECT_CONTROL_NOT_USED_REASONS, REBRIEF_REASONS, VERIFICATION_METHODS, WORK_CLASSIFICATIONS } from "@/lib/domain/controls";
 import { evaluateAlternativeControls } from "@/lib/domain/alternativeControls";
 import { PLANNING_NOTICE, READY_NOTICE } from "@/lib/domain/readiness";
 import { saveDraftLocal } from "@/lib/offline/store";
-import { useSpeechToText } from "@/hooks/useSpeechToText";
-import { joinSpokenText } from "@/lib/speech/browserSpeech";
+import { schemaForStep } from "@/lib/voice/pageSchemas";
+import type { VoiceSuggestion } from "@/lib/voice/types";
 
 const PREDEPARTURE = [
   ["job_packet", "Job Packet Review"],
@@ -55,6 +56,7 @@ export function BriefWizard({ id }: { id: string }) {
   const [form, setForm] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [matches, setMatches] = useState<any>(null);
+  const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
 
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
@@ -99,6 +101,77 @@ export function BriefWizard({ id }: { id: string }) {
 
   const presentExposures = version?.exposures?.filter((e: any) => e.presence === "present") ?? [];
   const climb = version?.taskSelections?.some((t: any) => /climb pole/i.test(t.task?.exactName ?? ""));
+  const stepKey = STEPS[step]?.key ?? "start";
+  const voiceContext = {
+    workTypes: catalog?.workTypes ?? [],
+    exposures: (catalog?.exposures ?? []).map((e: any) => ({
+      id: e.id,
+      label: e.formLabelExact ?? e.dcInventoryLabelExact ?? e.energyFamily,
+    })),
+    presentExposureFields: presentExposures.map((e: any) => ({
+      src: `${e.exposureId}-src`,
+      who: `${e.exposureId}-who`,
+      out: `${e.exposureId}-out`,
+      label: e.exposure?.formLabelExact ?? e.exposure?.dcInventoryLabelExact ?? "High Energy",
+    })),
+    ppe: catalog?.ppe ?? [],
+    extraFields: presentExposures.flatMap((e: any) => [
+      { key: `${e.id}_residual`, label: "Remaining exposure", type: "textarea" as const, safety: "prefill" as const, aliases: ["remaining exposure"] },
+      { key: `${e.id}_stop`, label: "Stop-work trigger", type: "textarea" as const, safety: "prefill" as const, aliases: ["stop-work trigger", "stop work"] },
+      { key: `${e.id}_why`, label: "Explain", type: "textarea" as const, safety: "prefill" as const, aliases: ["explain"] },
+      ...(e.directControlSelections ?? []).map((sel: any) => ({
+        key: `${sel.id}_owner`,
+        label: "Person responsible",
+        type: "text" as const,
+        safety: "prefill" as const,
+        aliases: ["person responsible", "responsible"],
+      })),
+    ]),
+  };
+  const voiceSchema = catalog ? schemaForStep(stepKey, voiceContext) : null;
+  const voiceCurrent: Record<string, unknown> = {
+    ...form,
+    workOrderNumber: form.workOrderNumber ?? jrb?.workOrderNumber ?? "",
+    addressOrCoordinates: form.addressOrCoordinates ?? jrb?.addressOrCoordinates ?? "",
+    workLocation: form.workLocation ?? jrb?.workLocation ?? "",
+    supervisorName: form.supervisorName ?? jrb?.supervisor?.displayName ?? "",
+    crewText: form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "",
+    contractorInvolved: form.contractorInvolved ?? jrb?.contractorInvolved,
+    contractorCompany: form.contractorCompany ?? jrb?.contractorCompany ?? "",
+    emergencyAccess: form.emergencyAccess ?? jrb?.emergencyAccess ?? "",
+    communicationMethod: form.communicationMethod ?? jrb?.communicationMethod ?? "",
+    edited: form.edited ?? version?.workDescriptionEdited ?? "",
+  };
+
+  const applyVoice = (updates: Record<string, unknown>, meta: { transcript: string; appliedKeys: string[]; preservedKeys: string[] }) => {
+    setForm((f) => ({
+      ...f,
+      ...updates,
+      original: typeof updates.edited === "string" ? f.original || meta.transcript : f.original,
+      speechProvider: typeof updates.edited === "string" ? "browser" : f.speechProvider,
+      voiceTranscripts: { ...(f.voiceTranscripts ?? {}), [stepKey]: meta.transcript },
+    }));
+    setVoiceKeys(meta.appliedKeys);
+    window.setTimeout(() => setVoiceKeys((keys) => keys.filter((k) => !meta.appliedKeys.includes(k))), 12_000);
+  };
+
+  const confirmVoiceSuggestion = (suggestion: VoiceSuggestion) => {
+    if (!catalog) return;
+    if (suggestion.key === "exposurePresence") {
+      void patch("setExposure", { exposureId: suggestion.value, presence: "present" });
+      return;
+    }
+    if (suggestion.key === "workTypeId") {
+      const wt = catalog.workTypes.find((w: any) => w.id === suggestion.value);
+      setForm((f) => ({ ...f, workTypeId: suggestion.value, workTypeCode: wt?.code }));
+      return;
+    }
+    if (suggestion.key === "workClassification") {
+      setForm((f) => ({ ...f, workClassification: suggestion.value }));
+      return;
+    }
+    setForm((f) => ({ ...f, [suggestion.key]: suggestion.value }));
+  };
 
   if (!jrb || !catalog) {
     return <p className="p-6 text-xl">Loading the job brief…</p>;
@@ -120,13 +193,24 @@ export function BriefWizard({ id }: { id: string }) {
         nextLabel={step === STEPS.length - 1 ? "Stay here" : "Next"}
       >
         <p className="text-xl">{STEPS[step].question}</p>
+        {voiceSchema ? (
+          <PageVoiceAssistant
+            schema={voiceSchema}
+            context={voiceContext}
+            currentValues={voiceCurrent}
+            onApply={applyVoice}
+            onConfirmSuggestion={confirmVoiceSuggestion}
+          />
+        ) : (
+          <p className="text-sm">This page is review and confirmation. Talk does not fill or approve it.</p>
+        )}
 
         {step === 0 && (
           <div className="space-y-4">
             <p className="text-lg">JRB {jrb.jrbNumber} · {jrb.status.replaceAll("_", " ")}</p>
-            <Field id="wo" label="Work order number" value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
-            <Field id="loc" label="911 address or coordinates" value={form.addressOrCoordinates ?? jrb.addressOrCoordinates ?? ""} onChange={(v) => setForm({ ...form, addressOrCoordinates: v })} />
-            <Field id="wl" label="Work location" value={form.workLocation ?? jrb.workLocation ?? ""} onChange={(v) => setForm({ ...form, workLocation: v })} />
+            <Field id="wo" label="Work order number" highlight={voiceMark(voiceKeys, "workOrderNumber")} value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
+            <Field id="loc" label="911 address or coordinates" highlight={voiceMark(voiceKeys, "addressOrCoordinates")} value={form.addressOrCoordinates ?? jrb.addressOrCoordinates ?? ""} onChange={(v) => setForm({ ...form, addressOrCoordinates: v })} />
+            <Field id="wl" label="Work location" highlight={voiceMark(voiceKeys, "workLocation")} value={form.workLocation ?? jrb.workLocation ?? ""} onChange={(v) => setForm({ ...form, workLocation: v })} />
             <fieldset className="space-y-2">
               <legend className="text-lg font-bold">Work Type</legend>
               {catalog.workTypes.map((wt: any) => (
@@ -145,17 +229,17 @@ export function BriefWizard({ id }: { id: string }) {
               <p className="text-sm">Suggested for Crew Review — the app does not make a legal determination.</p>
             </fieldset>
             <Field id="eic" label="Employee in Charge" value={jrb.employeeInCharge?.displayName ?? ""} />
-            <Field id="sup" label="Supervisor" value={form.supervisorName ?? jrb.supervisor?.displayName ?? ""} onChange={(v) => setForm({ ...form, supervisorName: v })} />
-            <Field id="crew" label="Crew members (one per line)" textarea value={form.crewText ?? version.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
+            <Field id="sup" label="Supervisor" highlight={voiceMark(voiceKeys, "supervisorName")} value={form.supervisorName ?? jrb.supervisor?.displayName ?? ""} onChange={(v) => setForm({ ...form, supervisorName: v })} />
+            <Field id="crew" label="Crew members (one per line)" textarea highlight={voiceMark(voiceKeys, "crewText")} value={form.crewText ?? version.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
             <label className="flex items-center gap-3 text-lg">
               <input type="checkbox" className="size-8" checked={Boolean(form.contractorInvolved ?? jrb.contractorInvolved)} onChange={(e) => setForm({ ...form, contractorInvolved: e.target.checked })} />
               Contractor involvement
             </label>
             {(form.contractorInvolved ?? jrb.contractorInvolved) ? (
-              <Field id="co" label="Contractor company" value={form.contractorCompany ?? jrb.contractorCompany ?? ""} onChange={(v) => setForm({ ...form, contractorCompany: v })} />
+              <Field id="co" label="Contractor company" highlight={voiceMark(voiceKeys, "contractorCompany")} value={form.contractorCompany ?? jrb.contractorCompany ?? ""} onChange={(v) => setForm({ ...form, contractorCompany: v })} />
             ) : null}
-            <Field id="em" label="Emergency access information" textarea value={form.emergencyAccess ?? jrb.emergencyAccess ?? ""} onChange={(v) => setForm({ ...form, emergencyAccess: v })} />
-            <Field id="comm" label="Communication method" value={form.communicationMethod ?? jrb.communicationMethod ?? ""} onChange={(v) => setForm({ ...form, communicationMethod: v })} />
+            <Field id="em" label="Emergency access information" textarea highlight={voiceMark(voiceKeys, "emergencyAccess")} value={form.emergencyAccess ?? jrb.emergencyAccess ?? ""} onChange={(v) => setForm({ ...form, emergencyAccess: v })} />
+            <Field id="comm" label="Communication method" highlight={voiceMark(voiceKeys, "communicationMethod")} value={form.communicationMethod ?? jrb.communicationMethod ?? ""} onChange={(v) => setForm({ ...form, communicationMethod: v })} />
             <BigButton onClick={async () => {
               const names = String(form.crewText ?? "").split("\n").map((n) => n.trim()).filter(Boolean);
               await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
@@ -175,7 +259,7 @@ export function BriefWizard({ id }: { id: string }) {
             matches={matches}
             setMatches={setMatches}
             patch={patch}
-            setErrors={setErrors}
+            voiceKeys={voiceKeys}
           />
         )}
 
@@ -183,14 +267,14 @@ export function BriefWizard({ id }: { id: string }) {
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Before You Leave</h2>
             {PREDEPARTURE.map(([key, label]) => (
-              <label key={key} className="flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg">
+              <label key={key} className={`flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg ${voiceMark(voiceKeys, `pd_${key}`) ? "ring-2 ring-yellow-300" : ""}`}>
                 <input type="checkbox" className="size-8" checked={Boolean(form[`pd_${key}`])} onChange={(e) => setForm({ ...form, [`pd_${key}`]: e.target.checked })} />
                 {label}
               </label>
             ))}
             <h2 className="text-xl font-bold">Environment</h2>
             {ENV.map((c) => (
-              <label key={c} className="flex items-center gap-3 text-lg">
+              <label key={c} className={`flex items-center gap-3 text-lg ${voiceMark(voiceKeys, "env") ? "ring-2 ring-yellow-300" : ""}`}>
                 <input type="checkbox" className="size-8" checked={(form.env ?? []).includes(c)} onChange={(e) => {
                   const cur = new Set(form.env ?? []);
                   e.target.checked ? cur.add(c) : cur.delete(c);
@@ -201,7 +285,7 @@ export function BriefWizard({ id }: { id: string }) {
             ))}
             <h2 className="text-xl font-bold">Jobsite walkdown</h2>
             {WALKDOWN.map(([key, label]) => (
-              <label key={key} className="flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg">
+              <label key={key} className={`flex items-center gap-3 rounded-xl bg-[#121a2b] p-3 text-lg ${voiceMark(voiceKeys, `wd_${key}`) ? "ring-2 ring-yellow-300" : ""}`}>
                 <input type="checkbox" className="size-8" checked={Boolean(form[`wd_${key}`])} onChange={(e) => setForm({ ...form, [`wd_${key}`]: e.target.checked })} />
                 {label}
               </label>
@@ -210,7 +294,7 @@ export function BriefWizard({ id }: { id: string }) {
             <BigButton selected={form.planMatchesField === true} onClick={() => setForm({ ...form, planMatchesField: true })}>Yes, it matches</BigButton>
             <BigButton selected={form.planMatchesField === false} onClick={() => setForm({ ...form, planMatchesField: false })}>No — we need to reassess</BigButton>
             {form.planMatchesField === false ? (
-              <Field id="diff" label="What changed?" textarea value={form.materialDifferenceNotes ?? ""} onChange={(v) => setForm({ ...form, materialDifferenceNotes: v })} />
+              <Field id="diff" label="What changed?" textarea highlight={voiceMark(voiceKeys, "materialDifferenceNotes")} value={form.materialDifferenceNotes ?? ""} onChange={(v) => setForm({ ...form, materialDifferenceNotes: v })} />
             ) : null}
             <BigButton onClick={() => patch("saveConditions", {
               planMatchesField: form.planMatchesField,
@@ -250,9 +334,9 @@ export function BriefWizard({ id }: { id: string }) {
                   </div>
                   {current?.presence === "present" ? (
                     <div className="mt-3 space-y-2">
-                      <Field id={`${exp.id}-src`} label="What energy could reach someone?" value={form[`${exp.id}-src`] ?? current.energySource ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-src`]: v })} />
-                      <Field id={`${exp.id}-who`} label="Who could be in the path?" value={form[`${exp.id}-who`] ?? current.personsExposed ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-who`]: v })} />
-                      <Field id={`${exp.id}-out`} label="What serious outcome could occur?" value={form[`${exp.id}-out`] ?? current.sifOutcome ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-out`]: v })} />
+                      <Field id={`${exp.id}-src`} label="What energy could reach someone?" highlight={voiceMark(voiceKeys, `${exp.id}-src`)} value={form[`${exp.id}-src`] ?? current.energySource ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-src`]: v })} />
+                      <Field id={`${exp.id}-who`} label="Who could be in the path?" highlight={voiceMark(voiceKeys, `${exp.id}-who`)} value={form[`${exp.id}-who`] ?? current.personsExposed ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-who`]: v })} />
+                      <Field id={`${exp.id}-out`} label="What serious outcome could occur?" highlight={voiceMark(voiceKeys, `${exp.id}-out`)} value={form[`${exp.id}-out`] ?? current.sifOutcome ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}-out`]: v })} />
                       <button type="button" className="underline" onClick={() => setHelp("sclm")}>Help: Serious Injury or Fatality Potential (SCLM)</button>
                       <BigButton onClick={() => patch("setExposure", {
                         exposureId: exp.id,
@@ -278,20 +362,21 @@ export function BriefWizard({ id }: { id: string }) {
             setForm={setForm}
             patch={patch}
             setHelp={setHelp}
+            voiceKeys={voiceKeys}
           />
         )}
 
         {step === 5 && (
           <div className="space-y-4">
             {["Setup", "Tasks", "Cleanup"].map((phase) => (
-              <Field key={phase} id={`step-${phase}`} label={`${phase} steps`} textarea value={form[`step_${phase}`] ?? ""} onChange={(v) => setForm({ ...form, [`step_${phase}`]: v })} />
+              <Field key={phase} id={`step-${phase}`} label={`${phase} steps`} textarea highlight={voiceMark(voiceKeys, `step_${phase}`)} value={form[`step_${phase}`] ?? ""} onChange={(v) => setForm({ ...form, [`step_${phase}`]: v })} />
             ))}
-            <Field id="proc" label="Work procedures" textarea value={form.workProcedure ?? ""} onChange={(v) => setForm({ ...form, workProcedure: v })} />
-            <Field id="prec" label="Special precautions" textarea value={form.specialPrecaution ?? ""} onChange={(v) => setForm({ ...form, specialPrecaution: v })} />
-            <Field id="energy" label="Energy-source control" textarea value={form.energySourceControl ?? ""} onChange={(v) => setForm({ ...form, energySourceControl: v })} />
+            <Field id="proc" label="Work procedures" textarea highlight={voiceMark(voiceKeys, "workProcedure")} value={form.workProcedure ?? ""} onChange={(v) => setForm({ ...form, workProcedure: v })} />
+            <Field id="prec" label="Special precautions" textarea highlight={voiceMark(voiceKeys, "specialPrecaution")} value={form.specialPrecaution ?? ""} onChange={(v) => setForm({ ...form, specialPrecaution: v })} />
+            <Field id="energy" label="Energy-source control" textarea highlight={voiceMark(voiceKeys, "energySourceControl")} value={form.energySourceControl ?? ""} onChange={(v) => setForm({ ...form, energySourceControl: v })} />
             <h2 className="text-xl font-bold">PPE — confirm what applies</h2>
             {catalog.ppe.map((p: any) => (
-              <label key={p.id} className="flex items-center gap-3 text-lg">
+              <label key={p.id} className={`flex items-center gap-3 text-lg ${voiceMark(voiceKeys, p.exactName) ? "ring-2 ring-yellow-300" : ""}`}>
                 <input type="checkbox" className="size-8" checked={(form.ppe ?? []).includes(p.exactName)} onChange={(e) => {
                   const cur = new Set(form.ppe ?? []);
                   e.target.checked ? cur.add(p.exactName) : cur.delete(p.exactName);
@@ -375,11 +460,11 @@ export function BriefWizard({ id }: { id: string }) {
             {["The Work", "What Can Seriously Hurt or Kill Us", "Direct Controls", "Work Steps", "PPE", "Emergency Plan", "Stop-Work Triggers"].map((card) => (
               <article key={card} className="rounded-2xl bg-[#121a2b] p-4 text-xl font-bold">{card}</article>
             ))}
-            <Field id="q" label="Question or concern" textarea value={form.question ?? ""} onChange={(v) => setForm({ ...form, question: v })} />
+            <Field id="q" label="Question or concern" textarea highlight={voiceMark(voiceKeys, "question")} value={form.question ?? ""} onChange={(v) => setForm({ ...form, question: v })} />
             <BigButton onClick={() => form.question && patch("addQuestion", { question: form.question, raisedBy: form.raisedBy, resolved: false })}>Save question</BigButton>
             <h2 className="text-xl font-bold">Crew acknowledgment</h2>
             <p>I participated in the briefing, had a chance to ask questions, and understand my part of the job.</p>
-            <Field id="ackname" label="Name" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
+            <Field id="ackname" label="Name" highlight={voiceMark(voiceKeys, "ackName")} value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
             <BigButton onClick={() => patch("acknowledge", { name: form.ackName, employer: "Electric Delivery" })}>Acknowledge this version</BigButton>
             {(version.crewMembers ?? []).map((m: any) => (
               <p key={m.id}>{m.name} {m.lateArrival ? "(arrived later)" : ""} — {version.acknowledgments?.some((a: any) => a.name === m.name) ? "Acknowledged" : "Needs Attention"}</p>
@@ -457,22 +542,8 @@ function Section({ title, children, onEdit }: { title: string; children: React.R
 }
 
 function WorkStep(props: any) {
-  const { jrb, version, form, setForm, matches, setMatches, patch } = props;
+  const { jrb, version, form, setForm, matches, setMatches, patch, voiceKeys } = props;
   const workTypeCode = jrb.workType?.code;
-  const { listening, status, error, toggle, start } = useSpeechToText({
-    onFinal: (spoken) => {
-      setForm((f: any) => {
-        const current = f.edited ?? version.workDescriptionEdited ?? "";
-        const next = joinSpokenText(current, spoken);
-        return {
-          ...f,
-          original: f.original || spoken.trim(),
-          edited: next,
-          speechProvider: "browser",
-        };
-      });
-    },
-  });
   const match = async (text: string, followUpOption?: string) => {
     const res = await api("/api/ai/match-tasks", {
       method: "POST",
@@ -486,15 +557,10 @@ function WorkStep(props: any) {
       <BigButton selected={form.mode === "library"} onClick={() => setForm({ ...form, mode: "library" })}>Select from the EEI Task Library</BigButton>
       {form.mode !== "library" ? (
         <>
-          <p className="text-lg" role="status" aria-live="polite">{error ?? status}</p>
-          <BigButton onClick={toggle}>
-            {listening ? "Stop recording" : "Start microphone"}
-          </BigButton>
-          <Field id="desc" label="Work description" textarea value={form.edited ?? version.workDescriptionEdited ?? ""} onChange={(v) => setForm({ ...form, edited: v })} />
-          <p className="text-sm">Talking adds to what is already in the box. You can also type.</p>
+          <Field id="desc" label="Work description" textarea highlight={voiceMark(voiceKeys ?? [], "edited")} value={form.edited ?? version.workDescriptionEdited ?? ""} onChange={(v) => setForm({ ...form, edited: v })} />
+          <p className="text-sm">Talk fills this page from what you said. You can edit anything. Matching a task still needs Confirm.</p>
           <div className="grid grid-cols-1 gap-2">
             <BigButton onClick={() => patch("saveWork", { workDescriptionOriginal: form.original, workDescriptionEdited: form.edited, transcriptStatus: form.edited ? "ok" : "failed", speechProvider: form.speechProvider ?? "browser" }).then(() => match(form.edited))}>Use This Description</BigButton>
-            <BigButton onClick={() => start()}>Record Again</BigButton>
             <BigButton onClick={() => setForm({ ...form, mode: "type" })}>Type Instead</BigButton>
           </div>
         </>
@@ -555,7 +621,7 @@ function LibrarySearch({ workTypeCode, onConfirm }: { workTypeCode: string; onCo
   );
 }
 
-function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp }: any) {
+function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp, voiceKeys = [] }: any) {
   const [mapped, setMapped] = useState<Record<string, any[]>>({});
   useEffect(() => {
     presentExposures.forEach((exp: any) => {
@@ -606,7 +672,7 @@ function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp
                     {VERIFICATION_METHODS.map((m) => <option key={m}>{m}</option>)}
                   </select>
                 </label>
-                <Field id={`${sel.id}-owner`} label="Person responsible" value={form[`${sel.id}_owner`] ?? ""} onChange={(v) => setForm({ ...form, [`${sel.id}_owner`]: v })} />
+                <Field id={`${sel.id}-owner`} label="Person responsible" highlight={voiceMark(voiceKeys, `${sel.id}_owner`)} value={form[`${sel.id}_owner`] ?? ""} onChange={(v) => setForm({ ...form, [`${sel.id}_owner`]: v })} />
                 <BigButton onClick={() => patch("verifyDirectControl", { selectionId: sel.id, method: form[`${sel.id}_vm`], personResponsible: form[`${sel.id}_owner`] })}>Mark verified</BigButton>
               </div>
             ))}
@@ -617,7 +683,7 @@ function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp
                 {DIRECT_CONTROL_NOT_USED_REASONS.map((r) => (
                   <BigButton key={r} selected={form[`${exp.id}_reason`] === r} onClick={() => setForm({ ...form, [`${exp.id}_reason`]: r })}>{r}</BigButton>
                 ))}
-                <Field id={`${exp.id}-why`} label="Explain" textarea value={form[`${exp.id}_why`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_why`]: v })} />
+                <Field id={`${exp.id}-why`} label="Explain" textarea highlight={voiceMark(voiceKeys, `${exp.id}_why`)} value={form[`${exp.id}_why`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_why`]: v })} />
                 <BigButton onClick={() => patch("notUseDirectControl", { jrbExposureId: exp.id, reason: form[`${exp.id}_reason`], explanation: form[`${exp.id}_why`] })}>Save reason and open Alternative Controls</BigButton>
               </div>
             ) : null}
@@ -656,8 +722,8 @@ function ControlsStep({ presentExposures, catalog, form, setForm, patch, setHelp
                     }} />
                   </div>
                 ))}
-                <Field id={`${exp.id}-res`} label="Remaining exposure" textarea value={form[`${exp.id}_residual`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_residual`]: v })} />
-                <Field id={`${exp.id}-sw`} label="Stop-work trigger" textarea value={form[`${exp.id}_stop`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_stop`]: v })} />
+                <Field id={`${exp.id}-res`} label="Remaining exposure" textarea highlight={voiceMark(voiceKeys, `${exp.id}_residual`)} value={form[`${exp.id}_residual`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_residual`]: v })} />
+                <Field id={`${exp.id}-sw`} label="Stop-work trigger" textarea highlight={voiceMark(voiceKeys, `${exp.id}_stop`)} value={form[`${exp.id}_stop`] ?? ""} onChange={(v) => setForm({ ...form, [`${exp.id}_stop`]: v })} />
                 <label className="flex items-center gap-3">
                   <input type="checkbox" className="size-8" checked={Boolean(form[`${exp.id}_sup`])} onChange={(e) => setForm({ ...form, [`${exp.id}_sup`]: e.target.checked })} />
                   Supervisor review complete

@@ -1,10 +1,7 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
 import { ConnectionStatus } from "./ConnectionStatus";
-import { useSpeechToText } from "@/hooks/useSpeechToText";
-import { joinSpokenText } from "@/lib/speech/browserSpeech";
 
 export const STEPS = [
   { key: "start", label: "Start the Job Brief", question: "Who is working, and where?" },
@@ -111,59 +108,40 @@ export function Field(props: {
   onChange?: (v: string) => void;
   textarea?: boolean;
   help?: string;
-  voice?: boolean;
+  highlight?: boolean;
 }) {
-  const voiceEnabled = props.voice !== false && typeof props.onChange === "function";
-  const valueRef = useRef(props.value ?? "");
-  valueRef.current = props.value ?? "";
-  const { listening, status, error, toggle } = useSpeechToText({
-    onFinal: (spoken) => {
-      const next = joinSpokenText(valueRef.current, spoken);
-      valueRef.current = next;
-      props.onChange?.(next);
-    },
-  });
-  const fieldClass = "min-h-14 w-full rounded-xl border-2 border-slate-500 bg-[#121a2b] px-3 py-3 text-lg";
+  const fieldClass = `min-h-14 w-full rounded-xl border-2 px-3 py-3 text-lg ${
+    props.highlight ? "border-yellow-300 bg-[#2a1d00]" : "border-slate-500 bg-[#121a2b]"
+  }`;
   return (
     <div className="block space-y-1">
-      <label className="text-lg font-bold" htmlFor={props.id}>
-        {props.label}
-      </label>
-      <div className="flex items-start gap-2">
-        {props.textarea ? (
-          <textarea
-            id={props.id}
-            rows={4}
-            className={fieldClass}
-            value={props.value ?? ""}
-            onChange={(e) => props.onChange?.(e.target.value)}
-          />
-        ) : (
-          <input
-            id={props.id}
-            className={fieldClass}
-            value={props.value ?? ""}
-            onChange={(e) => props.onChange?.(e.target.value)}
-          />
-        )}
-        {voiceEnabled ? (
-          <button
-            type="button"
-            className={`min-h-14 min-w-[6.5rem] shrink-0 rounded-xl px-3 text-lg font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
-            aria-pressed={listening}
-            aria-label={listening ? `Stop talking for ${props.label}` : `Talk to fill ${props.label}`}
-            onClick={toggle}
-          >
-            {listening ? "Stop" : "Talk"}
-          </button>
-        ) : null}
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <label className="text-lg font-bold" htmlFor={props.id}>
+          {props.label}
+        </label>
+        {props.highlight ? <span className="text-sm font-semibold text-yellow-300">Filled from talk</span> : null}
       </div>
-      {voiceEnabled && (listening || error) ? (
-        <p className="text-sm" role="status" aria-live="polite">
-          {error ?? status}
-        </p>
-      ) : null}
+      {props.textarea ? (
+        <textarea
+          id={props.id}
+          rows={4}
+          className={fieldClass}
+          value={props.value ?? ""}
+          onChange={(e) => props.onChange?.(e.target.value)}
+        />
+      ) : (
+        <input
+          id={props.id}
+          className={fieldClass}
+          value={props.value ?? ""}
+          onChange={(e) => props.onChange?.(e.target.value)}
+        />
+      )}
       {props.help ? <span className="block text-sm text-slate-200">{props.help}</span> : null}
     </div>
   );
+}
+
+export function voiceMark(keys: string[], key: string): boolean {
+  return keys.includes(key);
 }

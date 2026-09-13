@@ -27,6 +27,7 @@ flowchart LR
 | `/api/jrbs/[id]/release` | Ready for Work release |
 | `/api/speech/transcribe` | Speech provider |
 | `/api/ai/match-tasks` | Task matching |
+| `/api/ai/extract-page-fields` | Voice page-field extraction |
 | `/api/reference/*` | Published libraries |
 | `/api/evidence` | Uploads |
 | `/api/sync` | Offline queue |

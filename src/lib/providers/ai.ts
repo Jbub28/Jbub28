@@ -1,4 +1,6 @@
 import { matchTasks, type ApprovedSynonym, type ApprovedTask, type MatchResult } from "@/lib/domain/taskMatching";
+import { extractPageFields } from "@/lib/voice/extractPageFields";
+import type { ExtractionResult, PageVoiceSchema } from "@/lib/voice/types";
 
 export type AiMatchInput = {
   workTypeCode: string;
@@ -7,10 +9,16 @@ export type AiMatchInput = {
   approvedSynonyms: ApprovedSynonym[];
 };
 
+export type AiExtractInput = {
+  transcript: string;
+  schema: PageVoiceSchema;
+};
+
 export interface AiProvider {
   name: string;
   model: string;
   matchTasks(input: AiMatchInput): Promise<MatchResult>;
+  extractPageFields(input: AiExtractInput): Promise<ExtractionResult>;
 }
 
 export class LocalLibraryAiProvider implements AiProvider {
@@ -18,6 +26,9 @@ export class LocalLibraryAiProvider implements AiProvider {
   model = "deterministic-v1";
   async matchTasks(input: AiMatchInput): Promise<MatchResult> {
     return matchTasks(input);
+  }
+  async extractPageFields(input: AiExtractInput): Promise<ExtractionResult> {
+    return extractPageFields({ ...input, provider: this.name, model: this.model });
   }
 }
 
@@ -35,6 +46,12 @@ export class AzureOpenAiProvider implements AiProvider {
       };
     }
     return matchTasks(input);
+  }
+  async extractPageFields(input: AiExtractInput): Promise<ExtractionResult> {
+    // Structured JSON extraction against the current page schema can be
+    // swapped in here without changing the JRB workflow. Until credentials
+    // and a constrained prompt are configured, use the same local extractor.
+    return extractPageFields({ ...input, provider: this.name, model: this.model });
   }
 }
 

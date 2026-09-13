@@ -1,0 +1,865 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentStatus {
+  staged
+  published
+  retired
+  superseded
+  rejected
+  unresolved
+  administrator_review_required
+}
+
+enum JrbStatus {
+  draft
+  in_progress
+  needs_attention
+  supervisor_review_required
+  ready_for_crew_briefing
+  crew_briefing_complete
+  ready_for_work
+  released_for_work
+  stop_work_active
+  rebrief_required
+  closed
+}
+
+enum WorkClassification {
+  operations_or_maintenance
+  construction
+  not_yet_determined
+}
+
+enum Presence {
+  present
+  not_present
+  not_applicable
+  need_help
+}
+
+enum RoleName {
+  field_team_member
+  employee_in_charge
+  supervisor
+  safety_reviewer
+  eei_task_library_administrator
+  direct_control_library_administrator
+  alternative_control_administrator
+  regulatory_content_administrator
+  application_administrator
+  read_only_analyst
+}
+
+enum SyncStatus {
+  local_only
+  waiting_to_sync
+  synchronized
+  sync_error
+  conflict
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  users     User[]
+  areas     OperatingArea[]
+  crews     Crew[]
+  contractors Contractor[]
+  jrbs      JrbRecord[]
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  email          String   @unique
+  displayName    String
+  employeeNumber String?
+  passwordHash   String?
+  entraObjectId  String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  roles          UserRole[]
+  crewMemberships CrewMembership[]
+  createdJrbs    JrbRecord[] @relation("CreatedBy")
+  eicJrbs        JrbRecord[] @relation("EmployeeInCharge")
+  supervisorJrbs JrbRecord[] @relation("Supervisor")
+  auditEvents    AuditEvent[]
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  role      RoleName
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model OperatingArea {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  jrbs           JrbRecord[]
+  @@map("operating_areas")
+}
+
+model Crew {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  members        CrewMembership[]
+  @@map("crews")
+}
+
+model CrewMembership {
+  id     String @id @default(uuid())
+  crewId String
+  crew   Crew   @relation(fields: [crewId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  @@unique([crewId, userId])
+  @@map("crew_memberships")
+}
+
+model Contractor {
+  id             String @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  companyName    String
+  @@map("contractors")
+}
+
+model JrbRecord {
+  id                      String    @id @default(uuid())
+  organizationId          String
+  organization            Organization @relation(fields: [organizationId], references: [id])
+  jrbNumber               String    @unique
+  status                  JrbStatus @default(draft)
+  currentVersionId        String?
+  createdById             String
+  createdBy               User      @relation("CreatedBy", fields: [createdById], references: [id])
+  employeeInChargeId      String?
+  employeeInCharge        User?     @relation("EmployeeInCharge", fields: [employeeInChargeId], references: [id])
+  supervisorId            String?
+  supervisor              User?     @relation("Supervisor", fields: [supervisorId], references: [id])
+  operatingAreaId         String?
+  operatingArea           OperatingArea? @relation(fields: [operatingAreaId], references: [id])
+  workTypeId              String?
+  workType                WorkType? @relation(fields: [workTypeId], references: [id])
+  workClassification      WorkClassification @default(not_yet_determined)
+  workClassificationConfirmed Boolean @default(false)
+  date                    DateTime  @default(now())
+  plannedStartTime        DateTime?
+  workOrderNumber         String?
+  oasDojmNumber           String?
+  projectNumber           String?
+  circuitNumber           String?
+  clearanceNumber         String?
+  hazardNumber            String?
+  sawsNumber              String?
+  locateTicketNumber      String?
+  addressOrCoordinates    String?
+  workLocation            String?
+  gpsLatitude             Float?
+  gpsLongitude            Float?
+  gpsPermissionGranted    Boolean   @default(false)
+  contractorInvolved      Boolean   @default(false)
+  contractorCompany       String?
+  emergencyAccess         String?
+  communicationMethod     String?
+  syncStatus              SyncStatus @default(local_only)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  versions                JrbVersion[]
+  stopWorkEvents          StopWorkEvent[]
+  rebriefEvents           RebriefEvent[]
+  @@map("jrb_records")
+}
+
+model JrbVersion {
+  id                         String @id @default(uuid())
+  jrbId                      String
+  jrb                        JrbRecord @relation(fields: [jrbId], references: [id])
+  versionNumber              Int
+  status                     JrbStatus @default(draft)
+  workDescriptionOriginal    String?
+  workDescriptionEdited      String?
+  transcriptStatus           String?
+  speechProvider             String?
+  controlledLibrarySnapshot  Json?
+  releasedAt                 DateTime?
+  releasedById               String?
+  releasedRole               String?
+  createdAt                  DateTime @default(now())
+  jobSteps                   JrbJobStep[]
+  conditions                 JrbCondition[]
+  environmental              JrbEnvironmentalCondition[]
+  predeparture               JrbPredepartureCheck[]
+  walkdowns                  JrbJobsiteWalkdown[]
+  crewMembers                JrbCrewMember[]
+  acknowledgments            JrbAcknowledgment[]
+  questions                  JrbQuestion[]
+  postJobReviews             JrbPostJobReview[]
+  taskSelections             JrbTaskSelection[]
+  exposures                  JrbExposure[]
+  approvals                  Approval[]
+  matchExceptions            TaskMatchException[]
+  evidence                   EvidenceFile[]
+  aiRecommendations          AiRecommendation[]
+  @@unique([jrbId, versionNumber])
+  @@map("jrb_versions")
+}
+
+model JrbJobStep {
+  id                    String @id @default(uuid())
+  versionId             String
+  version               JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  sequence              Int
+  phase                 String
+  description           String
+  relatedTaskId         String?
+  workProcedure         String?
+  hazardOrExposure      String?
+  highEnergyExposureId  String?
+  sifPotential          String?
+  specialPrecaution     String?
+  energySourceControl   String?
+  ppeNotes              String?
+  responsiblePerson     String?
+  verificationStatus    String?
+  crewComment           String?
+  stopWorkTrigger       String?
+  @@map("jrb_job_steps")
+}
+
+model JrbCondition {
+  id                      String @id @default(uuid())
+  versionId               String
+  version                 JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  planMatchesField        Boolean?
+  materialDifferenceNotes String?
+  confirmedAt             DateTime?
+  @@map("jrb_conditions")
+}
+
+model JrbEnvironmentalCondition {
+  id        String @id @default(uuid())
+  versionId String
+  version   JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  choice    String
+  otherText String?
+  @@map("jrb_environmental_conditions")
+}
+
+model JrbPredepartureCheck {
+  id          String @id @default(uuid())
+  versionId   String
+  version     JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  itemKey     String
+  labelExact  String
+  discussed   Boolean @default(false)
+  @@map("jrb_predeparture_checks")
+}
+
+model JrbJobsiteWalkdown {
+  id         String @id @default(uuid())
+  versionId  String
+  version    JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  itemKey    String
+  labelExact String
+  observed   Boolean @default(false)
+  notes      String?
+  @@map("jrb_jobsite_walkdowns")
+}
+
+model JrbCrewMember {
+  id               String @id @default(uuid())
+  versionId        String
+  version          JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  name             String
+  employeeOrContractorId String?
+  employer         String?
+  isContractor     Boolean @default(false)
+  lateArrival      Boolean @default(false)
+  @@map("jrb_crew_members")
+}
+
+model JrbAcknowledgment {
+  id                 String @id @default(uuid())
+  versionId          String
+  version            JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  crewMemberId       String?
+  name               String
+  employeeOrContractorId String?
+  employer           String?
+  acknowledgmentText String
+  method             String
+  openConcern        Boolean @default(false)
+  jrbVersionAcknowledged Int
+  acknowledgedAt     DateTime @default(now())
+  @@map("jrb_acknowledgments")
+}
+
+model JrbQuestion {
+  id              String @id @default(uuid())
+  versionId       String
+  version         JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  question        String
+  raisedBy        String?
+  eicResponse     String?
+  planChanged     Boolean @default(false)
+  jobStepId       String?
+  resolved        Boolean @default(false)
+  createdAt       DateTime @default(now())
+  @@map("jrb_questions")
+}
+
+model JrbPostJobReview {
+  id                    String @id @default(uuid())
+  versionId             String
+  version               JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  completed             Boolean @default(false)
+  holdOrdersReleased    Boolean?
+  travelPlanReviewed    Boolean?
+  finalCircleOfSafety   Boolean?
+  groundsRemoved        Boolean?
+  cargoSecured          Boolean?
+  spotterUseCompleted   Boolean?
+  noIssues              Boolean?
+  rebriefWasNecessary   Boolean?
+  stopWorkUsed          Boolean?
+  whatWentWell          String?
+  whatNeedsImprovement  String?
+  bestPractices         String?
+  employeeInChargeName  String?
+  reviewedBy            String?
+  completedAt           DateTime?
+  closeoutStatus        String?
+  @@map("jrb_post_job_reviews")
+}
+
+model WorkType {
+  id              String @id @default(uuid())
+  code            String @unique
+  exactName       String
+  operational     Boolean @default(false)
+  sourceId        String?
+  sourceLocation  String?
+  sourceVersion   String?
+  contentStatus   ContentStatus @default(staged)
+  activities      EeiActivity[]
+  jrbs            JrbRecord[]
+  @@map("work_types")
+}
+
+model EeiActivity {
+  id             String @id @default(uuid())
+  workTypeId     String
+  workType       WorkType @relation(fields: [workTypeId], references: [id])
+  exactName      String
+  sourceLocation String?
+  contentStatus  ContentStatus @default(staged)
+  tasks          EeiTask[]
+  @@unique([workTypeId, exactName])
+  @@map("eei_activities")
+}
+
+model EeiTask {
+  id             String @id @default(uuid())
+  activityId     String
+  activity       EeiActivity @relation(fields: [activityId], references: [id])
+  exactName      String
+  sourceLocation String?
+  sourceAttribution String?
+  contentStatus  ContentStatus @default(staged)
+  versions       EeiTaskVersion[]
+  synonyms       TaskSynonym[]
+  selections     JrbTaskSelection[]
+  @@unique([activityId, exactName])
+  @@map("eei_tasks")
+}
+
+model EeiTaskVersion {
+  id         String @id @default(uuid())
+  taskId     String
+  task       EeiTask @relation(fields: [taskId], references: [id])
+  version    String
+  status     String
+  exactName  String
+  effectiveDate DateTime?
+  @@map("eei_task_versions")
+}
+
+model TaskSynonym {
+  id             String @id @default(uuid())
+  taskId         String?
+  task           EeiTask? @relation(fields: [taskId], references: [id])
+  phrase         String
+  workTypeCode   String?
+  proposedTaskExactName String?
+  status         String
+  @@map("task_synonyms")
+}
+
+model TaskMatchException {
+  id                 String @id @default(uuid())
+  versionId          String?
+  version            JrbVersion? @relation(fields: [versionId], references: [id])
+  originalTranscript String
+  editedDescription  String
+  workTypeCode       String
+  suggestedMatches   Json
+  matchConfidence    String
+  userDecision       String?
+  finalSelectedTask  String?
+  reviewStatus       String @default("pending")
+  createdAt          DateTime @default(now())
+  @@map("task_match_exceptions")
+}
+
+model JrbTaskSelection {
+  id              String @id @default(uuid())
+  versionId       String
+  version         JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  taskId          String
+  task            EeiTask @relation(fields: [taskId], references: [id])
+  taskVersionId   String
+  confirmed       Boolean @default(false)
+  confirmedAt     DateTime?
+  @@map("jrb_task_selections")
+}
+
+model HighEnergyExposure {
+  id                    String @id @default(uuid())
+  key                   String @unique
+  formLabelExact        String?
+  dcInventoryLabelExact String?
+  energyFamily          String?
+  definitionExact       String?
+  plainLanguageHelp     String?
+  contentStatus         ContentStatus @default(staged)
+  sourceLocation        String?
+  icon                  HighEnergyIconAsset?
+  mappings              HighEnergyDirectControlMapping[]
+  jrbExposures          JrbExposure[]
+  @@map("high_energy_exposures")
+}
+
+model HighEnergyIconAsset {
+  id             String @id @default(uuid())
+  exposureId     String @unique
+  exposure       HighEnergyExposure @relation(fields: [exposureId], references: [id])
+  storagePath    String
+  isPlaceholder  Boolean @default(false)
+  sourceFilename String?
+  sourceLocation String?
+  usageNotes     String?
+  @@map("high_energy_icon_assets")
+}
+
+model SclmClassification {
+  id            String @id @default(uuid())
+  exactName     String
+  definition    String?
+  contentStatus ContentStatus @default(unresolved)
+  sourceLocation String?
+  @@map("sclm_classifications")
+}
+
+model TaskHighEnergyMapping {
+  id            String @id @default(uuid())
+  taskId        String
+  exposureId    String
+  contentStatus ContentStatus @default(unresolved)
+  sourceLocation String?
+  @@unique([taskId, exposureId])
+  @@map("task_high_energy_mappings")
+}
+
+model JrbExposure {
+  id                         String @id @default(uuid())
+  versionId                  String
+  version                    JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  exposureId                 String
+  exposure                   HighEnergyExposure @relation(fields: [exposureId], references: [id])
+  presence                   Presence
+  energySource               String?
+  unwantedRelease            String?
+  personsExposed             String?
+  sifOutcome                 String?
+  relatedTaskId              String?
+  relatedJobStepId           String?
+  sclmClassification         String?
+  crewConfirmed              Boolean @default(false)
+  confirmedAt                DateTime?
+  whenPresent                String?
+  directControlSelections    JrbDirectControlSelection[]
+  notUsed                    DirectControlNotUsedReason[]
+  alternativeControls        JrbAlternativeControl[]
+  @@map("jrb_exposures")
+}
+
+model DirectControl {
+  id             String @id @default(uuid())
+  exactName      String
+  sourceRow      Int?
+  notes          String?
+  examples       String?
+  sourceVersion  String?
+  active         Boolean @default(true)
+  contentStatus  ContentStatus @default(staged)
+  sourceLocation String?
+  versions       DirectControlVersion[]
+  mappings       HighEnergyDirectControlMapping[]
+  selections     JrbDirectControlSelection[]
+  @@map("direct_controls")
+}
+
+model DirectControlVersion {
+  id               String @id @default(uuid())
+  directControlId  String
+  directControl    DirectControl @relation(fields: [directControlId], references: [id])
+  version          String
+  exactName        String
+  @@map("direct_control_versions")
+}
+
+model HighEnergyDirectControlMapping {
+  id               String @id @default(uuid())
+  exposureId       String
+  exposure         HighEnergyExposure @relation(fields: [exposureId], references: [id])
+  directControlId  String
+  directControl    DirectControl @relation(fields: [directControlId], references: [id])
+  contentStatus    ContentStatus @default(staged)
+  sourceLocation   String?
+  @@unique([exposureId, directControlId])
+  @@map("high_energy_direct_control_mappings")
+}
+
+model TaskDirectControlMapping {
+  id              String @id @default(uuid())
+  taskId          String
+  directControlId String
+  contentStatus   ContentStatus @default(unresolved)
+  @@unique([taskId, directControlId])
+  @@map("task_direct_control_mappings")
+}
+
+model JrbDirectControlSelection {
+  id                String @id @default(uuid())
+  jrbExposureId     String
+  jrbExposure       JrbExposure @relation(fields: [jrbExposureId], references: [id], onDelete: Cascade)
+  directControlId   String
+  directControl     DirectControl @relation(fields: [directControlId], references: [id])
+  planned           Boolean @default(true)
+  inPlace           Boolean @default(false)
+  checked           Boolean @default(false)
+  personResponsible String?
+  notes             String?
+  noLongerEffective Boolean @default(false)
+  verifications     DirectControlVerification[]
+  @@map("jrb_direct_control_selections")
+}
+
+model DirectControlVerification {
+  id              String @id @default(uuid())
+  selectionId     String
+  selection       JrbDirectControlSelection @relation(fields: [selectionId], references: [id], onDelete: Cascade)
+  method          String
+  personResponsible String?
+  verifiedAt      DateTime?
+  notes           String?
+  evidenceFileId  String?
+  status          String
+  @@map("direct_control_verifications")
+}
+
+model DirectControlNotUsedReason {
+  id             String @id @default(uuid())
+  jrbExposureId  String
+  jrbExposure    JrbExposure @relation(fields: [jrbExposureId], references: [id], onDelete: Cascade)
+  jrbId          String
+  jrbVersion     Int
+  jobStepId      String?
+  eeiTaskId      String?
+  reason         String
+  explanation    String
+  userId         String
+  reviewStatus   String @default("pending")
+  createdAt      DateTime @default(now())
+  @@map("direct_control_not_used_reasons")
+}
+
+model AlternativeControlCategory {
+  id              String @id @default(uuid())
+  exactName       String @unique
+  definitionExact String
+  examplesExact   String?
+  sourceAlsoCallsThis String?
+  contentStatus   ContentStatus @default(staged)
+  controls        AlternativeControl[]
+  jrbUses         JrbAlternativeControl[]
+  @@map("alternative_control_categories")
+}
+
+model AlternativeControl {
+  id           String @id @default(uuid())
+  categoryId   String
+  category     AlternativeControlCategory @relation(fields: [categoryId], references: [id])
+  exactName    String
+  sourceWording String?
+  contentStatus ContentStatus @default(staged)
+  versions     AlternativeControlVersion[]
+  @@map("alternative_controls")
+}
+
+model AlternativeControlVersion {
+  id                     String @id @default(uuid())
+  alternativeControlId   String
+  alternativeControl     AlternativeControl @relation(fields: [alternativeControlId], references: [id])
+  version                String
+  exactName              String
+  @@map("alternative_control_versions")
+}
+
+model JrbAlternativeControl {
+  id                   String @id @default(uuid())
+  jrbExposureId        String
+  jrbExposure          JrbExposure @relation(fields: [jrbExposureId], references: [id], onDelete: Cascade)
+  categoryId           String
+  category             AlternativeControlCategory @relation(fields: [categoryId], references: [id])
+  catalogControlId     String?
+  isOther              Boolean @default(false)
+  description          String
+  howReducesExposure   String?
+  howComplements       String?
+  owner                String?
+  verificationMethod   String?
+  keepInPlaceMethod    String?
+  startTime            DateTime?
+  endTimeOrRemoval     String?
+  residualExposure     String?
+  stopWorkTrigger      String?
+  supervisorReviewed   Boolean @default(false)
+  supervisorDecision   String?
+  proposedForLibrary   Boolean @default(false)
+  @@map("jrb_alternative_controls")
+}
+
+model PpeItem {
+  id            String @id @default(uuid())
+  exactName     String
+  sourceLocation String?
+  contentStatus ContentStatus @default(staged)
+  @@map("ppe_items")
+}
+
+model TaskPpeMapping {
+  id            String @id @default(uuid())
+  taskId        String
+  ppeItemId     String
+  contentStatus ContentStatus @default(unresolved)
+  @@unique([taskId, ppeItemId])
+  @@map("task_ppe_mappings")
+}
+
+model RegulatoryReference {
+  id              String @id @default(uuid())
+  regulationFamily String
+  citation        String
+  topic           String
+  applicability   String
+  approvedHelpText String
+  sourceUrl       String?
+  effectiveDate   DateTime?
+  contentOwner    String?
+  reviewStatus    ContentStatus @default(staged)
+  version         String
+  topics          RegulatoryTopic[]
+  @@map("regulatory_references")
+}
+
+model RegulatoryTopic {
+  id          String @id @default(uuid())
+  referenceId String
+  reference   RegulatoryReference @relation(fields: [referenceId], references: [id])
+  topic       String
+  @@map("regulatory_topics")
+}
+
+model TaskRegulatoryMapping {
+  id            String @id @default(uuid())
+  taskId        String
+  referenceId   String
+  contentStatus ContentStatus @default(unresolved)
+  @@map("task_regulatory_mappings")
+}
+
+model ConditionalQuestion {
+  id             String @id @default(uuid())
+  key            String @unique
+  promptExact    String
+  helpText       String?
+  workTypeCode   String?
+  activityName   String?
+  taskNameContains String?
+  contentStatus  ContentStatus @default(staged)
+  sourceLocation String?
+  @@map("conditional_questions")
+}
+
+model Approval {
+  id          String @id @default(uuid())
+  versionId   String
+  version     JrbVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  type        String
+  approverId  String?
+  decision    String
+  notes       String?
+  decidedAt   DateTime?
+  @@map("approvals")
+}
+
+model ApprovalRule {
+  id          String @id @default(uuid())
+  name        String
+  condition   Json
+  requiredRole RoleName
+  active      Boolean @default(true)
+  @@map("approval_rules")
+}
+
+model RebriefEvent {
+  id          String @id @default(uuid())
+  jrbId       String
+  jrb         JrbRecord @relation(fields: [jrbId], references: [id])
+  reason      String
+  explanation String?
+  fromVersion Int
+  toVersion   Int
+  userId      String
+  createdAt   DateTime @default(now())
+  @@map("rebrief_events")
+}
+
+model StopWorkEvent {
+  id                 String @id @default(uuid())
+  jrbId              String
+  jrb                JrbRecord @relation(fields: [jrbId], references: [id])
+  reason             String
+  explanation        String
+  initiatingUserId   String
+  relatedTaskOrStep  String?
+  immediateCondition String?
+  resolutionStatus   String @default("open")
+  createdAt          DateTime @default(now())
+  @@map("stop_work_events")
+}
+
+model EvidenceFile {
+  id            String @id @default(uuid())
+  versionId     String?
+  version       JrbVersion? @relation(fields: [versionId], references: [id])
+  association   String
+  originalName  String
+  storageKey    String
+  mimeType      String
+  sizeBytes     Int
+  scanStatus    String @default("pending")
+  createdAt     DateTime @default(now())
+  @@map("evidence_files")
+}
+
+model AiRecommendation {
+  id                    String @id @default(uuid())
+  versionId             String?
+  version               JrbVersion? @relation(fields: [versionId], references: [id])
+  kind                  String
+  userInput             String
+  originalTranscript    String?
+  suggestion            Json
+  provider              String
+  model                 String?
+  confidence            String?
+  recordsConsidered     Json?
+  userDecision          String?
+  confirmedResult       Json?
+  errorStatus           String?
+  createdAt             DateTime @default(now())
+  @@map("ai_recommendations")
+}
+
+model AuditEvent {
+  id           String @id @default(uuid())
+  userId       String?
+  user         User? @relation(fields: [userId], references: [id])
+  action       String
+  entityType   String
+  entityId     String?
+  originalValue Json?
+  newValue     Json?
+  createdAt    DateTime @default(now())
+  @@map("audit_events")
+}
+
+model ControlledContentSource {
+  id             String @id @default(uuid())
+  filename       String
+  sourceVersion  String?
+  effectiveDate  DateTime?
+  checksum       String?
+  storagePath    String?
+  notes          String?
+  imports        ControlledContentImport[]
+  @@map("controlled_content_sources")
+}
+
+model ControlledContentImport {
+  id             String @id @default(uuid())
+  sourceId       String
+  source         ControlledContentSource @relation(fields: [sourceId], references: [id])
+  importedById   String?
+  importedAt     DateTime @default(now())
+  report         Json
+  @@map("controlled_content_imports")
+}
+
+model ControlledContentException {
+  id             String @id @default(uuid())
+  code           String @unique
+  severity       String
+  status         String
+  topic          String
+  detail         String
+  createdAt      DateTime @default(now())
+  @@map("controlled_content_exceptions")
+}
+
+model HelpContent {
+  id         String @id @default(uuid())
+  term       String @unique
+  exactTerm  String
+  plainHelp  String
+  sourceNote String?
+  @@map("help_content")
+}
+
+model ConfigurationSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+  @@map("configuration_settings")
+}

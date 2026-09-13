@@ -1,0 +1,2554 @@
+{
+  "source": {
+    "filename": "EEI_Task_Libraries_-_All_work_types_7-21-2026 (2).pdf",
+    "originalFilenameNoted": "EEI Task Libraries - All work types_7-21-2026 (2).pdf",
+    "sourceVersion": "Approved Task Libraries, July 2026",
+    "effectiveDate": "2026-07-01",
+    "published": "2026",
+    "copyright": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+    "importDate": "2026-09-13T16:13:06.697916+00:00"
+  },
+  "definitions": {
+    "activity": {
+      "exactText": "An \u201cActivity\u201d is a grouping of tasks which can be customized for different use cases. The purpose of \u201cactivity\u201d in the task library hierarchy is to improve the user experience by grouping tasks in ways they find most useful.",
+      "sourceLocation": "EEI Task Libraries July 2026, page 7, What is an Activity?"
+    },
+    "task": {
+      "exactText": "A task is a combination of the action performed (e.g. install, remove, etc.), the asset that the action is performed on (material), and the work method used (tools and competency)",
+      "formula": "Task \u2192 Action Performed + Asset + Work Method (if needed) \u2192 E.g. Install or remove cable brackets",
+      "sourceLocation": "EEI Task Libraries July 2026, page 8, What is a Task?"
+    },
+    "hierarchy": [
+      "Work Type",
+      "Activity",
+      "Task",
+      "Work Method when needed"
+    ]
+  },
+  "operationalWorkTypesLoaded": [
+    {
+      "code": "ELECTRIC_DISTRIBUTION",
+      "exactName": "Electric Distribution",
+      "sourceLocation": "EEI Task Libraries July 2026, pages 12-16",
+      "activities": [
+        {
+          "exactName": "Excavate",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 13",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Prep work site",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 13",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Material handling",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 13-14",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Manhole or vault work",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 14",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Pole work",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 15",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Cable work",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 15",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Wire work",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 15",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Meter work",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 15",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Work on electrical equipment and devices",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 16",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Operate equipment",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 16",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ],
+      "tasks": [
+        {
+          "exactName": "Backfill (tamping, compacting, soil dumping)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Backfill (tamping, compacting, soil dumping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Grade (e.g. skid steer, bobcat, etc.)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Grade (e.g. skid steer, bobcat, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove protective systems (e.g. shoring, shielding, benching, sloping)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Install or remove protective systems (e.g. shoring, shielding, benching, sloping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove tieback",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Install or remove tieback'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Restore soft surface (e.g. seed, mulch, lime, sod, etc.)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Restore soft surface (e.g. seed, mulch, lime, sod, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Sample soil",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Excavate', Task 'Sample soil'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Assemble or demo scaffold",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Assemble or demo scaffold'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Clear and remove debris, vegetation, trees, or obstructions",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Clear and remove debris, vegetation, trees, or obstructions'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove fall protection system",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Install or remove fall protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove matting",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Install or remove matting'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove work area protection (i.e. traffic control)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Install or remove work area protection (i.e. traffic control)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Locate or mark-out",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Locate or mark-out'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Operate work area protection (i.e. flaggers)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Operate work area protection (i.e. flaggers)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Survey and stake",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Survey and stake'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13, Activity 'Prep work site', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Load or unload material or equipment",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13-14, Activity 'Material handling', Task 'Load or unload material or equipment'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Non-critical lift",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13-14, Activity 'Material handling', Task 'Rig and lift - Non-critical lift'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Critical lift with plan in place",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 13-14, Activity 'Material handling', Task 'Rig and lift - Critical lift with plan in place'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Enter or work in confined or enclosed space",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 14, Activity 'Manhole or vault work', Task 'Enter or work in confined or enclosed space'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 14, Activity 'Manhole or vault work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 14, Activity 'Manhole or vault work', Task 'Install or remove vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Maintain or inspect vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 14, Activity 'Manhole or vault work', Task 'Maintain or inspect vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Repair vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 14, Activity 'Manhole or vault work', Task 'Repair vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Climb pole",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Pole work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Pole work', Task 'Climb pole'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Inspect pole",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Pole work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Pole work', Task 'Inspect pole'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove anchor or guy",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Pole work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Pole work', Task 'Install or remove anchor or guy'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Pole work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Pole work', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove pole, crossarm, or brackets",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Pole work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Pole work', Task 'Install or remove pole, crossarm, or brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fault locate on cable (e.g. HIPOT)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Fault locate on cable (e.g. HIPOT)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove conduit or boring",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Install or remove conduit or boring'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, pull, maintain, or remove cable or elbow",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Install, pull, maintain, or remove cable or elbow'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Terminate and splice cable",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Terminate and splice cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot cable",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Cable work', Task 'Test, maintain, inspect, or troubleshoot cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fault locate on wire",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Fault locate on wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or transfer wire",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Install, remove, or transfer wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Terminate and splice wire",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Terminate and splice wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, patrol, or troubleshoot wire",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Test, maintain, inspect, patrol, or troubleshoot wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Wire work', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove current transformer (CT) and potential transformer (PT) metering",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Meter work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Meter work', Task 'Install or remove current transformer (CT) and potential transformer (PT) metering'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Meter work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Meter work', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove meter",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Meter work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Meter work', Task 'Install or remove meter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test or inspect meter",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Meter work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 15, Activity 'Meter work', Task 'Test or inspect meter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, capacitor) - Underground",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, capacitor) - Underground'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove fault indicator",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install or remove fault indicator'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair pad or foundation",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install, remove, or repair pad or foundation'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot equipment or devices (sectionalizer, recloser, switch, arrestor, insulator, regulator, capacitor, or distribution xfmr)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Test, maintain, inspect, or troubleshoot equipment or devices (sectionalizer, recloser, switch, arrestor, insulator, regulator, capacitor, or distribution xfmr)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Work on electrical equipment and devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Work on electrical equipment and devices', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Change settings / taps on device (e.g. regulator, inverter, capacitor, etc.)",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Change settings / taps on device (e.g. regulator, inverter, capacitor, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Conduct load check or phasing",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Conduct load check or phasing'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Connect or pull elbows",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Connect or pull elbows'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Cut conductors in the clear",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Cut conductors in the clear'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Cut in floats or bells",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Cut in floats or bells'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Energize or de-energize a circuit",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Energize or de-energize a circuit'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove taps",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Install or remove taps'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Open, close, or bypass cutout, switch, recloser, fuse, or sectionalizer",
+          "workTypeCode": "ELECTRIC_DISTRIBUTION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 16, Activity 'Operate equipment', Task 'Open, close, or bypass cutout, switch, recloser, fuse, or sectionalizer'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ]
+    },
+    {
+      "code": "ELECTRIC_TRANSMISSION",
+      "exactName": "Electric Transmission",
+      "sourceLocation": "EEI Task Libraries July 2026, pages 17-21",
+      "activities": [
+        {
+          "exactName": "Excavate",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 18",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Prep work site",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 18",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Material handling",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 18-19",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Manhole or vault work",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 19",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Wire work",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 20",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Cable work",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 20",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Structure work",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 21",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Work on line hardware or devices",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 21",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ],
+      "tasks": [
+        {
+          "exactName": "Backfill (tamping, compacting, soil dumping)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Backfill (tamping, compacting, soil dumping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Grade (e.g. skid steer, bobcat, etc.)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Grade (e.g. skid steer, bobcat, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove protective systems (e.g. shoring, shielding, benching, sloping)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Install or remove protective systems (e.g. shoring, shielding, benching, sloping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove tieback",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Install or remove tieback'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Restore soft surface (e.g. seed, mulch, lime, sod, etc.)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Restore soft surface (e.g. seed, mulch, lime, sod, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Sample soil",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Excavate', Task 'Sample soil'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Assemble or demo scaffold",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Assemble or demo scaffold'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Clear and remove debris, vegetation, trees, or obstructions",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Clear and remove debris, vegetation, trees, or obstructions'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove fall protection system",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Install or remove fall protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove matting",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Install or remove matting'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove work area protection (i.e. traffic control)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Install or remove work area protection (i.e. traffic control)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Operate work area protection (i.e. flaggers)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Operate work area protection (i.e. flaggers)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Locate or mark-out",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Locate or mark-out'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Survey and stake",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Survey and stake'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18, Activity 'Prep work site', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Load or unload material or equipment",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18-19, Activity 'Material handling', Task 'Load or unload material or equipment'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Non-critical lift",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18-19, Activity 'Material handling', Task 'Rig and lift - Non-critical lift'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Critical lift with plan in place",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 18-19, Activity 'Material handling', Task 'Rig and lift - Critical lift with plan in place'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Enter or work in confined or enclosed space",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 19, Activity 'Manhole or vault work', Task 'Enter or work in confined or enclosed space'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 19, Activity 'Manhole or vault work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 19, Activity 'Manhole or vault work', Task 'Install or remove vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Maintain or inspect vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 19, Activity 'Manhole or vault work', Task 'Maintain or inspect vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Repair vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 19, Activity 'Manhole or vault work', Task 'Repair vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, sag, dead end, transfer, or remove wire",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Install, sag, dead end, transfer, or remove wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Terminate and splice wire",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Terminate and splice wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot wire",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Test, maintain, inspect, or troubleshoot wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fault locate on wire",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Fault locate on wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Aerial work from helicopter",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Aerial work from helicopter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Aerial inspection from helicopter",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Aerial inspection from helicopter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Wire work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Wire work', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove conduit, duct bank, or cable trenches",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Install or remove conduit, duct bank, or cable trenches'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, pull, maintain, or remove cable or elbow",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Install, pull, maintain, or remove cable or elbow'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Terminate and splice cable",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Terminate and splice cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot cable",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Test, maintain, inspect, or troubleshoot cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fault locate on cable (e.g. HIPOT)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Fault locate on cable (e.g. HIPOT)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 20, Activity 'Cable work', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove transmission structure (e.g. tower, pole)",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove transmission structure (e.g. tower, pole)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove down guys",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove down guys'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cathodic protection system",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove cathodic protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair pad or foundation",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install, remove, or repair pad or foundation'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Inspect and maintain structure and foundation",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Inspect and maintain structure and foundation'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or maintain tower lights",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install, remove, or maintain tower lights'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Climb structure",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Climb structure'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Aerial work from helicopter",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Aerial work from helicopter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Aerial inspection from helicopter",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Aerial inspection from helicopter'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove fall protection system",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove fall protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or replace fencing",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install, remove, or replace fencing'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Structure work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Structure work', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arrestor",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove arrestor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove capacitor or reactor",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove capacitor or reactor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove insulator",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove insulator'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove switch",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove switch'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cathodic protection system",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove cathodic protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove aerial markers",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove aerial markers'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot arrestor",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Test, maintain, inspect, or troubleshoot arrestor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot capacitor or reactor",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Test, maintain, inspect, or troubleshoot capacitor or reactor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot insulator",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Test, maintain, inspect, or troubleshoot insulator'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot switch",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Test, maintain, inspect, or troubleshoot switch'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot cathodic protection system",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Test, maintain, inspect, or troubleshoot cathodic protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_TRANSMISSION",
+          "activityExactName": "Work on line hardware or devices",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 21, Activity 'Work on line hardware or devices', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ]
+    },
+    {
+      "code": "ELECTRIC_SUBSTATION",
+      "exactName": "Electric Substation",
+      "sourceLocation": "EEI Task Libraries July 2026, pages 22-27",
+      "activities": [
+        {
+          "exactName": "Excavate",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 23",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Prep work site",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 23",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Material handling",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 23-24",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Manhole or vault work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 24",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Foundation and civil work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 25",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Ground grid work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 25",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Metal clad switchgear work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 25",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Wire and bus work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 25",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Cable work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 25",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Work on equipment and devices (open air)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 26",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Relay work",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 26",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Operate equipment",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "sourceLocation": "EEI Task Libraries July 2026, pages 27",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ],
+      "tasks": [
+        {
+          "exactName": "Backfill (tamping, compacting, soil dumping)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Backfill (tamping, compacting, soil dumping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Grade (e.g. skid steer, bobcat, etc.)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Grade (e.g. skid steer, bobcat, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove protective systems (e.g. shoring, shielding, benching, sloping)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Install or remove protective systems (e.g. shoring, shielding, benching, sloping)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove tieback",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Install or remove tieback'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Non-mechanical excavation (e.g. vacuum truck, hand dig, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Restore soft surface (e.g. seed, mulch, lime, sod, etc.)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Restore soft surface (e.g. seed, mulch, lime, sod, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Sample soil",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Excavate",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Excavate', Task 'Sample soil'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Assemble or demo scaffold",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Assemble or demo scaffold'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Clear and remove debris, vegetation, trees, or obstructions",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Clear and remove debris, vegetation, trees, or obstructions'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove fall protection system",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Install or remove fall protection system'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove live line insulation, cover up, or rubber goods",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Install or remove live line insulation, cover up, or rubber goods'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove matting",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Install or remove matting'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove work area protection (i.e. traffic control)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Install or remove work area protection (i.e. traffic control)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Operate work area protection (i.e. flaggers)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Operate work area protection (i.e. flaggers)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Locate or mark-out",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Locate or mark-out'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Survey and stake",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Survey and stake'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Prep work site",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23, Activity 'Prep work site', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Load or unload material or equipment",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23-24, Activity 'Material handling', Task 'Load or unload material or equipment'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Non-critical lift",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23-24, Activity 'Material handling', Task 'Rig and lift - Non-critical lift'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rig and lift - Critical lift with plan in place",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Material handling",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 23-24, Activity 'Material handling', Task 'Rig and lift - Critical lift with plan in place'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Enter or work in confined or enclosed space",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 24, Activity 'Manhole or vault work', Task 'Enter or work in confined or enclosed space'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 24, Activity 'Manhole or vault work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 24, Activity 'Manhole or vault work', Task 'Install or remove vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Maintain or inspect vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 24, Activity 'Manhole or vault work', Task 'Maintain or inspect vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Repair vault, manhole, or pad",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Manhole or vault work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 24, Activity 'Manhole or vault work', Task 'Repair vault, manhole, or pad'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair pad or foundation",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Foundation and civil work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Foundation and civil work', Task 'Install, remove, or repair pad or foundation'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair spill containment",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Foundation and civil work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Foundation and civil work', Task 'Install, remove, or repair spill containment'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove conduit, duct bank, or cable trenches",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Foundation and civil work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Foundation and civil work', Task 'Install or remove conduit, duct bank, or cable trenches'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fabricate, alter, assemble, or remove structure",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Foundation and civil work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Foundation and civil work', Task 'Fabricate, alter, assemble, or remove structure'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair fencing",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Foundation and civil work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Foundation and civil work', Task 'Install, remove, or repair fencing'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair ground grid",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Ground grid work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Ground grid work', Task 'Install, remove, or repair ground grid'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test ground grid",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Ground grid work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Ground grid work', Task 'Test ground grid'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove metal clad switchgear",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Install or remove metal clad switchgear'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, or inspect bus work (metal clad switchgear)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Test, maintain, or inspect bus work (metal clad switchgear)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, or inspect circuit breaker (metal clad switchgear)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Test, maintain, or inspect circuit breaker (metal clad switchgear)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, or inspect PT and CT (metal clad switchgear)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Test, maintain, or inspect PT and CT (metal clad switchgear)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, or inspect switchgear cubicle (metal clad switchgear)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Test, maintain, or inspect switchgear cubicle (metal clad switchgear)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, or inspect ground and test device (metal clad switchgear)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Test, maintain, or inspect ground and test device (metal clad switchgear)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or repair equipment grounding lead",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Metal clad switchgear work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Metal clad switchgear work', Task 'Install or repair equipment grounding lead'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or maintain bus work (flexible / hard)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Wire and bus work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Wire and bus work', Task 'Install, remove, or maintain bus work (flexible / hard)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove primary wire",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Wire and bus work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Wire and bus work', Task 'Install or remove primary wire'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Wire and bus work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Wire and bus work', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove conduit, duct bank, or cable trenches",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Install or remove conduit, duct bank, or cable trenches'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, pull, maintain, or remove cable or elbow",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Install, pull, maintain, or remove cable or elbow'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Terminate and splice cable",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Terminate and splice cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove cable brackets",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Install or remove cable brackets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot cable",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Test, maintain, inspect, or troubleshoot cable'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Fault locate on cable (e.g. HIPOT)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Fault locate on cable (e.g. HIPOT)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove arc flash blankets",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Cable work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 25, Activity 'Cable work', Task 'Install or remove arc flash blankets'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove transformer or regulator",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove transformer or regulator'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove circuit breaker",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove circuit breaker'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove capacitor bank",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove capacitor bank'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove switch, ground switch, or motor operated disconnect (MOD)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove switch, ground switch, or motor operated disconnect (MOD)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove wiring, CCVT, CT, PT, or lightning arrestor",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove wiring, CCVT, CT, PT, or lightning arrestor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove wave trap",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove wave trap'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove reactor",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove reactor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install, remove, or repair cable trays",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install, remove, or repair cable trays'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot transformer or regulator",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot transformer or regulator'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot circuit breaker",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot circuit breaker'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot capacitor bank",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot capacitor bank'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot switch, ground switch, or motor operated disconnect (MOD)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot switch, ground switch, or motor operated disconnect (MOD)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot wiring, CCVT, CT, PT, or lightning arrestor",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot wiring, CCVT, CT, PT, or lightning arrestor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot wave trap",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot wave trap'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot reactor",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Test, maintain, inspect, or troubleshoot reactor'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Work on equipment and devices (open air)",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Work on equipment and devices (open air)', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove relay",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Install or remove relay'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove relay panel",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Install or remove relay panel'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove station batteries and chargers",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Install or remove station batteries and chargers'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot relay",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Test, maintain, inspect, or troubleshoot relay'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot relay panel",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Test, maintain, inspect, or troubleshoot relay panel'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Test, maintain, inspect, or troubleshoot station batteries and chargers",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Relay work",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 26, Activity 'Relay work', Task 'Test, maintain, inspect, or troubleshoot station batteries and chargers'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Conduct load check or phasing",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Conduct load check or phasing'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Install or remove grounding",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Install or remove grounding'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Open or close circuit breaker",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Open or close circuit breaker'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Open or close switch, ground switch, or motor operated disconnect (MOD)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Open or close switch, ground switch, or motor operated disconnect (MOD)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Change taps on device (e.g. transformer, load tap changer, regulator, etc.)",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Change taps on device (e.g. transformer, load tap changer, regulator, etc.)'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        },
+        {
+          "exactName": "Rack-in or rack-out circuit breaker",
+          "workTypeCode": "ELECTRIC_SUBSTATION",
+          "activityExactName": "Operate equipment",
+          "workMethod": null,
+          "version": "2026-07",
+          "status": "active",
+          "sourceLocation": "EEI Task Libraries July 2026, page 27, Activity 'Operate equipment', Task 'Rack-in or rack-out circuit breaker'",
+          "sourceAttribution": "\u00a9 2026 by the Edison Electric Institute (EEI) and Itron. All rights reserved. Published 2026.",
+          "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH"
+        }
+      ]
+    }
+  ],
+  "preservedInImportHistoryNotLoadedToFieldApp": [
+    "Gas Distribution & Regulator Station (pages 28-32)",
+    "Gas Plant and Gate Station (pages 33-38)",
+    "Generation - Gas Simple Cycle (pages 39-45)",
+    "Generation - Gas Combined Cycle (pages 46-54)",
+    "Generation - Gas Boiler (pages 55-62)",
+    "Generation - Gas - Reciprocating Internal Combustion Engine (RICE) (pages 63-68)",
+    "Generation - Diesel (pages 69-74)",
+    "Generation - Solid Fuel - Coal, Biomass, Refuse Drive Fuel (RDF) (pages 75-82)",
+    "Generation - Nuclear (pages 83-90)",
+    "Vegetation Management (pages 91-93)",
+    "Fleet Work (pages 94-99)",
+    "Supply Chain and Warehouse (pages 100-103)",
+    "Renewable Generation - Solar (pages 104-116)",
+    "Renewable Generation - Wind (pages 117-121)",
+    "Renewable Generation - Hydroelectric (pages 122-129)",
+    "Renewable Generation - Battery (pages 130-136)"
+  ]
+}

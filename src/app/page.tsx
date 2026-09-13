@@ -1,9 +1,8 @@
-import { NavigationShell } from "@/components/navigation/NavigationShell";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth/session";
 
-export default function Home() {
-  return (
-    <main className="flex-1">
-      <NavigationShell />
-    </main>
-  );
+export default async function Home() {
+  const user = await getSessionUser();
+  if (!user) redirect("/sign-in");
+  redirect("/briefs");
 }

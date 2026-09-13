@@ -1,0 +1,51 @@
+{
+  "source": {
+    "filename": "cc21cf_f6f373a62bf34aaa9b7aa3bb05be5750.pdf",
+    "title": "High Energy: Controlling the Uncontrollable",
+    "attributionVisible": "CSRA CONSTRUCTION SAFETY RESEARCH ALLIANCE",
+    "pages": 1,
+    "importDate": "2026-09-13T16:13:06.698080+00:00"
+  },
+  "directControlRequirementsExact": [
+    "Specifically targeted to the High Energy source",
+    "Effectively mitigates exposure to High Energy when installed, verified, and used properly",
+    "Effective when someone makes a mistake"
+  ],
+  "ruleExact": "When a Direct Control is not feasible, there must be at least 2 Alternative Controls, from at least 2 or more of the following categories: Physical Obstacle, Direct Monitoring, and Visual Reminder.",
+  "alternativeControlsDefinitionExact": "Alternative Controls are a system of complementary controls that reduce the likelihood of human error.",
+  "categoryLabelDiscrepancy": {
+    "bodyTextUses": "Direct Monitoring",
+    "categoryCardUses": "Dedicated Monitoring",
+    "applicationFieldLabel": "Dedicated Monitoring",
+    "status": "Administrator Review Required \u2014 source uses both terms on the same page"
+  },
+  "categories": [
+    {
+      "exactName": "Physical Obstacle",
+      "definitionExact": "An obstruction that blocks the path or hinders progress toward a high energy hazard",
+      "examplesExact": "Example: Cones with toppers, danger tape, barriers around equipment"
+    },
+    {
+      "exactName": "Dedicated Monitoring",
+      "definitionExact": "Devoted and continuous attention to the high energy hazard",
+      "examplesExact": "Example: Monitoring alarms, proximity detection devices with two 2-way warnings, spotter (refer to rule 5 and 7)*",
+      "sourceAlsoCallsThis": "Direct Monitoring"
+    },
+    {
+      "exactName": "Visual Reminder",
+      "definitionExact": "A visible warning of the presence of the high energy hazard",
+      "examplesExact": "Example: Signage (refer to rule 8)*, temporary traffic lights, painted lines"
+    }
+  ],
+  "footerStatementsExact": [
+    "are relevant only when they are in place during the work",
+    "are a placeholder as we aspire to the Direct Control of the high-energy",
+    "are primarily designed to mitigate human errors rather than solely reducing energy levels",
+    "should require supporting processes such as JSAs, Pre-job briefs or permits"
+  ],
+  "unresolved": [
+    "QR code labeled 'Access Alternative Controls rules' could not be resolved to an importable rule set from the provided PDF.",
+    "Rules 5, 7, and 8 referenced in examples are not contained in the one-page PDF.",
+    "Infographic includes an 'Energy Calculations' / Other High Energy icon that is not a DC Inventory Logic View column and is not used as an operational High Energy record."
+  ]
+}

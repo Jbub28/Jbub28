@@ -1,16 +1,20 @@
 import type { NextConfig } from "next";
 
-const isCapacitorBuild = process.env.CAPACITOR_BUILD === "1";
-
 const nextConfig: NextConfig = {
-  ...(isCapacitorBuild
-    ? {
-        output: "export",
-        trailingSlash: true,
-      }
-    : {}),
-  images: {
-    unoptimized: isCapacitorBuild,
+  poweredByHeader: false,
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self)" },
+        ],
+      },
+    ];
   },
 };
 

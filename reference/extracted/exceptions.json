@@ -1,0 +1,96 @@
+{
+  "exceptions": [
+    {
+      "id": "EXC-001",
+      "severity": "high",
+      "status": "Administrator Review Required",
+      "topic": "Original Excel workbooks not provided",
+      "detail": "The authoritative request named AIC 2024 Electric Job Briefing Form.xlsx and DC Inventory_v1 (5).xlsx. The files received were PDF conversions. Worksheet names, hidden columns, data-validation lists, and Logic View filters from Excel could not be inspected."
+    },
+    {
+      "id": "EXC-002",
+      "severity": "high",
+      "status": "Administrator Review Required",
+      "topic": "DC Inventory header OCR",
+      "detail": "High Energy column headers in DC_Inventory_v1 (5).pdf are rotated and were not reliably machine-readable. Column order was reconstructed from X-mark alignment plus the 14 High Energy exposures listed in the inventory. Canonical field labels prefer Job Briefing Form icon text where an icon exists. Do not treat reconstructed headers as a substitute for the original xlsx."
+    },
+    {
+      "id": "EXC-003",
+      "severity": "high",
+      "status": "Unresolved",
+      "topic": "No task-to-High Energy production mapping in sources",
+      "detail": "EEI Task Libraries do not contain High Energy mappings. No production task-to-exposure map is published. The mapping table exists for administrator review only."
+    },
+    {
+      "id": "EXC-004",
+      "severity": "high",
+      "status": "Unresolved",
+      "topic": "No task-to-Direct Control production mapping in sources",
+      "detail": "Direct Controls are filtered by High Energy Logic View mapping only until a task-specific mapping is approved."
+    },
+    {
+      "id": "EXC-005",
+      "severity": "medium",
+      "status": "Administrator Review Required",
+      "topic": "Dedicated Monitoring vs Direct Monitoring",
+      "detail": "cc21cf PDF body text says 'Direct Monitoring'; the category card label and definition header say 'Dedicated Monitoring'. Field UI uses the card label 'Dedicated Monitoring' and stores the discrepancy."
+    },
+    {
+      "id": "EXC-006",
+      "severity": "medium",
+      "status": "Unresolved",
+      "topic": "Alternative Control rules 5, 7, 8 and QR target",
+      "detail": "Examples refer to rule 5, 7, and 8 and a QR code 'Access Alternative Controls rules'. Those rules are not in the provided one-page PDF and were not imported."
+    },
+    {
+      "id": "EXC-007",
+      "severity": "medium",
+      "status": "Unresolved",
+      "topic": "Gas detection monitoring unmapped",
+      "detail": "Direct Control 'Gas detection monitoring' had no extractable High Energy X-mark in the PDF Logic View. Record staged with zero mappings."
+    },
+    {
+      "id": "EXC-008",
+      "severity": "medium",
+      "status": "Administrator Review Required",
+      "topic": "High Energy label variants across sources",
+      "detail": "Job Briefing Form icon captions differ in wording from DC Inventory column names (e.g. Fall from Elevation \u2265 4' vs Fall from greater than 4 feet). Both exact strings are stored. Field cards show the form icon + form caption. Mapping uses DC inventory keys."
+    },
+    {
+      "id": "EXC-009",
+      "severity": "low",
+      "status": "Unresolved",
+      "topic": "Swinging load icon missing",
+      "detail": "Swinging load is a DC Inventory Logic View column. No matching icon exists on the Job Briefing Form. A labeled placeholder is used."
+    },
+    {
+      "id": "EXC-010",
+      "severity": "low",
+      "status": "Unresolved",
+      "topic": "SCLM classification table not in attachments",
+      "detail": "No SCLM classification catalog was present in the four files. The field label is 'Serious Injury or Fatality Potential'. SCLM acronym is help-only. Classification values require administrator-authored content."
+    },
+    {
+      "id": "EXC-011",
+      "severity": "low",
+      "status": "Note",
+      "topic": "Worker in Charge vs Employee in Charge",
+      "detail": "The form uses 'Worker in Charge'. The application role is 'Employee in Charge'. Both terms are stored; the field workflow uses Employee in Charge as specified for the product."
+    },
+    {
+      "id": "EXC-012",
+      "severity": "medium",
+      "status": "Unresolved",
+      "topic": "No approved PPE-to-task mappings",
+      "detail": "PPE items are imported from the form list. AI must not independently determine PPE. Suggestions require an approved mapping which does not exist in the sources."
+    }
+  ],
+  "counts": {
+    "distributionTasks": 65,
+    "transmissionTasks": 66,
+    "substationTasks": 78,
+    "directControls": 44,
+    "highEnergyFormIcons": 13,
+    "highEnergyDcColumns": 14
+  }
+}

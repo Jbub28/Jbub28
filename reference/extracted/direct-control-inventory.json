@@ -1,0 +1,625 @@
+{
+  "source": {
+    "filename": "DC_Inventory_v1 (5).pdf",
+    "originalFilenameNoted": "DC Inventory_v1 (5).xlsx",
+    "sourceVersion": "v1",
+    "sheetsAvailableInProvidedFile": [
+      "single rendered Logic View page (PDF conversion)"
+    ],
+    "xlsxWorksheetsNotAvailable": true,
+    "directControlDefinitionExact": "Direct Control: (1) Targeted at high energy, (2) effective when installed, verified, and used properly, (3) Not vulnerable to human error",
+    "importDate": "2026-09-13T16:13:06.698054+00:00"
+  },
+  "highEnergyColumns": [
+    {
+      "key": "suspended_load",
+      "dcInventoryColumnLabel": "Suspended load",
+      "formKey": "suspended_load"
+    },
+    {
+      "key": "swinging_load",
+      "dcInventoryColumnLabel": "Swinging load",
+      "formKey": null
+    },
+    {
+      "key": "fall_from_elevation_4ft",
+      "dcInventoryColumnLabel": "Fall from greater than 4 feet",
+      "formKey": "fall_from_elevation_4ft"
+    },
+    {
+      "key": "mobile_equipment_workers_on_foot",
+      "dcInventoryColumnLabel": "Mobile equipment and workers on foot",
+      "formKey": "mobile_equipment_workers_on_foot"
+    },
+    {
+      "key": "motor_vehicle_over_30mph",
+      "dcInventoryColumnLabel": "Motor vehicle operation over 30 mph",
+      "formKey": "motor_vehicle_over_30mph"
+    },
+    {
+      "key": "heavy_rotating_equipment",
+      "dcInventoryColumnLabel": "Heavy rotating equipment",
+      "formKey": "heavy_rotating_equipment"
+    },
+    {
+      "key": "high_temperature_150f",
+      "dcInventoryColumnLabel": "Surface temperatures over 150 degrees Fahrenheit",
+      "formKey": "high_temperature_150f"
+    },
+    {
+      "key": "steam",
+      "dcInventoryColumnLabel": "Steam",
+      "formKey": "steam"
+    },
+    {
+      "key": "fire_sustained_fuel",
+      "dcInventoryColumnLabel": "Fire with sustained fuel source",
+      "formKey": "fire_sustained_fuel"
+    },
+    {
+      "key": "explosion",
+      "dcInventoryColumnLabel": "Explosion",
+      "formKey": "explosion"
+    },
+    {
+      "key": "excavation_trench_5ft",
+      "dcInventoryColumnLabel": "Excavation or trench 5 feet deep or greater",
+      "formKey": "excavation_trench_5ft"
+    },
+    {
+      "key": "electrical_contact_50v",
+      "dcInventoryColumnLabel": "Electrical contact with 50 volts or greater",
+      "formKey": "electrical_contact_50v"
+    },
+    {
+      "key": "arc_flash",
+      "dcInventoryColumnLabel": "Arc flash",
+      "formKey": "arc_flash"
+    },
+    {
+      "key": "toxic_chemical_radiation",
+      "dcInventoryColumnLabel": "High dose of toxic chemical or radiation",
+      "formKey": "toxic_chemical_radiation"
+    }
+  ],
+  "directControls": [
+    {
+      "exactName": "Automatic collision avoidance or shutoff system",
+      "sourceRow": 1,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "mobile_equipment_workers_on_foot",
+        "motor_vehicle_over_30mph"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 1: Automatic collision avoidance or shutoff system"
+    },
+    {
+      "exactName": "Automatic fire suppression system",
+      "sourceRow": 2,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "fire_sustained_fuel",
+        "explosion"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 2: Automatic fire suppression system"
+    },
+    {
+      "exactName": "Automatic shutoff system",
+      "sourceRow": 3,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "high_temperature_150f",
+        "steam",
+        "fire_sustained_fuel",
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 3: Automatic shutoff system"
+    },
+    {
+      "exactName": "Blast blankets",
+      "sourceRow": 4,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "explosion",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 4: Blast blankets"
+    },
+    {
+      "exactName": "Bonding and grounding",
+      "sourceRow": 5,
+      "notesAndExamples": "Prevents static discharge of explosive chemicals.",
+      "mappedHighEnergyKeys": [
+        "explosion"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 5: Bonding and grounding"
+    },
+    {
+      "exactName": "Covers over holes",
+      "sourceRow": 6,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "fall_from_elevation_4ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 6: Covers over holes"
+    },
+    {
+      "exactName": "De-energization w/ zero voltage check and grounding",
+      "sourceRow": 7,
+      "notesAndExamples": "Example: For potential wildfire ignition; gas operations; clearance including switching and tagging",
+      "mappedHighEnergyKeys": [
+        "fire_sustained_fuel",
+        "explosion",
+        "electrical_contact_50v",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 7: De-energization w/ zero voltage check and grounding"
+    },
+    {
+      "exactName": "Electrical insulation barriers",
+      "sourceRow": 8,
+      "notesAndExamples": "Examples: Pole guard, blankets, covers, line hoses",
+      "mappedHighEnergyKeys": [
+        "electrical_contact_50v",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 8: Electrical insulation barriers"
+    },
+    {
+      "exactName": "Energy isolation where LOTO is not required",
+      "sourceRow": 9,
+      "notesAndExamples": "Examples: Shutting a valve, squeezing and blocking *Does not include LOTO applied. Only applicable where LOTO is not required. Unplugging equipment,",
+      "mappedHighEnergyKeys": [
+        "heavy_rotating_equipment",
+        "steam",
+        "fire_sustained_fuel",
+        "explosion",
+        "electrical_contact_50v",
+        "arc_flash",
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 9: Energy isolation where LOTO is not required"
+    },
+    {
+      "exactName": "Equipotential zones (EPZ)",
+      "sourceRow": 10,
+      "notesAndExamples": "Energy type: Induction",
+      "mappedHighEnergyKeys": [
+        "electrical_contact_50v",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 10: Equipotential zones (EPZ)"
+    },
+    {
+      "exactName": "Excavation support system",
+      "sourceRow": 11,
+      "notesAndExamples": "Examples: Shoring, sheet piles, soldier piles",
+      "mappedHighEnergyKeys": [
+        "excavation_trench_5ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 11: Excavation support system"
+    },
+    {
+      "exactName": "Fall arrest system*",
+      "sourceRow": 12,
+      "notesAndExamples": "Examples: Self retracting lifeline, netting system, ladder safety system. * Check integrity of the tie-off",
+      "mappedHighEnergyKeys": [
+        "fall_from_elevation_4ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 12: Fall arrest system*"
+    },
+    {
+      "exactName": "Fall restraint system*",
+      "sourceRow": 13,
+      "notesAndExamples": "* Check integrity of the tie-off",
+      "mappedHighEnergyKeys": [
+        "fall_from_elevation_4ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 13: Fall restraint system*"
+    },
+    {
+      "exactName": "Fuel source separation",
+      "sourceRow": 14,
+      "notesAndExamples": "Example: Static spray, wet rag, removal of combustibles",
+      "mappedHighEnergyKeys": [
+        "fire_sustained_fuel",
+        "explosion"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 14: Fuel source separation"
+    },
+    {
+      "exactName": "Gas detection monitoring",
+      "sourceRow": 15,
+      "notesAndExamples": "UNRESOLVED: no High Energy X-mark extracted from Logic View PDF. Administrator Review Required.",
+      "mappedHighEnergyKeys": [],
+      "active": true,
+      "contentStatus": "UNRESOLVED",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 15: Gas detection monitoring"
+    },
+    {
+      "exactName": "Hard physical barrier - to stop equipment/vehicles",
+      "sourceRow": 16,
+      "notesAndExamples": "Examples: Jersey barriers and work vehicle positioning",
+      "mappedHighEnergyKeys": [
+        "mobile_equipment_workers_on_foot",
+        "explosion"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 16: Hard physical barrier - to stop equipment/vehicles"
+    },
+    {
+      "exactName": "Highway rated vehicle w/ seatbelt",
+      "sourceRow": 17,
+      "notesAndExamples": "Examples: Roll cage, seat belt and airbag systems.",
+      "mappedHighEnergyKeys": [
+        "motor_vehicle_over_30mph"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 17: Highway rated vehicle w/ seatbelt"
+    },
+    {
+      "exactName": "Insulated or voltage-rated equipment and tools",
+      "sourceRow": 18,
+      "notesAndExamples": "Examples: Insulated sticks, booms, hot arms, hot line sticks.",
+      "mappedHighEnergyKeys": [
+        "electrical_contact_50v",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 18: Insulated or voltage-rated equipment and tools"
+    },
+    {
+      "exactName": "Interlocks",
+      "sourceRow": 19,
+      "notesAndExamples": "Examples: Area curtains, 2 hand switches, pressure sensors on hydraulics. *Automatically detects and stops energy release.= or proximity.",
+      "mappedHighEnergyKeys": [
+        "heavy_rotating_equipment",
+        "high_temperature_150f"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 19: Interlocks"
+    },
+    {
+      "exactName": "Limitors/stabilizer that eliminates lateral motion",
+      "sourceRow": 20,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "swinging_load"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 20: Limitors/stabilizer that eliminates lateral motion"
+    },
+    {
+      "exactName": "Local exhaust ventilation",
+      "sourceRow": 21,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 21: Local exhaust ventilation"
+    },
+    {
+      "exactName": "Lock-out tag-out applied",
+      "sourceRow": 22,
+      "notesAndExamples": "Prevents unintended equipment operation or switch access. Isolate, test, and ground, Tags+ (tagging with other physical element to prevent energization)",
+      "mappedHighEnergyKeys": [
+        "heavy_rotating_equipment",
+        "steam",
+        "fire_sustained_fuel",
+        "explosion",
+        "electrical_contact_50v",
+        "arc_flash",
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 22: Lock-out tag-out applied"
+    },
+    {
+      "exactName": "Machine guards",
+      "sourceRow": 23,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "heavy_rotating_equipment"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 23: Machine guards"
+    },
+    {
+      "exactName": "Mechanical pressure release devices",
+      "sourceRow": 24,
+      "notesAndExamples": "Examples: Rupture discs, shear pins.",
+      "mappedHighEnergyKeys": [
+        "explosion"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 24: Mechanical pressure release devices"
+    },
+    {
+      "exactName": "Rated panel enclosure",
+      "sourceRow": 25,
+      "notesAndExamples": "For Explosion, due to combustible dust areas. Example: MCC, Metal clad switchgear. Panel enclosure is related to and installed for the hazard present.",
+      "mappedHighEnergyKeys": [
+        "explosion",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 25: Rated panel enclosure"
+    },
+    {
+      "exactName": "Vehicle w/ Rollover Protection and Seatbelt",
+      "sourceRow": 26,
+      "notesAndExamples": "Examples: UTV, ATV, forklifts, bulldozers.",
+      "mappedHighEnergyKeys": [
+        "motor_vehicle_over_30mph"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 26: Vehicle w/ Rollover Protection and Seatbelt"
+    },
+    {
+      "exactName": "PPE Specialized - Arc rated and coverage per requirements",
+      "sourceRow": 27,
+      "notesAndExamples": "Examples: FR clothing, flash-rated equipment including suit, glasses, face shield, etc. Requirements based on system configuration and arc hazard analysis. Change made to include \"requirement\" rather than full coverage because SIFs are not happening when required coverage is present (to be verified)",
+      "mappedHighEnergyKeys": [
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 27: PPE Specialized - Arc rated and coverage per requirements"
+    },
+    {
+      "exactName": "PPE Specialized - Chemical or radiation rated",
+      "sourceRow": 28,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 28: PPE Specialized - Chemical or radiation rated"
+    },
+    {
+      "exactName": "PPE Specialized - Electrical (Insulating gloves, sleeves, dielectric footwear,etc. )",
+      "sourceRow": 29,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "electrical_contact_50v"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 29: PPE Specialized - Electrical (Insulating gloves, sleeves, dielectric footwear,etc. )"
+    },
+    {
+      "exactName": "PPE Specialized - Heat resistant clothing",
+      "sourceRow": 30,
+      "notesAndExamples": "Examples: FR clothing, thermal suits, Kevlar sleeves, gloves, leathers for welding etc.",
+      "mappedHighEnergyKeys": [
+        "high_temperature_150f"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 30: PPE Specialized - Heat resistant clothing"
+    },
+    {
+      "exactName": "PPE Specialized- Steam suits w/ no skin exposed",
+      "sourceRow": 31,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "steam"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 31: PPE Specialized- Steam suits w/ no skin exposed"
+    },
+    {
+      "exactName": "Radiation shielding",
+      "sourceRow": 32,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 32: Radiation shielding"
+    },
+    {
+      "exactName": "Ratchet Straps or Tie-downs",
+      "sourceRow": 33,
+      "notesAndExamples": "Energy type: Gravity - Forklift or flatbed load lifts",
+      "mappedHighEnergyKeys": [
+        "suspended_load"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 33: Ratchet Straps or Tie-downs"
+    },
+    {
+      "exactName": "Remote operation",
+      "sourceRow": 34,
+      "notesAndExamples": "Examples: Operations that take workers out of proximity. Cable cutting, racking, switching devices, drone operations, remote racking.",
+      "mappedHighEnergyKeys": [
+        "suspended_load",
+        "swinging_load",
+        "fall_from_elevation_4ft",
+        "mobile_equipment_workers_on_foot",
+        "motor_vehicle_over_30mph",
+        "heavy_rotating_equipment",
+        "high_temperature_150f",
+        "steam",
+        "fire_sustained_fuel",
+        "explosion",
+        "excavation_trench_5ft",
+        "electrical_contact_50v",
+        "arc_flash",
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 34: Remote operation"
+    },
+    {
+      "exactName": "Sloping or benching",
+      "sourceRow": 35,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "excavation_trench_5ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 35: Sloping or benching"
+    },
+    {
+      "exactName": "Specialized Rated Containers",
+      "sourceRow": 36,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 36: Specialized Rated Containers"
+    },
+    {
+      "exactName": "Standard hard barrier exclusion zone - to stop people",
+      "sourceRow": 37,
+      "notesAndExamples": "Examples: Guardrails, handrails, concrete barriers.",
+      "mappedHighEnergyKeys": [
+        "suspended_load",
+        "swinging_load",
+        "fall_from_elevation_4ft",
+        "mobile_equipment_workers_on_foot",
+        "motor_vehicle_over_30mph",
+        "heavy_rotating_equipment",
+        "high_temperature_150f",
+        "steam",
+        "fire_sustained_fuel",
+        "explosion",
+        "excavation_trench_5ft",
+        "electrical_contact_50v",
+        "arc_flash",
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 37: Standard hard barrier exclusion zone - to stop people"
+    },
+    {
+      "exactName": "Supplied air respirator",
+      "sourceRow": 38,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "toxic_chemical_radiation"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 38: Supplied air respirator"
+    },
+    {
+      "exactName": "Temperature Control Device",
+      "sourceRow": 39,
+      "notesAndExamples": "Examples: Active cooling system, awning over equipment.",
+      "mappedHighEnergyKeys": [
+        "high_temperature_150f"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 39: Temperature Control Device"
+    },
+    {
+      "exactName": "Thermal surface insulation",
+      "sourceRow": 40,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "high_temperature_150f"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 40: Thermal surface insulation"
+    },
+    {
+      "exactName": "Tool forcing safe distance",
+      "sourceRow": 41,
+      "notesAndExamples": "Example: Hot sticks, load-break tools etc.",
+      "mappedHighEnergyKeys": [
+        "high_temperature_150f",
+        "electrical_contact_50v",
+        "arc_flash"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 41: Tool forcing safe distance"
+    },
+    {
+      "exactName": "Tool tethers",
+      "sourceRow": 42,
+      "notesAndExamples": "Energy Type: Gravity - Falling object",
+      "mappedHighEnergyKeys": [
+        "suspended_load"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 42: Tool tethers"
+    },
+    {
+      "exactName": "Trench box",
+      "sourceRow": 43,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "excavation_trench_5ft"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 43: Trench box"
+    },
+    {
+      "exactName": "Outriggers",
+      "sourceRow": 44,
+      "notesAndExamples": null,
+      "mappedHighEnergyKeys": [
+        "heavy_rotating_equipment"
+      ],
+      "active": true,
+      "contentStatus": "STAGED_PENDING_ADMIN_PUBLISH",
+      "sourceLocation": "DC_Inventory_v1 (5).pdf Logic View row 44: Outriggers"
+    }
+  ]
+}

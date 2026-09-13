@@ -1,0 +1,101 @@
+{
+  "source": "Proposed matching aids pending administrator approval. Do not treat as controlled EEI content.",
+  "synonyms": [
+    {
+      "phrase": "Set a pole",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove pole, crossarm, or brackets",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Change out a pole",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove pole, crossarm, or brackets",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Frame a pole",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove pole, crossarm, or brackets",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Pull wire",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install, remove, or transfer wire",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Transfer wire",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install, remove, or transfer wire",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Hang a transformer",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Change a transformer",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Set grounds",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove grounding",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Pull elbows",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Connect or pull elbows",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Rack a breaker",
+      "proposedWorkTypeCode": "ELECTRIC_SUBSTATION",
+      "proposedTaskExactName": "Rack-in or rack-out circuit breaker",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Dig a pole hole",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Mechanical excavation (e.g. excavator, digger derrick, saw cutting, etc.)",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "Set up traffic control",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove work area protection (i.e. traffic control)",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "setting a pole",
+      "proposedWorkTypeCode": "ELECTRIC_DISTRIBUTION",
+      "proposedTaskExactName": "Install or remove pole, crossarm, or brackets",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "installing a transmission pole",
+      "proposedWorkTypeCode": "ELECTRIC_TRANSMISSION",
+      "proposedTaskExactName": "Install or remove transmission structure (e.g. tower, pole)",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "rack-in",
+      "proposedWorkTypeCode": "ELECTRIC_SUBSTATION",
+      "proposedTaskExactName": "Rack-in or rack-out circuit breaker",
+      "status": "proposed_pending_admin_approval"
+    },
+    {
+      "phrase": "rack-out",
+      "proposedWorkTypeCode": "ELECTRIC_SUBSTATION",
+      "proposedTaskExactName": "Rack-in or rack-out circuit breaker",
+      "status": "proposed_pending_admin_approval"
+    }
+  ]
+}

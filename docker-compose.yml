@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: energyguard
+      POSTGRES_PASSWORD: energyguard_dev
+      POSTGRES_DB: energyguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - energyguard_pg:/var/lib/postgresql/data
+volumes:
+  energyguard_pg:

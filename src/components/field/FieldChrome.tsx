@@ -15,11 +15,20 @@ export function usePeekOpen(force = false, options?: { trackFocus?: boolean; hov
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [focus, setFocus] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const hoverTimer = useRef<number | undefined>(undefined);
   return {
-    open: force || hover || pinned || (options?.trackFocus ? focus : false),
+    open: force || pinned || (options?.trackFocus ? focus : false) || (hover && !dismissed),
     pinned,
     setPinned,
+    expand: () => {
+      setPinned(true);
+      setDismissed(false);
+    },
+    collapse: () => {
+      setPinned(false);
+      setDismissed(true);
+    },
     bind: {
       onMouseEnter: () => {
         window.clearTimeout(hoverTimer.current);
@@ -32,6 +41,7 @@ export function usePeekOpen(force = false, options?: { trackFocus?: boolean; hov
       onMouseLeave: () => {
         window.clearTimeout(hoverTimer.current);
         setHover(false);
+        setDismissed(false);
       },
       onFocusCapture: options?.trackFocus ? () => setFocus(true) : undefined,
       onBlurCapture: options?.trackFocus
@@ -158,9 +168,9 @@ export function FieldChrome(props: {
               className="eg-compact-btn rounded-lg px-3 text-sm font-bold text-[var(--navy)]"
               aria-expanded={dock.open}
               aria-controls="brief-actions"
-              onClick={() => dock.setPinned((v) => !v)}
+              onClick={() => (dock.open ? dock.collapse() : dock.expand())}
             >
-              {dock.pinned ? "Minimize actions" : "Expand actions"}
+              {dock.open ? "Minimize actions" : "Expand actions"}
             </button>
           </div>
           <div id="brief-actions" className={`grid grid-cols-3 ${dock.open ? "gap-2" : "gap-1"}`}>

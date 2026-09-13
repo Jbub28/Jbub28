@@ -666,6 +666,10 @@ function JobTalk(props: {
 
   const visible = [transcript, interim].filter(Boolean).join(" ").trim();
   const peek = usePeekOpen(listening || busy || Boolean(error), { trackFocus: true });
+  useEffect(() => {
+    if (!peek.open) return;
+    document.getElementById("type-job")?.scrollIntoView({ block: "nearest" });
+  }, [peek.open]);
   return (
     <section
       className="eg-peek eg-card space-y-2 p-3"
@@ -696,9 +700,9 @@ function JobTalk(props: {
           type="button"
           className="eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-3 text-sm font-bold"
           aria-expanded={peek.open}
-          onClick={() => peek.setPinned((v) => !v)}
+          onClick={() => (peek.open ? peek.collapse() : peek.expand())}
         >
-          {peek.pinned ? "Minimize talk" : "Type the job"}
+          {peek.open ? "Minimize talk" : "Type the job"}
         </button>
       </div>
       <p className="eg-muted text-sm" role="status">{error ?? (listening ? "Listening..." : busy ? "Matching the discussion to the job…" : peek.open ? "Talk naturally. You can still type." : "Hover or tap Type the job to paste a briefing.")}</p>

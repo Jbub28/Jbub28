@@ -10,7 +10,7 @@ Safety-critical gaps are recorded as exception records and as `controlled_conten
 4. Demo users are seeded for local use only. They are not production identities.
 5. “JULIE #” on the Illinois-origin form is stored as **utility locate / ticket number** so other operating areas can use the same field.
 6. Work Classification is a user-confirmed value. AI may suggest Operations or Maintenance vs Construction; it never finalizes a legal class.
-7. Voice transcription in local mock mode returns a configured transcript. Browser Web Speech API is used when the browser supports it. Azure Speech is used when `SPEECH_PROVIDER=azure`.
+7. Crew-facing talk-to-text uses the browser Web Speech API. If the browser cannot listen, the field says so and typing still works. `/api/speech/transcribe` mock/Azure adapters remain for server-side transcription; they are not used as a fake microphone in the field UI. Azure Speech is used when `SPEECH_PROVIDER=azure`.
 8. Photos are optional evidence. They never replace verification fields.
 9. The original EEI PDF is retained under `/reference` even though only three Electric Delivery work types are operational.
 

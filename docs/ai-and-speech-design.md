@@ -12,9 +12,13 @@ Interface: `SpeechProvider.transcribe(input)`.
 | `browser` | Web Speech API in the client; server stores the posted transcript |
 | `azure` | Azure AI Speech adapter (`AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`) |
 
+Field Talk buttons and the work-description microphone use the **browser Web Speech API** in the client. Recognized words are appended to whatever is already in the box. Typed fallback is always available. The UI does not post a canned mock phrase instead of listening.
+
 Workflow: request microphone permission → show recording → stop → transcript → user edits → Use This Description / Record Again / Type Instead.
 
 Store original transcript separately from edited description, plus transcription status and provider. Raw audio is discarded unless `AUDIO_RETENTION_ENABLED=true`.
+
+`/api/speech/transcribe` remains for the mock/Azure adapters and tests. Azure is used only when `SPEECH_PROVIDER=azure`.
 
 Offline: typed entry remains available. If transcription needs connectivity, the UI says so.
 

@@ -6,6 +6,8 @@ import { DIRECT_CONTROL_NOT_USED_REASONS, REBRIEF_REASONS, VERIFICATION_METHODS,
 import { evaluateAlternativeControls } from "@/lib/domain/alternativeControls";
 import { PLANNING_NOTICE, READY_NOTICE } from "@/lib/domain/readiness";
 import { saveDraftLocal } from "@/lib/offline/store";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { joinSpokenText } from "@/lib/speech/browserSpeech";
 
 const PREDEPARTURE = [
   ["job_packet", "Job Packet Review"],
@@ -53,7 +55,6 @@ export function BriefWizard({ id }: { id: string }) {
   const [form, setForm] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [matches, setMatches] = useState<any>(null);
-  const [recording, setRecording] = useState(false);
 
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
@@ -173,8 +174,6 @@ export function BriefWizard({ id }: { id: string }) {
             setForm={setForm}
             matches={matches}
             setMatches={setMatches}
-            recording={recording}
-            setRecording={setRecording}
             patch={patch}
             setErrors={setErrors}
           />
@@ -458,21 +457,22 @@ function Section({ title, children, onEdit }: { title: string; children: React.R
 }
 
 function WorkStep(props: any) {
-  const { jrb, version, form, setForm, matches, setMatches, recording, setRecording, patch, setErrors } = props;
+  const { jrb, version, form, setForm, matches, setMatches, patch } = props;
   const workTypeCode = jrb.workType?.code;
-  const speak = async (phrase?: string) => {
-    setRecording(true);
-    try {
-      const result = await api("/api/speech/transcribe", { method: "POST", body: JSON.stringify({ mockPhrase: phrase ?? form.spoken ?? version.workDescriptionEdited }) });
-      if (result.status !== "ok") {
-        setErrors([result.message ?? "We could not hear that. Try again or type the work."]);
-      } else {
-        setForm((f: any) => ({ ...f, original: result.text, edited: result.text, speechProvider: result.provider }));
-      }
-    } finally {
-      setRecording(false);
-    }
-  };
+  const { listening, status, error, toggle, start } = useSpeechToText({
+    onFinal: (spoken) => {
+      setForm((f: any) => {
+        const current = f.edited ?? version.workDescriptionEdited ?? "";
+        const next = joinSpokenText(current, spoken);
+        return {
+          ...f,
+          original: f.original || spoken.trim(),
+          edited: next,
+          speechProvider: "browser",
+        };
+      });
+    },
+  });
   const match = async (text: string, followUpOption?: string) => {
     const res = await api("/api/ai/match-tasks", {
       method: "POST",
@@ -486,14 +486,15 @@ function WorkStep(props: any) {
       <BigButton selected={form.mode === "library"} onClick={() => setForm({ ...form, mode: "library" })}>Select from the EEI Task Library</BigButton>
       {form.mode !== "library" ? (
         <>
-          <p className="text-lg" role="status">{recording ? "Recording is active" : "Microphone is off"}</p>
-          <BigButton onClick={() => speak(form.edited || "Today we are setting a pole and transferring primary wire.")}>
-            {recording ? "Stop recording" : "Start microphone"}
+          <p className="text-lg" role="status" aria-live="polite">{error ?? status}</p>
+          <BigButton onClick={toggle}>
+            {listening ? "Stop recording" : "Start microphone"}
           </BigButton>
           <Field id="desc" label="Work description" textarea value={form.edited ?? version.workDescriptionEdited ?? ""} onChange={(v) => setForm({ ...form, edited: v })} />
+          <p className="text-sm">Talking adds to what is already in the box. You can also type.</p>
           <div className="grid grid-cols-1 gap-2">
-            <BigButton onClick={() => patch("saveWork", { workDescriptionOriginal: form.original, workDescriptionEdited: form.edited, transcriptStatus: "ok", speechProvider: form.speechProvider ?? "mock" }).then(() => match(form.edited))}>Use This Description</BigButton>
-            <BigButton onClick={() => speak()}>Record Again</BigButton>
+            <BigButton onClick={() => patch("saveWork", { workDescriptionOriginal: form.original, workDescriptionEdited: form.edited, transcriptStatus: form.edited ? "ok" : "failed", speechProvider: form.speechProvider ?? "browser" }).then(() => match(form.edited))}>Use This Description</BigButton>
+            <BigButton onClick={() => start()}>Record Again</BigButton>
             <BigButton onClick={() => setForm({ ...form, mode: "type" })}>Type Instead</BigButton>
           </div>
         </>

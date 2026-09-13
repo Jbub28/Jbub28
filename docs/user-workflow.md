@@ -8,7 +8,7 @@ Capture identity, location, work type (Distribution / Transmission / Substation 
 
 ## Step 2 — What Work Are We Doing?
 
-Two equal choices: Speak or Type the Work, or Select from the EEI Task Library. Voice records a transcript, then the user edits and confirms. Matching returns at most three approved tasks for the selected work type. The user must Confirm. Ambiguous pole work asks one follow-up. Unmatched work creates a Task Match Exception and does not invent a task. Multiple tasks are allowed.
+Two equal choices: Speak or Type the Work, or Select from the EEI Task Library. **Talk** on each briefing field (and **Start microphone** on the work description) uses the device microphone. Recognized words are added to whatever is already typed. If the browser cannot listen, the field says so and typing still works. Matching returns at most three approved tasks for the selected work type. The user must Confirm. Ambiguous pole work asks one follow-up. Unmatched work creates a Task Match Exception and does not invent a task. Multiple tasks are allowed.
 
 ## Step 3 — Before You Leave and Jobsite Conditions
 

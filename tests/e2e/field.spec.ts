@@ -80,7 +80,7 @@ test("one Talk button prefills the current page from natural speech", async ({ p
   await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/Steve/);
   await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue("");
   await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
-  await expect(page.getByText(/Filled from talk/)).toBeVisible();
+  await expect(page.getByText("Filled from talk where it was clear")).toBeVisible();
 });
 
 test("Job Location is first, GPS is optional, and typed location persists", async ({ page }) => {

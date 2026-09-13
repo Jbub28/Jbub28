@@ -137,7 +137,16 @@ export function BriefWizard({ id }: { id: string }) {
 
   const saveStart = () => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
 
-  if (!jrb || !catalog) return <p className="p-6 text-xl">Loading the job brief…</p>;
+  if (!jrb || !catalog) {
+    return (
+      <div className="space-y-4 p-6">
+        <p className="text-xl">{errors.length ? "Could not load this job brief." : "Loading the job brief…"}</p>
+        {errors.map((e) => (
+          <p key={e} role="alert">{e}</p>
+        ))}
+      </div>
+    );
+  }
 
   const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
   const eicName = jrb.employeeInCharge?.displayName ?? "Employee in Charge";

@@ -53,11 +53,15 @@ async function loadJrb(id: string) {
 export async function GET(_: NextRequest, context: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await context.params;
-  const jrb = await loadJrb(id);
-  if (!jrb || jrb.organizationId !== user.organizationId) return jsonError("Job brief not found.", 404);
-  const version = jrb.versions[0];
-  const readiness = version ? await buildReadiness(version.id) : null;
-  return NextResponse.json({ jrb, readiness });
+  try {
+    const jrb = await loadJrb(id);
+    if (!jrb || jrb.organizationId !== user.organizationId) return jsonError("Job brief not found.", 404);
+    const version = jrb.versions[0];
+    const readiness = version ? await buildReadiness(version.id) : null;
+    return NextResponse.json({ jrb, readiness });
+  } catch {
+    return jsonError("Could not load this job brief.", 500);
+  }
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {

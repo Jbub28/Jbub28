@@ -44,6 +44,17 @@ textarea {
   min-height: 56px;
 }
 
+button.eg-compact-btn,
+a.eg-compact-btn {
+  min-height: 2.5rem;
+}
+
+.eg-peek[data-expanded="true"] button.eg-compact-btn,
+.eg-peek:hover button.eg-compact-btn,
+.eg-peek:focus-within button.eg-compact-btn {
+  min-height: 3.5rem;
+}
+
 input,
 select,
 textarea {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Field, FieldChrome, BigButton, STEPS } from "./FieldChrome";
+import { Field, FieldChrome, BigButton, STEPS, usePeekOpen } from "./FieldChrome";
 import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLocation";
 import { REBRIEF_REASONS } from "@/lib/domain/controls";
 import { READY_NOTICE } from "@/lib/domain/readiness";
@@ -665,12 +665,18 @@ function JobTalk(props: {
   }
 
   const visible = [transcript, interim].filter(Boolean).join(" ").trim();
+  const peek = usePeekOpen(listening || busy || Boolean(error));
   return (
-    <section className="eg-card space-y-3 p-4">
-      <div className="sticky top-0 z-10 bg-[var(--surface)] pb-2">
+    <section
+      className="eg-peek eg-card space-y-2 p-3"
+      aria-label="Job talk"
+      data-expanded={peek.open ? "true" : "false"}
+      {...peek.bind}
+    >
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[var(--accent)] text-[var(--accent-text)]" : "bg-[var(--navy)] text-white"}`}
+          className={`eg-compact-btn flex-1 rounded-xl px-3 font-bold ${listening ? "bg-[var(--accent)] text-[var(--accent-text)]" : "bg-[var(--navy)] text-white"} ${peek.open ? "text-xl" : "text-sm"}`}
           aria-pressed={listening}
           aria-label={listening ? "Stop talking" : "Talk through the job"}
           onClick={() => {
@@ -686,22 +692,37 @@ function JobTalk(props: {
         >
           {listening ? "Listening… Stop" : "Talk through the job"}
         </button>
+        <button
+          type="button"
+          className="eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-3 text-sm font-bold"
+          aria-expanded={peek.open}
+          onClick={() => peek.setPinned((v) => !v)}
+        >
+          {peek.pinned ? "Minimize talk" : "Type the job"}
+        </button>
       </div>
-      <p className="text-lg" role="status">{error ?? (listening ? "Listening..." : busy ? "Matching the discussion to the job…" : "Talk naturally. You can still type.")}</p>
-      {visible ? <p className="text-lg">{visible}</p> : null}
-      <Field id="type-job" label="Or type the job" textarea value={typed} onChange={setTyped} />
-      <BigButton
-        primary
-        onClick={() => {
-          const spoken = typed.trim();
-          if (!spoken) return;
-          setTranscript(spoken);
-          setBusy(true);
-          void runExtract(spoken).finally(() => setBusy(false));
-        }}
-      >
-        Use typed briefing
-      </BigButton>
+      <p className="eg-muted text-sm" role="status">{error ?? (listening ? "Listening..." : busy ? "Matching the discussion to the job…" : peek.open ? "Talk naturally. You can still type." : "Hover or tap Type the job to paste a briefing.")}</p>
+      {visible ? (
+        <p className={`text-lg ${peek.open ? "" : "line-clamp-2"}`}>{visible}</p>
+      ) : null}
+      {peek.open ? (
+        <>
+          <Field id="type-job" label="Or type the job" textarea value={typed} onChange={setTyped} />
+          <button
+            type="button"
+            className="eg-compact-btn w-full rounded-xl bg-[var(--navy)] px-3 font-bold text-white"
+            onClick={() => {
+              const spoken = typed.trim();
+              if (!spoken) return;
+              setTranscript(spoken);
+              setBusy(true);
+              void runExtract(spoken).finally(() => setBusy(false));
+            }}
+          >
+            Use typed briefing
+          </button>
+        </>
+      ) : null}
       {props.proposed.length ? (
         <div className="space-y-2">
           <p className="font-bold text-[var(--navy)]">Location already entered</p>

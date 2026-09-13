@@ -11,6 +11,25 @@ export const STEPS = [
   { key: "ready", label: "Ready for Work", question: "Do we understand the job, the serious exposures, and the controls?" },
 ];
 
+export function usePeekOpen(force = false) {
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const [focus, setFocus] = useState(false);
+  return {
+    open: force || hover || pinned || focus,
+    pinned,
+    setPinned,
+    bind: {
+      onMouseEnter: () => setHover(true),
+      onMouseLeave: () => setHover(false),
+      onFocusCapture: () => setFocus(true),
+      onBlurCapture: (event: React.FocusEvent<HTMLElement>) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocus(false);
+      },
+    },
+  };
+}
+
 function useKeyboardOpen() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -51,6 +70,7 @@ export function FieldChrome(props: {
   const total = STEPS.length;
   const keyboardOpen = useKeyboardOpen();
   const [helpOpen, setHelpOpen] = useState(false);
+  const dock = usePeekOpen();
   const help = props.helpText ?? STEPS[props.stepIndex]?.question;
 
   return (
@@ -113,22 +133,36 @@ export function FieldChrome(props: {
         </p>
       ) : (
         <nav
-          className="shrink-0 border-t border-[var(--border)] bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          className="eg-peek shrink-0 border-t border-[var(--border)] bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
           aria-label="Job brief actions"
+          data-expanded={dock.open ? "true" : "false"}
+          {...dock.bind}
         >
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 text-lg font-bold" onClick={props.onBack}>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <p className="eg-muted text-xs font-bold uppercase tracking-wide">Actions</p>
+            <button
+              type="button"
+              className="eg-compact-btn rounded-lg px-3 text-sm font-bold text-[var(--navy)]"
+              aria-expanded={dock.open}
+              aria-controls="brief-actions"
+              onClick={() => dock.setPinned((v) => !v)}
+            >
+              {dock.pinned ? "Minimize actions" : "Expand actions"}
+            </button>
+          </div>
+          <div id="brief-actions" className={`grid grid-cols-3 ${dock.open ? "gap-2" : "gap-1"}`}>
+            <button type="button" className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onBack}>
               {props.backLabel ?? "Back"}
             </button>
-            <button type="button" className="rounded-xl bg-[var(--navy)] px-4 text-lg font-bold text-white" onClick={props.onNext}>
+            <button type="button" className={`eg-compact-btn rounded-xl bg-[var(--navy)] px-2 font-bold text-white ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onNext}>
               {props.nextLabel ?? "Next"}
             </button>
-            <button type="button" className="rounded-xl border border-[var(--border)] bg-white px-4 text-lg font-bold" onClick={props.onSave}>
+            <button type="button" className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onSave}>
               Save Draft
             </button>
             <button
               type="button"
-              className="rounded-xl border border-[var(--border)] bg-white px-4 text-lg font-bold"
+              className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`}
               onClick={() => {
                 props.onHelp();
                 setHelpOpen(true);
@@ -136,21 +170,26 @@ export function FieldChrome(props: {
             >
               Help
             </button>
-            <button type="button" className="rounded-xl bg-[var(--danger)] px-4 text-lg font-bold text-white" onClick={props.onStop}>
+            <button type="button" className={`eg-compact-btn rounded-xl bg-[var(--danger)] px-2 font-bold text-white ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onStop}>
               Stop Work
             </button>
-            <button type="button" className="rounded-xl bg-[var(--warn-bg)] px-4 text-lg font-bold text-[var(--warn)]" onClick={props.onRebrief}>
-              Conditions Changed / Rebrief
+            <button
+              type="button"
+              className={`eg-compact-btn rounded-xl bg-[var(--warn-bg)] px-2 font-bold text-[var(--warn)] ${dock.open ? "text-lg" : "text-sm"}`}
+              aria-label="Conditions Changed / Rebrief"
+              onClick={props.onRebrief}
+            >
+              Rebrief
             </button>
           </div>
-          <p className="mt-2 text-center text-sm">
-            <Link href="/briefs" className="font-bold text-[var(--navy)] underline">
+          <p className="mt-1 text-center text-sm">
+            <Link href="/briefs" className="eg-compact-btn inline-flex items-center font-bold text-[var(--navy)] underline">
               My briefs
             </Link>
             {props.briefId ? (
               <>
                 {" · "}
-                <Link href={`/briefs/${props.briefId}/closeout`} className="font-bold text-[var(--navy)] underline">
+                <Link href={`/briefs/${props.briefId}/closeout`} className="eg-compact-btn inline-flex items-center font-bold text-[var(--navy)] underline">
                   Post-job review
                 </Link>
               </>

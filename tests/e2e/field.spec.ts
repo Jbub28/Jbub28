@@ -9,6 +9,15 @@ async function signInAsEic(page: import("@playwright/test").Page) {
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible({ timeout: 15_000 });
 }
 
+async function openTypedBriefing(page: import("@playwright/test").Page) {
+  const field = page.getByRole("textbox", { name: "Or type the job" });
+  if ((await field.count()) === 0 || !(await field.isVisible())) {
+    await page.getByRole("button", { name: "Type the job" }).click();
+  }
+  await expect(field).toBeVisible();
+  return field;
+}
+
 test("sign-in is usable on a mobile viewport and has no critical axe violations", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByRole("heading", { name: "EnergyGuard JRB" })).toBeVisible();
@@ -178,7 +187,8 @@ test("typed incomplete high-energy briefing asks a control question and does not
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await page.getByRole("textbox", { name: "Or type the job" }).fill(
+  const typed = await openTypedBriefing(page);
+  await typed.fill(
     "We're replacing a transformer from the bucket with energized primary overhead.",
   );
   await page.getByRole("button", { name: "Use typed briefing" }).click();
@@ -255,7 +265,8 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await page.getByRole("textbox", { name: "Or type the job" }).fill(
+  const typed = await openTypedBriefing(page);
+  await typed.fill(
     "All right guys let's go over the job we're at 4200 N. West Ave. in Tampa Florida at Poteet 1847 this is circuit test 1324 work order 77218 I'm Chris Martinez worker in charge on the crew today we have James Carter Luis Rivera and Mike Thompson our job is to replace a damaged 50 kVA overhead transformer and associate a cut out Will set up the work area. The biggest thing that can hurt or kill us today is energize 13.2 kV primary. We also have a suspended load hazard. Wet fall exposure from an aerial lift bucket operations with all our normal aerial lift requirements including the required fall protection. Traffic is another exposure. We'll maintain minimal approach distance, use the required cover up, isolate, test it dead, install grounds, establish an exclusion zone, and set traffic control. Required PPE includes hardhat safety glasses high visibility apparel proper work boots and arc rated clothing.",
   );
   await page.getByRole("button", { name: "Use typed briefing" }).click();

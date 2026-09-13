@@ -6,7 +6,7 @@ import { BigButton, Field, voiceMark } from "@/components/field/FieldChrome";
 import { JobLocationSummary } from "@/components/field/JobLocation";
 import { PageVoiceAssistant } from "@/components/field/PageVoiceAssistant";
 import { schemaForStep } from "@/lib/voice/pageSchemas";
-import { AppHeader, PageShell } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell } from "@/components/ui/AppHeader";
 
 export default function CloseoutPage() {
   const params = useParams<{ id: string }>();
@@ -82,6 +82,7 @@ export default function CloseoutPage() {
       </BigButton>
       </div>
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

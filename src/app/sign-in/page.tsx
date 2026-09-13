@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BigButton, Field } from "@/components/field/FieldChrome";
-import { AppHeader, PageShell } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell } from "@/components/ui/AppHeader";
 
 export default function SignInPage() {
   const [users, setUsers] = useState<{ email: string; displayName: string; roles: string[] }[]>([]);
@@ -18,9 +18,13 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-dvh">
-      <AppHeader title="EnergyGuard JRB" subtitle="Sign in to start or continue a job brief. This is a crew discussion tool, not a scorecard." />
+      <AppHeader
+        title="EnergyGuard JRB"
+        subtitle="Employee sign-in for Electric Delivery job briefs. This is a crew discussion tool, not a scorecard."
+      />
       <PageShell>
         {error ? <p className="eg-alert mt-2 p-3" role="alert">{error}</p> : null}
+        <p className="eg-muted mb-3 text-sm">Authorized employees only. Use your company credentials in production; local demo accounts are listed below.</p>
         <form
           className="eg-card mt-2 space-y-4 p-5"
           onSubmit={async (e) => {
@@ -53,6 +57,7 @@ export default function SignInPage() {
           ))}
         </ul>
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

@@ -15,7 +15,13 @@ export function ConnectionStatus() {
     };
   }, []);
   return (
-    <p className="text-sm font-bold" role="status" aria-live="polite">
+    <p
+      className={`inline-flex min-h-8 items-center rounded-full px-3 text-xs font-bold ${
+        online ? "bg-white/15 text-white" : "bg-[var(--warn-bg)] text-[var(--warn)]"
+      }`}
+      role="status"
+      aria-live="polite"
+    >
       {online ? "Online" : "Offline"}
     </p>
   );

@@ -1,5 +1,20 @@
 "use client";
 
+export function BrandMark(props: { compact?: boolean }) {
+  const size = props.compact ? 36 : 44;
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-lg bg-[#f0c43a] text-[#0a3161] shadow-sm"
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <svg viewBox="0 0 32 32" width={size - 10} height={size - 10}>
+        <path d="M18 4 8 18h7l-2 10 12-16h-7z" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
 export function AppHeader(props: {
   title: string;
   subtitle?: string;
@@ -8,13 +23,17 @@ export function AppHeader(props: {
   return (
     <header className="bg-[var(--bg-navy)] text-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#f0c43a]">Electric Delivery</p>
-          <p className="text-lg font-bold leading-tight">EnergyGuard JRB</p>
+        <div className="flex items-center gap-3">
+          <BrandMark />
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#f0c43a]">Electric Delivery</p>
+            <p className="text-lg font-bold leading-tight">EnergyGuard JRB</p>
+          </div>
         </div>
         {props.right}
       </div>
-      <div className="border-t border-white/15 bg-[#134074]">
+      <div className="h-1 bg-[#f0c43a]" aria-hidden />
+      <div className="border-t border-white/10 bg-[#134074]">
         <div className="mx-auto max-w-5xl px-4 py-3">
           <h1 className="text-2xl font-bold">{props.title}</h1>
           {props.subtitle ? <p className="mt-1 text-sm text-white/85">{props.subtitle}</p> : null}
@@ -36,6 +55,14 @@ export function StatusChip(props: { children: React.ReactNode; tone?: "ok" | "wa
 
 export function PageShell(props: { children: React.ReactNode; wide?: boolean }) {
   return <main className={`mx-auto ${props.wide ? "max-w-5xl" : "max-w-xl"} px-4 py-6`}>{props.children}</main>;
+}
+
+export function PageFooter() {
+  return (
+    <p className="eg-muted mx-auto max-w-5xl px-4 py-8 text-center text-sm">
+      EnergyGuard JRB · Electric Delivery · Authorized crew use
+    </p>
+  );
 }
 
 export function canSeeLibraries(roles: string[] | undefined): boolean {

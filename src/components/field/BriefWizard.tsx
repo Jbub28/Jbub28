@@ -286,18 +286,16 @@ export function BriefWizard({ id }: { id: string }) {
             />
             {extraction?.workDescription ? <p className="text-lg"><span className="font-bold">The work: </span>{extraction.workDescription}</p> : null}
             {extraction?.highEnergy.length ? (
-              <ul className="space-y-2">
-                {extraction.highEnergy.map((he) => (
-                  <li key={he.exposureId} className="eg-card p-3">
-                    <HighEnergyIcon
-                      compact
-                      energyKey={he.key}
-                      label={he.label}
-                      src={catalog?.exposures?.find((e: any) => e.id === he.exposureId)?.icon?.storagePath}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-2">
+                <h2 className="text-lg font-bold">High Energy hazards heard</h2>
+                <ul className="space-y-2">
+                  {extraction.highEnergy.map((he) => (
+                    <li key={he.exposureId} className="eg-card p-3">
+                      <HighEnergyIcon compact energyKey={he.key} label={he.label} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
             {followUps.length ? (
               <div className="space-y-2 eg-alert p-4">
@@ -392,6 +390,7 @@ export function BriefWizard({ id }: { id: string }) {
               </div>
             ) : null}
             <h2 className="text-xl font-bold">What can seriously hurt or kill us?</h2>
+            <p className="eg-muted text-sm">Official High Energy icons from the Electric Delivery briefing form.</p>
             {(extraction?.highEnergy ?? []).length === 0 ? (
               <p>Nothing from the talk was clear enough to show as High Energy. Add what you see, or go back and talk through the job.</p>
             ) : (
@@ -405,11 +404,7 @@ export function BriefWizard({ id }: { id: string }) {
                 const recorded = (version?.exposures ?? []).find((row: any) => row.exposureId === he.exposureId);
                 return (
                 <article key={he.exposureId} className="eg-card p-4">
-                  <HighEnergyIcon
-                    energyKey={he.key}
-                    label={he.label}
-                    src={catalog?.exposures?.find((e: any) => e.id === he.exposureId)?.icon?.storagePath}
-                  />
+                  <HighEnergyIcon energyKey={he.key} label={he.label} />
                   <p className="mt-2 text-sm">Identified from talk — not confirmed until you say it can hurt us.</p>
                   <p className="text-sm">Heard: {he.evidence}</p>
                   {suggested.length ? (
@@ -499,12 +494,7 @@ export function BriefWizard({ id }: { id: string }) {
                 <ul className="mt-2 space-y-2">
                   {(extraction?.highEnergy ?? []).map((h) => (
                     <li key={h.exposureId}>
-                      <HighEnergyIcon
-                        compact
-                        energyKey={h.key}
-                        label={h.label}
-                        src={catalog?.exposures?.find((e: any) => e.id === h.exposureId)?.icon?.storagePath}
-                      />
+                      <HighEnergyIcon compact energyKey={h.key} label={h.label} />
                     </li>
                   ))}
                 </ul>

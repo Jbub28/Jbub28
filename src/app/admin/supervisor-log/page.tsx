@@ -3,13 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatJobLocation } from "@/lib/domain/jobLocation";
-import { AppHeader, PageShell, StatusChip } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell, StatusChip, canSeeLibraries } from "@/components/ui/AppHeader";
 
 export default function SupervisorLogPage() {
   const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
 
   useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => setRoles(d.user?.roles ?? []));
     fetch("/api/admin/supervisor-log")
       .then(async (r) => {
         const d = await r.json();
@@ -26,15 +30,22 @@ export default function SupervisorLogPage() {
         subtitle="Hidden from field crews. Review of submitted JRBs is planned for a later version."
       />
       <PageShell wide>
-        <div className="eg-alert p-4">
-          <p className="font-bold">Not active in this version</p>
-          <p>Supervisors will review released and closed job briefs here later. No review, comment, or approval actions are available yet.</p>
-        </div>
-        {error ? <p className="eg-danger mt-4 p-3" role="alert">{error}</p> : null}
+        {error ? (
+          <p className="eg-danger p-3" role="alert">{error}</p>
+        ) : (
+          <div className="eg-alert p-4">
+            <p className="font-bold">Not active in this version</p>
+            <p>Supervisors will review released and closed job briefs here later. No review, comment, or approval actions are available yet.</p>
+          </div>
+        )}
         <p className="mt-4">
           <Link href="/briefs" className="font-bold text-[var(--navy)] underline">My briefs</Link>
-          {" · "}
-          <Link href="/admin" className="font-bold text-[var(--navy)] underline">Libraries</Link>
+          {canSeeLibraries(roles) ? (
+            <>
+              {" · "}
+              <Link href="/admin" className="font-bold text-[var(--navy)] underline">Libraries</Link>
+            </>
+          ) : null}
         </p>
         <ul className="mt-6 space-y-3">
           {(jrbs ?? []).map((j) => (
@@ -53,6 +64,7 @@ export default function SupervisorLogPage() {
         </ul>
         {jrbs && jrbs.length === 0 ? <p className="eg-muted mt-6">No job briefs are in this log yet.</p> : null}
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

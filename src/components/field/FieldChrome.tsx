@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConnectionStatus } from "./ConnectionStatus";
+import { BrandMark } from "@/components/ui/AppHeader";
 
 export const STEPS = [
   { key: "talk", label: "Talk Through the Job", question: "Tell us what we're doing, what can seriously hurt or kill us, and how we're going to control it." },
@@ -56,9 +57,12 @@ export function FieldChrome(props: {
     <div className="mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[var(--bg)]">
       <header className="shrink-0 bg-[var(--bg-navy)] px-4 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
         <div className="flex items-start justify-between gap-3 pb-3">
-          <div>
-            <p className="eg-kicker text-[#f0c43a]">Electric Delivery · Step {props.stepIndex + 1} of {total}</p>
-            <h1 className="text-2xl font-bold">{props.title}</h1>
+          <div className="flex items-start gap-3">
+            <BrandMark compact />
+            <div>
+              <p className="eg-kicker text-[#f0c43a]">Electric Delivery · Step {props.stepIndex + 1} of {total}</p>
+              <h1 className="text-2xl font-bold">{props.title}</h1>
+            </div>
           </div>
           <div className="text-right text-sm">
             <ConnectionStatus />
@@ -70,6 +74,25 @@ export function FieldChrome(props: {
             </Link>
           </div>
         </div>
+        <ol className="grid grid-cols-3 gap-1 pb-3" aria-label="Briefing steps">
+          {STEPS.map((step, index) => {
+            const current = index === props.stepIndex;
+            const done = index < props.stepIndex;
+            const short = ["Talk", "Exposures", "Ready"][index];
+            return (
+              <li
+                key={step.key}
+                className={`rounded-md px-2 py-1 text-center text-[11px] font-bold uppercase tracking-wide ${
+                  current ? "bg-[#f0c43a] text-[#0a3161]" : done ? "bg-white/20 text-white" : "bg-white/10 text-white/70"
+                }`}
+                aria-current={current ? "step" : undefined}
+              >
+                {index + 1}. {short}
+              </li>
+            );
+          })}
+        </ol>
+        <div className="-mx-4 h-1 bg-[#f0c43a]" aria-hidden />
       </header>
       {props.errorSummary && props.errorSummary.length > 0 ? (
         <div className="eg-alert mx-4 mt-3 shrink-0 p-4" role="alert">

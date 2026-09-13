@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigButton } from "@/components/field/FieldChrome";
-import { AppHeader, PageShell } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell } from "@/components/ui/AppHeader";
 
 export default function NewBriefPage() {
   const router = useRouter();
@@ -48,6 +48,7 @@ export default function NewBriefPage() {
           Create draft
         </button>
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

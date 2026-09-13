@@ -287,3 +287,23 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await page.getByRole("button", { name: "Release JRB for Work" }).click();
   await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 15_000 });
 });
+
+test("field crews do not see the supervisor log", async ({ page }) => {
+  await signInAsEic(page);
+  await expect(page.getByRole("link", { name: "Supervisor log" })).toHaveCount(0);
+  await page.goto("/admin/supervisor-log");
+  await expect(page.getByText("Not allowed.")).toBeVisible();
+  await expect(page.getByText("Not active in this version")).toHaveCount(0);
+});
+
+test("supervisor can open the inactive JRB log", async ({ page }) => {
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill("supervisor@energyguard.local");
+  await page.getByLabel("Password").fill("ChangeMe!LocalOnly");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("link", { name: "Supervisor log" }).click();
+  await expect(page.getByRole("heading", { name: "Supervisor log" })).toBeVisible();
+  await expect(page.getByText("Not active in this version")).toBeVisible();
+  await expect(page.getByText(/No review, comment, or approval actions/)).toBeVisible();
+});

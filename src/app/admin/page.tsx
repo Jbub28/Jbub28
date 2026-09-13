@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AppHeader, PageShell } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell, canSeeSupervisorLog } from "@/components/ui/AppHeader";
 
 export default function AdminPage() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const load = () =>
     fetch("/api/admin")
       .then(async (r) => {
@@ -17,6 +18,9 @@ export default function AdminPage() {
       .catch((e) => setError(e.message));
   useEffect(() => {
     load();
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => setRoles(d.user?.roles ?? []));
   }, []);
   return (
     <div className="min-h-dvh">
@@ -36,6 +40,12 @@ export default function AdminPage() {
         </div>
         <p className="mt-4">
           <Link href="/briefs" className="font-bold text-[var(--navy)] underline">My briefs</Link>
+          {canSeeSupervisorLog(roles) ? (
+            <>
+              {" · "}
+              <Link href="/admin/supervisor-log" className="font-bold text-[var(--navy)] underline">Supervisor log</Link>
+            </>
+          ) : null}
         </p>
         <h2 className="mt-8 text-2xl font-bold">Exceptions</h2>
         <ul className="mt-2 space-y-2">
@@ -56,6 +66,7 @@ export default function AdminPage() {
           ))}
         </ul>
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

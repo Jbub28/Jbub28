@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ConnectionStatus } from "@/components/field/ConnectionStatus";
 import { formatJobLocation } from "@/lib/domain/jobLocation";
-import { AppHeader, PageShell, StatusChip, canSeeLibraries, canSeeSupervisorLog } from "@/components/ui/AppHeader";
+import { AppHeader, PageFooter, PageShell, StatusChip, canSeeLibraries, canSeeSupervisorLog } from "@/components/ui/AppHeader";
 
 function statusTone(status: string): "ok" | "warn" | "neutral" {
   if (status === "released_for_work" || status === "closed") return "ok";
@@ -13,7 +13,7 @@ function statusTone(status: string): "ok" | "warn" | "neutral" {
 }
 
 export default function BriefsPage() {
-  const [jrbs, setJrbs] = useState<any[]>([]);
+  const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [me, setMe] = useState<any>(null);
   useEffect(() => {
     fetch("/api/auth/session").then((r) => r.json()).then(setMe);
@@ -31,8 +31,11 @@ export default function BriefsPage() {
         <Link href="/briefs/new" className="block rounded-2xl bg-[var(--navy)] py-4 text-center text-xl font-bold text-white">
           Start a Job Brief
         </Link>
+        {jrbs?.length === 0 ? (
+          <p className="eg-card mt-6 p-4 eg-muted">No job briefs yet. Start one to talk through the job with the crew.</p>
+        ) : null}
         <ul className="mt-6 space-y-3">
-          {jrbs.map((j) => (
+          {(jrbs ?? []).map((j) => (
             <li key={j.id}>
               <Link href={`/briefs/${j.id}`} className="eg-card block p-4">
                 <div className="flex items-start justify-between gap-3">
@@ -64,6 +67,7 @@ export default function BriefsPage() {
           </button>
         </div>
       </PageShell>
+      <PageFooter />
     </div>
   );
 }

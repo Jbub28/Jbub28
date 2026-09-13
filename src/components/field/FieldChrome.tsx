@@ -97,7 +97,7 @@ export function FieldChrome(props: {
   const help = props.helpText ?? STEPS[props.stepIndex]?.question;
 
   return (
-    <div className="mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[var(--bg)]">
+    <div className="mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[var(--bg)] md:max-w-3xl">
       <header className="shrink-0 bg-[var(--bg-navy)] px-4 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
         <div className="flex items-start justify-between gap-3 pb-3">
           <div className="flex items-start gap-3">
@@ -156,68 +156,70 @@ export function FieldChrome(props: {
         </p>
       ) : (
         <nav
-          className="eg-peek shrink-0 border-t border-[var(--border)] bg-white px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+          className="relative shrink-0 border-t border-[var(--border)] bg-white px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))]"
           aria-label="Job brief actions"
           data-expanded={dock.open ? "true" : "false"}
-          {...dock.bind}
         >
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <p className="eg-muted text-xs font-bold uppercase tracking-wide">Actions</p>
-            <button
-              type="button"
-              className="eg-compact-btn rounded-lg px-3 text-sm font-bold text-[var(--navy)]"
-              aria-expanded={dock.open}
-              aria-controls="brief-actions"
-              onClick={() => (dock.open ? dock.collapse() : dock.expand())}
+          {dock.open ? (
+            <div
+              id="brief-more-actions"
+              className="absolute inset-x-2 bottom-full z-20 mb-1 grid grid-cols-2 gap-1 rounded-xl border border-[var(--border)] bg-white p-2 shadow-lg md:grid-cols-3"
             >
-              {dock.open ? "Minimize actions" : "Expand actions"}
-            </button>
-          </div>
-          <div id="brief-actions" className={`grid grid-cols-3 ${dock.open ? "gap-2" : "gap-1"}`}>
-            <button type="button" className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onBack}>
+              <button type="button" className="eg-dock-btn border border-[var(--border)] bg-white font-bold md:hidden" onClick={props.onSave}>
+                Save Draft
+              </button>
+              <button
+                type="button"
+                className="eg-dock-btn border border-[var(--border)] bg-white font-bold"
+                onClick={() => {
+                  props.onHelp();
+                  setHelpOpen(true);
+                  dock.collapse();
+                }}
+              >
+                Help
+              </button>
+              <button
+                type="button"
+                className="eg-dock-btn bg-[var(--warn-bg)] font-bold text-[var(--warn)]"
+                aria-label="Conditions Changed / Rebrief"
+                onClick={props.onRebrief}
+              >
+                Rebrief
+              </button>
+              {props.briefId ? (
+                <Link href={`/briefs/${props.briefId}/closeout`} className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline">
+                  Post-job review
+                </Link>
+              ) : null}
+              <Link href="/briefs" className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline md:hidden">
+                My briefs
+              </Link>
+            </div>
+          ) : null}
+          <div className="flex items-center gap-1">
+            <button type="button" className="eg-dock-btn flex-1 border border-[var(--border)] bg-[var(--surface-2)] font-bold" onClick={props.onBack}>
               {props.backLabel ?? "Back"}
             </button>
-            <button type="button" className={`eg-compact-btn rounded-xl bg-[var(--navy)] px-2 font-bold text-white ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onNext}>
+            <button type="button" className="eg-dock-btn min-w-0 flex-[1.2] truncate bg-[var(--navy)] font-bold text-white" onClick={props.onNext}>
               {props.nextLabel ?? "Next"}
             </button>
-            <button type="button" className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onSave}>
+            <button type="button" className="eg-dock-btn hidden flex-1 border border-[var(--border)] bg-white font-bold md:block" onClick={props.onSave}>
               Save Draft
             </button>
-            <button
-              type="button"
-              className={`eg-compact-btn rounded-xl border border-[var(--border)] bg-white px-2 font-bold ${dock.open ? "text-lg" : "text-sm"}`}
-              onClick={() => {
-                props.onHelp();
-                setHelpOpen(true);
-              }}
-            >
-              Help
-            </button>
-            <button type="button" className={`eg-compact-btn rounded-xl bg-[var(--danger)] px-2 font-bold text-white ${dock.open ? "text-lg" : "text-sm"}`} onClick={props.onStop}>
+            <button type="button" className="eg-dock-btn bg-[var(--danger)] font-bold text-white" onClick={props.onStop}>
               Stop Work
             </button>
             <button
               type="button"
-              className={`eg-compact-btn rounded-xl bg-[var(--warn-bg)] px-2 font-bold text-[var(--warn)] ${dock.open ? "text-lg" : "text-sm"}`}
-              aria-label="Conditions Changed / Rebrief"
-              onClick={props.onRebrief}
+              className="eg-dock-btn border border-[var(--border)] bg-white px-3 font-bold"
+              aria-expanded={dock.open}
+              aria-controls="brief-more-actions"
+              onClick={() => (dock.open ? dock.collapse() : dock.expand())}
             >
-              Rebrief
+              {dock.open ? "Less" : "More"}
             </button>
           </div>
-          <p className="mt-1 text-center text-sm">
-            <Link href="/briefs" className="eg-compact-btn inline-flex items-center font-bold text-[var(--navy)] underline">
-              My briefs
-            </Link>
-            {props.briefId ? (
-              <>
-                {" · "}
-                <Link href={`/briefs/${props.briefId}/closeout`} className="eg-compact-btn inline-flex items-center font-bold text-[var(--navy)] underline">
-                  Post-job review
-                </Link>
-              </>
-            ) : null}
-          </p>
         </nav>
       )}
       {helpOpen ? (

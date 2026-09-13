@@ -49,8 +49,21 @@ a.eg-compact-btn {
   min-height: 2.5rem;
 }
 
-.eg-peek[data-expanded="true"] button.eg-compact-btn {
-  min-height: 3.5rem;
+button.eg-dock-btn,
+a.eg-dock-btn {
+  min-height: 2rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  padding: 0 0.45rem;
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  button.eg-dock-btn,
+  a.eg-dock-btn {
+    min-height: 2.25rem;
+    font-size: 0.8125rem;
+  }
 }
 
 input,

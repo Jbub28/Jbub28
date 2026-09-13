@@ -18,6 +18,13 @@ async function openTypedBriefing(page: import("@playwright/test").Page) {
   return field;
 }
 
+async function openMoreActions(page: import("@playwright/test").Page) {
+  const help = page.getByRole("button", { name: "Help" });
+  if (await help.isVisible()) return;
+  await page.getByRole("button", { name: "More" }).click();
+  await expect(help).toBeVisible();
+}
+
 test("sign-in is usable on a mobile viewport and has no critical axe violations", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByRole("heading", { name: "EnergyGuard JRB" })).toBeVisible();
@@ -34,6 +41,7 @@ test("Employee in Charge can create a draft JRB", async ({ page }) => {
   await page.getByRole("button", { name: "Create draft" }).click();
   await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Stop Work" })).toBeVisible();
+  await openMoreActions(page);
   await expect(page.getByRole("button", { name: "Conditions Changed / Rebrief" })).toBeVisible();
 });
 
@@ -111,6 +119,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await page.getByRole("textbox", { name: "911/street address" }).fill("500 Main Street");
   await page.getByRole("textbox", { name: /Pole, structure, equipment/ }).fill("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
+  await openMoreActions(page);
   await page.getByRole("button", { name: "Save Draft" }).click();
   await expect(page.getByText("Synchronized")).toBeVisible();
   const briefUrl = page.url();
@@ -122,6 +131,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
 
+  await openMoreActions(page);
   await page.getByRole("link", { name: "Post-job review" }).click();
   await expect(page.getByRole("heading", { name: "Post-job review" })).toBeVisible();
   await expect(page.getByText(/Lincoln substation/)).toBeVisible();
@@ -252,6 +262,7 @@ test("Back returns to My briefs, Help opens, and the action bar stays at the bot
   const box = await stop.boundingBox();
   expect(box?.y ?? 0).toBeGreaterThan(500);
 
+  await openMoreActions(page);
   await page.getByRole("button", { name: "Help" }).click();
   await expect(page.getByRole("heading", { name: "Help" })).toBeVisible();
   await page.getByRole("button", { name: "Close help" }).click();

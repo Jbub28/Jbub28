@@ -32,7 +32,7 @@ export function FieldChrome(props: {
 }) {
   const total = STEPS.length;
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-40 pt-4">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-[22rem] pt-4">
       <header className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-yellow-300">

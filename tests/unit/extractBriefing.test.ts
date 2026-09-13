@@ -14,14 +14,15 @@ const catalog: BriefingCatalog = {
     { id: "dc-deenergize", exactName: "De-energization w/ zero voltage check and grounding", exposureIds: ["he-elec"] },
     { id: "dc-insul", exactName: "Electrical insulation barriers", exposureIds: ["he-elec"] },
     { id: "dc-tools", exactName: "Insulated or voltage-rated equipment and tools", exposureIds: ["he-elec"] },
-    { id: "dc-zone", exactName: "Standard hard barrier exclusion zone - to stop people", exposureIds: ["he-elec"] },
+    { id: "dc-zone", exactName: "Standard hard barrier exclusion zone - to stop people", exposureIds: ["he-elec", "he-load"] },
     { id: "dc-barrier", exactName: "Hard physical barrier - to stop equipment/vehicles", exposureIds: ["he-traffic"] },
+    { id: "dc-fall", exactName: "Fall arrest system*", exposureIds: ["he-fall"] },
   ],
-  ppe: [{ exactName: "Arc Flash Apparel" }, { exactName: "Hard Hats" }],
+  ppe: [{ exactName: "Arc Flash Apparel" }, { exactName: "Hard Hats" }, { exactName: "Safety Glasses (Dark/Clear)" }],
 };
 
 const COMPLETE =
-  "We're replacing the transformer at pole 6742 on circuit 412. We'll isolate the transformer, test it dead, install grounds, remove it with the line truck and set the new one. We've got 13.2 kV primary energized overhead, suspended-load exposure during the lift, traffic on the west side and fall exposure from the bucket. We'll maintain MAD, install the required cover-up, establish an exclusion zone, use the designated observer during the lift, set traffic control and wear the required arc-rated PPE. Weather is windy and we'll stage the trailer on the south side.";
+  "We're replacing the transformer at pole 6742 on circuit 412. We'll isolate the transformer, test it dead, install grounds, remove it with the line truck and set the new one. We've got 13.2 kV primary energized overhead, suspended-load exposure during the lift, traffic on the west side and fall exposure from the bucket. We'll maintain MAD, install the required cover-up, establish an exclusion zone, use the designated observer during the lift, set traffic control, use the required fall protection, and wear the required arc-rated PPE. Weather is windy and we'll stage the trailer on the south side.";
 
 describe("conversation briefing extraction", () => {
   it("routine complete briefing asks no follow-up and maps OSHA subjects", () => {
@@ -115,5 +116,23 @@ describe("conversation briefing extraction", () => {
     expect(backend.some((f) => f.key === "staging")).toBe(true);
     expect(backend.every((f) => f.displayOnJrb === false)).toBe(true);
     expect(queryConversationFacts(result.facts, { valueIncludes: "weather" }).length).toBeGreaterThan(0);
+  });
+
+  it("maps a noisy Tampa transformer briefing without swallowing the crew list", () => {
+    const transcript =
+      "All right guys let's go over the job we're at 4200 N. West Ave. in Tampa Florida at Poteet 1847 this is circuit test 1324 work order 77218 I'm Chris Martinez worker in charge on the crew today we have James Carter Luis Rivera and Mike Thompson our job is to replace a damaged 50 kVA overhead transformer and associate a cut out Will set up the work area. The biggest thing that can hurt or kill us today is energize 13.2 kV primary. We also have a suspended load hazard when we were moving set the transformer. Wet fall exposure from an aerial lift bucket operations with all our normal aerial lift requirements including the required fall protection. Traffic is another exposure. Required PPE includes hardhat safety glasses high visibility apparel proper work boots and arc rated clothing.";
+    const result = extractBriefing({ transcript, catalog });
+    expect(result.crewNames).toEqual(["James Carter", "Luis Rivera", "Mike Thompson"]);
+    expect(result.crewNames.join(" ")).not.toMatch(/replace|transformer|Tampa|damaged/i);
+    expect(result.workDescription).toMatch(/replace a damaged 50 kVA overhead transformer/i);
+    expect(result.location.workOrderNumber).toBe("77218");
+    expect(result.location.circuitNumber).toBe("1324");
+    expect(result.highEnergy.map((h) => h.key)).toEqual(
+      expect.arrayContaining(["electrical_contact_50v", "suspended_load", "fall_from_elevation_4ft", "mobile_equipment_workers_on_foot"]),
+    );
+    expect(result.controls.some((c) => /fall/i.test(c.text))).toBe(true);
+    expect(result.controls.some((c) => c.catalogId === "dc-fall")).toBe(true);
+    expect(result.ppe.some((p) => /arc/i.test(p))).toBe(true);
+    expect(result.followUps.filter((f) => f.key === "control_fall_from_elevation_4ft")).toEqual([]);
   });
 });

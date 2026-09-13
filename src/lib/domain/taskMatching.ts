@@ -50,6 +50,10 @@ const CLIMB_POLE = "Climb pole";
 const INSPECT_POLE = "Inspect pole";
 const ANCHOR_GUY = "Install or remove anchor or guy";
 const TRANSFER_WIRE_DIST = "Install, remove, or transfer wire";
+const OVERHEAD_EQUIPMENT =
+  "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead";
+const UNDERGROUND_EQUIPMENT =
+  "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, capacitor) - Underground";
 
 function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -145,6 +149,15 @@ export function matchTasks(input: {
     }
   }
 
+  const mentionsTransformer = /\btransformers?\b/.test(n);
+  const mentionsCutout = /\bcut[- ]?outs?\b/.test(n);
+  const mentionsReplaceEquip = /\b(install|installing|remove|removing|replace|replacing|change|changing|hang|set)\b/.test(n);
+  if (input.workTypeCode === "ELECTRIC_DISTRIBUTION" && mentionsReplaceEquip && (mentionsTransformer || mentionsCutout)) {
+    const underground = /\bunderground|pad[- ]?mount|\bu\/g\b/.test(n);
+    const t = findByName(pool, underground ? UNDERGROUND_EQUIPMENT : OVERHEAD_EQUIPMENT);
+    if (t) forced.push(t);
+  }
+
   const scored = pool
     .map((task) => {
       const { score, why } = scoreTask(text, task, synonyms);
@@ -160,14 +173,13 @@ export function matchTasks(input: {
 
   const top = merged.slice(0, 3).map((task) => {
     const scoredHit = scored.find((s) => s.task.id === task.id);
+    const forcedHit = forced.some((f) => f.id === task.id);
     const confidence: MatchConfidence =
-      scoredHit && scoredHit.score >= 85
+      forcedHit || (scoredHit && scoredHit.score >= 85)
         ? "Strong Match"
         : scoredHit && scoredHit.score >= 50
           ? "Possible Match"
-          : forced.some((f) => f.id === task.id)
-            ? "Strong Match"
-            : "More Information Needed";
+          : "More Information Needed";
     return {
       taskId: task.id,
       workTypeExactName: task.workTypeExactName,

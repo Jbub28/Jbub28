@@ -96,3 +96,19 @@ describe("voice prefill merge", () => {
     expect(String(applied.updates.crewText).split("\n")).toEqual(["John", "Mike", "Steve"]);
   });
 });
+
+describe("crew extraction from a long briefing", () => {
+  it("keeps only the named crew after 'on the crew today we have'", () => {
+    const schema = schemaForStep("start")!;
+    const result = extractPageFields({
+      transcript:
+        "I'm Chris Martinez worker in charge on the crew today we have James Carter Luis Rivera and Mike Thompson our job is to replace a damaged 50 kVA overhead transformer and associate a cut out Will set up the work area position the bucket truck",
+      schema,
+    });
+    expect(result.fills.find((f) => f.key === "crewText")?.value).toEqual([
+      "James Carter",
+      "Luis Rivera",
+      "Mike Thompson",
+    ]);
+  });
+});

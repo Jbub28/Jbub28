@@ -10,12 +10,19 @@ import type {
 
 const NAME_STOPWORDS = new Set(
   [
-    "we", "we'll", "i", "i'm", "the", "a", "an", "at", "to", "and", "or", "of", "for", "with", "using", "use",
+    "we", "we'll", "i", "i'm", "im", "the", "a", "an", "at", "to", "and", "or", "of", "for", "with", "using", "use",
     "there", "is", "are", "was", "working", "work", "crew", "members", "member", "replacing", "replace",
     "transformer", "pole", "bucket", "truck", "energized", "overhead", "primary", "location", "order",
     "today", "this", "that", "will", "would", "our", "their", "then", "from", "onto", "into", "on", "in",
+    "have", "has", "had", "job", "guys", "let", "go", "over", "charge", "worker", "damaged", "associated",
+    "associate", "cutout", "setup", "area", "position", "line", "verify", "complete", "required", "testing",
+    "grounding", "remove", "install", "make", "connections", "inspect", "restore", "equipment", "when",
+    "authorized", "biggest", "thing", "hurt", "kill", "maintain", "minimal", "approach", "distance",
   ].map((w) => w.toLowerCase()),
 );
+
+const CREW_CUTOFF =
+  /\b(?:our job|the job is|we(?:'re| are) going|we'll |the biggest|hazard|what can|work is to|i slay|will set up|we'll set)\b/i;
 
 function splitSentences(text: string): string[] {
   return text
@@ -42,7 +49,7 @@ function extractWorkOrder(text: string): { value: string; confidence: VoiceConfi
 }
 
 function extractPole(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
-  const m = text.match(/\bpole(?:\s+number)?\s+(\d+[A-Za-z]?)\b/i);
+  const m = text.match(/\b(?:pole(?:\s+(?:number|t))?|poteet|port\s+t)\s+(\d+[A-Za-z]?)\b/i);
   if (!m) return null;
   return { value: `Pole ${m[1]}`, confidence: "high", evidence: m[0] };
 }
@@ -93,7 +100,7 @@ function extractAddress(text: string): { value: string; confidence: VoiceConfide
     return labeled;
   }
   const m = text.match(
-    /\b(\d{1,6}\s+[A-Za-z][A-Za-z0-9]*(?:\s+[A-Za-z][A-Za-z0-9]*){0,4}\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct))\b/i,
+    /\b(\d{1,6}\s+(?:[A-Za-z]\.?|[A-Za-z][A-Za-z0-9]*)(?:\s+(?:[A-Za-z]\.?|[A-Za-z][A-Za-z0-9]*)){0,4}\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct))\b/i,
   );
   if (!m) return null;
   return { value: m[1].trim(), confidence: "high", evidence: m[0] };
@@ -111,24 +118,57 @@ function extractLabeled(text: string, labels: string[]): { value: string; confid
   return null;
 }
 
-function extractCrew(text: string): { value: string[]; confidence: VoiceConfidence; evidence: string } | null {
-  const working = text.match(/([A-Za-z][A-Za-z'',\s]{2,80}?)\s+are working\b/i);
-  const labeled = text.match(/\bcrew(?:\s+members?)?\s*(?:is|are|:)?\s+([^.]+)/i);
-  const chunk = working?.[1] ?? labeled?.[1];
-  if (!chunk) return null;
+function boundCrewChunk(chunk: string): string {
+  const cut = chunk.search(CREW_CUTOFF);
+  const bounded = cut >= 0 ? chunk.slice(0, cut) : chunk;
+  const firstStop = bounded.split(/[.!?]/)[0] ?? bounded;
+  return firstStop.replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
+function fullNamesFromChunk(chunk: string): string[] {
+  const names: string[] = [];
+  const re = /\b([A-Za-z]{2,15})\s+([A-Za-z]{2,20})\b/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(chunk)) !== null) {
+    const first = match[1];
+    const last = match[2];
+    if (NAME_STOPWORDS.has(first.toLowerCase()) || NAME_STOPWORDS.has(last.toLowerCase())) {
+      re.lastIndex = match.index + first.length;
+      continue;
+    }
+    if (!/^[A-Za-z]+$/.test(first) || !/^[A-Za-z]+$/.test(last)) continue;
+    names.push(`${titleCaseName(first)} ${titleCaseName(last)}`);
+  }
+  return [...new Set(names)].slice(0, 8);
+}
+
+function firstNamesFromChunk(chunk: string): string[] {
   const tokens = chunk
     .split(/,|\band\b|\s+/)
     .map((t) => t.trim())
     .filter(Boolean);
-  const names = tokens
-    .filter((t) => /^[A-Za-z]{2,20}$/.test(t) && !NAME_STOPWORDS.has(t.toLowerCase()))
-    .map(titleCaseName);
-  const unique = [...new Set(names)];
-  if (unique.length < 1) return null;
+  return [...new Set(
+    tokens
+      .filter((t) => /^[A-Za-z]{2,20}$/.test(t) && !NAME_STOPWORDS.has(t.toLowerCase()))
+      .map(titleCaseName),
+  )].slice(0, 8);
+}
+
+function extractCrew(text: string): { value: string[]; confidence: VoiceConfidence; evidence: string } | null {
+  const working = text.match(/([A-Za-z][A-Za-z'',\s]{2,80}?)\s+are working\b/i);
+  const listed = text.match(
+    /\b(?:on the\s+)?crew(?:\s+today)?(?:\s+we have|\s+members?(?:\s+(?:is|are|:))?|\s+(?:is|are|:))\s+([^.]+)/i,
+  );
+  const chunk = working?.[1] ?? listed?.[1];
+  if (!chunk) return null;
+  const bounded = boundCrewChunk(chunk);
+  const fullNames = fullNamesFromChunk(bounded);
+  const names = fullNames.length >= 2 ? fullNames : firstNamesFromChunk(bounded);
+  if (names.length < 1) return null;
   return {
-    value: unique,
-    confidence: working ? "high" : "medium",
-    evidence: (working?.[0] ?? labeled?.[0] ?? "").trim(),
+    value: names,
+    confidence: working || fullNames.length >= 2 ? "high" : "medium",
+    evidence: (working?.[0] ?? listed?.[0] ?? bounded).trim().slice(0, 180),
   };
 }
 
@@ -143,6 +183,13 @@ function extractCommunication(text: string): { value: string; confidence: VoiceC
 }
 
 function extractWorkDescription(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
+  const intent = text.match(
+    /\b(?:our job is to|the job is to|we(?:'re| are) going to)\s+((?:replace|install|set|repair|remove|change)[\s\S]{8,160}?)(?=\b(?:will set|we'll |the biggest|hazard|what can)\b|[.!]|$)/i,
+  );
+  if (intent?.[1]) {
+    const value = intent[1].replace(/\s+/g, " ").trim().replace(/[,;]+$/, "");
+    return { value, confidence: "high", evidence: intent[0].trim() };
+  }
   const sentences = splitSentences(text);
   const workish = sentences.find((s) =>
     /\b(replac\w*|install\w*|set(?:ting)?(?:\s+a)?\s+pole|transfer\w*|repair\w*|remov\w*|chang\w*|switch\w*|transformer|conductor|primary wire)\b/i.test(
@@ -150,7 +197,7 @@ function extractWorkDescription(text: string): { value: string; confidence: Voic
     ) && !/\bare working\b/i.test(s),
   );
   if (!workish) return null;
-  const cleaned = workish.replace(/\bwe'll use\b[\s\S]*$/i, "").trim();
+  const cleaned = workish.replace(/\bwe'll use\b[\s\S]*$/i, "").trim().replace(/\s+/g, " ").slice(0, 220);
   return { value: cleaned.replace(/\.$/, ""), confidence: "high", evidence: workish };
 }
 

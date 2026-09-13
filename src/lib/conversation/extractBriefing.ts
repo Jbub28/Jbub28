@@ -23,7 +23,15 @@ const HE_ALIASES: Record<string, string[]> = {
   arc_flash: ["arc flash"],
   suspended_load: ["suspended load", "suspended-load", "during the lift"],
   swinging_load: ["swinging load"],
-  fall_from_elevation_4ft: ["fall from", "fall exposure", "from the bucket", "aerial lift"],
+  fall_from_elevation_4ft: [
+    "fall from",
+    "fall exposure",
+    "from the bucket",
+    "aerial lift",
+    "fall protection",
+    "fall from height",
+    "fall from elevation",
+  ],
   mobile_equipment_workers_on_foot: ["traffic", "mobile equipment", "workers on foot"],
   motor_vehicle_over_30mph: ["over 30", "highway speed"],
   excavation_trench_5ft: ["excavation", "trench"],
@@ -40,6 +48,7 @@ const SPOKEN_CONTROLS: { phrase: string; catalogHints: string[]; extracted: stri
   { phrase: "cover up", catalogHints: ["Electrical insulation barriers"], extracted: "Cover-up", energy: true, precaution: true },
   { phrase: "mad", catalogHints: ["Insulated or voltage-rated equipment and tools"], extracted: "MAD", energy: true, precaution: true },
   { phrase: "minimum approach", catalogHints: ["Insulated or voltage-rated equipment and tools"], extracted: "MAD", energy: true, precaution: true },
+  { phrase: "minimal approach", catalogHints: ["Insulated or voltage-rated equipment and tools"], extracted: "MAD", energy: true, precaution: true },
   { phrase: "isolate", catalogHints: ["De-energization w/ zero voltage check and grounding"], extracted: "Isolate", energy: true },
   { phrase: "test it dead", catalogHints: ["De-energization w/ zero voltage check and grounding"], extracted: "Test dead", energy: true },
   { phrase: "test dead", catalogHints: ["De-energization w/ zero voltage check and grounding"], extracted: "Test dead", energy: true },
@@ -50,7 +59,20 @@ const SPOKEN_CONTROLS: { phrase: string; catalogHints: string[]; extracted: stri
   { phrase: "traffic control", catalogHints: ["Hard physical barrier - to stop equipment/vehicles"], extracted: "Traffic control", precaution: true },
   { phrase: "fall arrest", catalogHints: ["Fall arrest system*"], extracted: "Fall arrest", precaution: true },
   { phrase: "fall restraint", catalogHints: ["Fall restraint system*"], extracted: "Fall restraint", precaution: true },
+  { phrase: "fall protection", catalogHints: ["Fall arrest system*"], extracted: "Fall protection", precaution: true },
+  { phrase: "aerial lift requirements", catalogHints: ["Fall arrest system*"], extracted: "Aerial lift requirements", precaution: true },
   { phrase: "harness", catalogHints: ["Fall arrest system*"], extracted: "Fall protection harness", precaution: true },
+];
+
+const PPE_ALIASES: { match: RegExp; phrases: string[] }[] = [
+  { match: /hard hat/i, phrases: ["hard hat", "hardhat", "hardhats"] },
+  { match: /safety glasses/i, phrases: ["safety glasses"] },
+  { match: /high-?vis|visibility apparel/i, phrases: ["high vis", "high-vis", "hi-vis", "high visibility", "visibility apparel"] },
+  { match: /footwear|boot/i, phrases: ["work boots", "proper work boots", "proper footwear"] },
+  { match: /rubber/i, phrases: ["rubber insulated gloves", "rubber gloves"] },
+  { match: /glove/i, phrases: ["task appropriate gloves", "work gloves"] },
+  { match: /arc flash|arc-rated|arc rated/i, phrases: ["arc-rated", "arc rated", "arc rid", "arc flash apparel", "fr clothing", "fr shirt"] },
+  { match: /fall protection/i, phrases: ["fall protection"] },
 ];
 
 function wordBoundary(phrase: string): RegExp {
@@ -78,13 +100,19 @@ function fact(partial: ConversationFact): ConversationFact {
 }
 
 export function extractCircuit(text: string): { value: string; evidence: string } | null {
-  const m = text.match(/\bcircuit\s+(?:#|number\s+)?([A-Za-z0-9-]{1,12})\b/i);
-  if (!m) return null;
-  return { value: m[1], evidence: m[0] };
+  const labeled = text.match(/\bcircuit\s+(?:test\s+|#|number\s+)?([A-Za-z0-9-]{1,12})\b/i);
+  if (!labeled) return null;
+  let value = labeled[1];
+  if (/^(test|number|no)$/i.test(value)) {
+    const next = text.match(/\bcircuit\s+(?:test\s+|#|number\s+)?(?:test|number|no)\s+([A-Za-z0-9-]{1,12})\b/i);
+    if (!next) return null;
+    value = next[1];
+  }
+  return { value, evidence: labeled[0] };
 }
 
 export function extractVoltage(text: string): { value: string; evidence: string } | null {
-  const m = text.match(/\b(\d+(?:\.\d+)?)\s*kV\b/i);
+  const m = text.match(/\b(\d+(?:\.\d+)?)\s*(?:to\s+)?kV\b/i);
   if (!m) return null;
   return { value: `${m[1]} kV`, evidence: m[0] };
 }
@@ -237,9 +265,16 @@ export function extractBriefing(input: {
       });
     }
     for (const hint of spoken.catalogHints) {
-      const dc = catalog.directControls.find((c) => c.exactName === hint);
+      const dc = catalog.directControls.find(
+        (c) => c.exactName === hint || (hint.endsWith("*") && c.exactName.toLowerCase() === hint.toLowerCase()),
+      );
       if (!dc) continue;
-      const related = highEnergy.find((he) => (dc.exposureIds ?? []).includes(he.exposureId)) ?? highEnergy[0];
+      const related =
+        highEnergy.find((he) => (dc.exposureIds ?? []).includes(he.exposureId)) ??
+        (spoken.phrase.includes("fall")
+          ? highEnergy.find((he) => he.key === "fall_from_elevation_4ft")
+          : undefined) ??
+        highEnergy[0];
       const key = `dc:${dc.id}`;
       if (seenControl.has(key)) continue;
       seenControl.add(key);
@@ -267,9 +302,11 @@ export function extractBriefing(input: {
 
   const ppe: string[] = [];
   for (const item of catalog.ppe) {
-    if (wordBoundary(item.exactName).test(transcript)) ppe.push(item.exactName);
+    const alias = PPE_ALIASES.find((entry) => entry.match.test(item.exactName));
+    const phrases = [item.exactName, ...(alias?.phrases ?? [])].filter((p) => p.length > 2);
+    if (phrases.some((p) => wordBoundary(p).test(transcript))) ppe.push(item.exactName);
   }
-  if (/\barc[- ]rated\b|\barc flash apparel\b|\bfr\b/i.test(transcript) && !ppe.some((p) => /arc/i.test(p))) {
+  if (/\barc[- ]rated\b|\barc rid\b|\barc flash apparel\b|\bfr\b/i.test(transcript) && !ppe.some((p) => /arc/i.test(p))) {
     const arc = catalog.ppe.find((p) => /arc/i.test(p.exactName));
     if (arc) ppe.push(arc.exactName);
     else ppe.push("Arc-rated PPE");
@@ -377,7 +414,13 @@ export function extractBriefing(input: {
     });
   } else {
     for (const he of highEnergy) {
-      const hasControl = controls.some((c) => c.exposureId === he.exposureId) || energyControlSpoken || precautionSpoken;
+      const hasControl = controls.some(
+        (c) =>
+          c.exposureId === he.exposureId ||
+          (he.key === "fall_from_elevation_4ft" && /fall/i.test(c.text)) ||
+          (he.key === "suspended_load" && /exclusion|observer|lift/i.test(c.text)) ||
+          (he.key === "mobile_equipment_workers_on_foot" && /traffic|barrier/i.test(c.text)),
+      );
       if (!hasControl) {
         followUps.push({
           key: `control_${he.key}`,

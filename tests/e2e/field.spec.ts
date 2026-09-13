@@ -249,3 +249,35 @@ test("Back returns to My briefs, Help opens, and the action bar stays at the bot
   await page.getByRole("button", { name: "My briefs" }).click();
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
 });
+
+test("noisy transformer briefing keeps crew names, confirms the EEI task, and maps fall protection", async ({ page }) => {
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByRole("textbox", { name: "Or type the job" }).fill(
+    "All right guys let's go over the job we're at 4200 N. West Ave. in Tampa Florida at Poteet 1847 this is circuit test 1324 work order 77218 I'm Chris Martinez worker in charge on the crew today we have James Carter Luis Rivera and Mike Thompson our job is to replace a damaged 50 kVA overhead transformer and associate a cut out Will set up the work area. The biggest thing that can hurt or kill us today is energize 13.2 kV primary. We also have a suspended load hazard. Wet fall exposure from an aerial lift bucket operations with all our normal aerial lift requirements including the required fall protection. Traffic is another exposure. We'll maintain minimal approach distance, use the required cover up, isolate, test it dead, install grounds, establish an exclusion zone, and set traffic control. Required PPE includes hardhat safety glasses high visibility apparel proper work boots and arc rated clothing.",
+  );
+  await page.getByRole("button", { name: "Use typed briefing" }).click();
+  const crew = page.getByRole("textbox", { name: "Crew members (one per line)" });
+  await expect(crew).toHaveValue(/James Carter/, { timeout: 15_000 });
+  await expect(crew).toHaveValue(/Luis Rivera/);
+  await expect(crew).toHaveValue(/Mike Thompson/);
+  await expect(crew).not.toHaveValue(/replace a damaged/i);
+  await expect(page.getByRole("heading", { name: /EEI task/i })).toBeVisible();
+  await page.getByRole("button", { name: "Confirm this task" }).first().click();
+  await expect(page.getByText(/^Confirmed:/)).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
+  await expect(page.getByText(/Fall from/i)).toBeVisible();
+  await expect(page.getByText(/Fall protection|Fall arrest/i).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /Direct Control not used/ })).toBeVisible();
+  await page.getByRole("button", { name: "This is what we briefed" }).click();
+  await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
+  await expect(page.getByText(/High Energy is Present for Fall from/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Acknowledge for James Carter" }).click();
+  await page.getByRole("button", { name: "Acknowledge for Luis Rivera" }).click();
+  await page.getByRole("button", { name: "Acknowledge for Mike Thompson" }).click();
+  await page.getByRole("button", { name: "Release JRB for Work" }).click();
+  await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 10_000 });
+});

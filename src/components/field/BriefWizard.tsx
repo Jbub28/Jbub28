@@ -15,6 +15,8 @@ import type { BriefingCatalog, BriefingExtraction, FollowUpQuestion } from "@/li
 import { applyVoicePrefill } from "@/lib/voice/applyPrefill";
 import { schemaForStep } from "@/lib/voice/pageSchemas";
 import type { ProposedChange } from "@/lib/voice/types";
+import { TaskConfirm } from "./TaskConfirm";
+import { ControlOverride } from "./ControlOverride";
 
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
@@ -37,6 +39,7 @@ export function BriefWizard({ id }: { id: string }) {
   const [followAnswer, setFollowAnswer] = useState("");
   const [matches, setMatches] = useState<any>(null);
   const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
+  const [chosenControls, setChosenControls] = useState<{ exposureId: string; directControlId: string }[]>([]);
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
   const loc = locationFromRecord(jrb ?? {});
@@ -71,6 +74,7 @@ export function BriefWizard({ id }: { id: string }) {
     } catch (e) {
       setSaveState("Sync Error");
       setErrors([e instanceof Error ? e.message : "Save failed"]);
+      throw e;
     }
   };
 
@@ -96,6 +100,9 @@ export function BriefWizard({ id }: { id: string }) {
       ppe: catalog?.ppe ?? [],
     };
   })();
+  const workTypeCode =
+    catalog?.workTypes?.find((w: any) => w.id === (form.workTypeId ?? jrb?.workTypeId))?.code ?? jrb?.workType?.code;
+  const altCategories = catalog?.categories ?? [];
 
   const applyExtraction = async (result: BriefingExtraction, current: Record<string, unknown>) => {
     setExtraction(result);
@@ -120,14 +127,25 @@ export function BriefWizard({ id }: { id: string }) {
       original: result.transcript,
       circuitNumber: result.location.circuitNumber ?? f.circuitNumber,
     }));
-    await patch("saveBriefing", { extraction: result });
-    if (result.workDescription) {
+    try {
+      await patch("saveBriefing", { extraction: result });
+    } catch {
+      /* keep extraction on screen; save error is already shown */
+    }
+    const matchText = result.workDescription || result.transcript;
+    if (matchText) {
       try {
-        const workTypeCode = catalog?.workTypes?.find((w: any) => w.id === (form.workTypeId ?? jrb?.workTypeId))?.code ?? jrb?.workType?.code;
-        if (workTypeCode) {
+        const code =
+          catalog?.workTypes?.find((w: any) => w.id === (form.workTypeId ?? jrb?.workTypeId))?.code ?? jrb?.workType?.code;
+        if (code) {
           const res = await api("/api/ai/match-tasks", {
             method: "POST",
-            body: JSON.stringify({ workTypeCode, text: result.workDescription, originalTranscript: result.transcript, versionId: version?.id }),
+            body: JSON.stringify({
+              workTypeCode: code,
+              text: matchText,
+              originalTranscript: result.transcript,
+              versionId: version?.id,
+            }),
           });
           setMatches(res);
         }
@@ -140,6 +158,23 @@ export function BriefWizard({ id }: { id: string }) {
   const saveStart = () => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
   const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
   const eicName = jrb?.employeeInCharge?.displayName ?? "Employee in Charge";
+  const confirmedTasks = (version?.taskSelections ?? [])
+    .filter((t: any) => t.confirmed)
+    .map((t: any) => ({ id: t.taskId, name: t.task?.exactName ?? "EEI task" }));
+
+  const controlsToConfirm = () => {
+    const fromTalk = (extraction?.controls ?? [])
+      .filter((c) => c.catalogId && (c.origin === "ai_suggested" || c.origin === "ai_extracted"))
+      .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName }));
+    const extra = chosenControls.map((c) => ({ ...c, personResponsible: eicName }));
+    const merged = [...fromTalk];
+    for (const item of extra) {
+      if (!merged.some((m) => m.directControlId === item.directControlId && m.exposureId === item.exposureId)) {
+        merged.push(item);
+      }
+    }
+    return merged.filter((c) => c.directControlId && c.exposureId);
+  };
 
   const saveDraft = async () => {
     setErrors([]);
@@ -156,9 +191,13 @@ export function BriefWizard({ id }: { id: string }) {
 
   const goNext = async () => {
     if (step === 0) {
-      await saveDraft();
-      if (extraction) await patch("saveBriefing", { extraction, markStartComplete: true });
-      setStep(1);
+      try {
+        await saveDraft();
+        if (extraction) await patch("saveBriefing", { extraction, markStartComplete: true });
+        setStep(1);
+      } catch {
+        return;
+      }
       return;
     }
     if (step === 1) {
@@ -166,17 +205,19 @@ export function BriefWizard({ id }: { id: string }) {
         setErrors(["Answer the follow-up before confirming controls."]);
         return;
       }
-      if (extraction?.highEnergy.length) {
-        await patch("crewConfirmBriefing", {
-          exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
-          controls: extraction.controls
-            .filter((c) => c.catalogId && c.origin === "ai_suggested")
-            .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName })),
-        });
-      } else if (extraction) {
-        await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+      try {
+        if (extraction?.highEnergy.length) {
+          await patch("crewConfirmBriefing", {
+            exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
+            controls: controlsToConfirm(),
+          });
+        } else if (extraction) {
+          await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+        }
+        setStep(2);
+      } catch {
+        return;
       }
-      setStep(2);
     }
   };
 
@@ -209,12 +250,12 @@ export function BriefWizard({ id }: { id: string }) {
           void goNext();
         }}
         onSave={() => {
-          void saveDraft();
+          void saveDraft().catch(() => undefined);
         }}
         onHelp={() => undefined}
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
-        nextLabel={step === STEPS.length - 1 ? "Stay here" : "Next"}
+        nextLabel={step === STEPS.length - 1 ? "Review remaining gaps" : "Next"}
         backLabel={step === 0 ? "My briefs" : "Back"}
         helpText={STEPS[step].question}
         briefId={id}
@@ -278,18 +319,21 @@ export function BriefWizard({ id }: { id: string }) {
               onChange={(key, value) => setForm({ ...form, [key]: value })}
               onOptionalGps={capture}
             />
-            {matches?.result?.suggestions?.length ? (
-              <div className="space-y-2">
-                <p className="font-bold text-yellow-300">Suggested EEI task — confirm it yourself</p>
-                {matches.result.suggestions.map((s: any) => (
-                  <article key={s.taskId} className="rounded-xl bg-[#121a2b] p-3">
-                    <p className="font-bold">{s.exactTaskName}</p>
-                    <p className="text-sm">{s.explanation}</p>
-                    <BigButton onClick={() => patch("confirmTask", { taskId: s.taskId })}>Confirm this task</BigButton>
-                  </article>
-                ))}
-              </div>
-            ) : null}
+            <TaskConfirm
+              workTypeCode={workTypeCode}
+              workDescription={extraction?.workDescription || String(form.edited ?? "")}
+              suggestions={matches?.result?.suggestions ?? []}
+              unmatchedMessage={matches?.result?.message}
+              confirmed={confirmedTasks}
+              onConfirm={async (taskId) => {
+                setErrors([]);
+                try {
+                  await patch("confirmTask", { taskId });
+                } catch {
+                  /* shown in the banner */
+                }
+              }}
+            />
             <Field id="wo" label="Work order number" value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
             <Field id="ckt" label="Circuit" value={form.circuitNumber ?? extraction?.location.circuitNumber ?? jrb.circuitNumber ?? ""} onChange={(v) => setForm({ ...form, circuitNumber: v })} />
             <Field id="eic" label="Worker in Charge" value={eicName} />
@@ -335,13 +379,48 @@ export function BriefWizard({ id }: { id: string }) {
             {(extraction?.highEnergy ?? []).length === 0 ? (
               <p>Nothing from the talk was clear enough to show as High Energy. Add what you see, or go back and talk through the job.</p>
             ) : (
-              extraction!.highEnergy.map((he) => (
+              extraction!.highEnergy.map((he) => {
+                const suggested = (extraction?.controls ?? []).filter(
+                  (c) => c.exposureId === he.exposureId || (he.key === "fall_from_elevation_4ft" && /fall/i.test(c.text)),
+                );
+                const inventory = briefingCatalog.directControls
+                  .filter((dc) => (dc.exposureIds ?? []).includes(he.exposureId))
+                  .map((dc) => ({ id: dc.id, exactName: dc.exactName, exposureIds: dc.exposureIds ?? [] }));
+                const recorded = (version?.exposures ?? []).find((row: any) => row.exposureId === he.exposureId);
+                return (
                 <article key={he.exposureId} className="rounded-2xl bg-[#121a2b] p-4">
                   <p className="text-xl font-bold">{he.label}</p>
                   <p className="text-sm">Identified from talk — not confirmed until you say it can hurt us.</p>
                   <p className="text-sm">Heard: {he.evidence}</p>
+                  {suggested.length ? (
+                    <p className="mt-2 text-sm">Heard controls: {suggested.map((c) => c.text).join("; ")}</p>
+                  ) : (
+                    <p className="mt-2 text-sm">No inventory Direct Control was matched from the talk yet.</p>
+                  )}
+                  <ControlOverride
+                    exposureId={he.exposureId}
+                    exposureLabel={he.label}
+                    energySource={he.evidence}
+                    inventoryControls={inventory}
+                    categories={altCategories}
+                    eicName={eicName}
+                    selectedDirectControlId={
+                      chosenControls.find((c) => c.exposureId === he.exposureId)?.directControlId ??
+                      suggested.find((c) => c.catalogId)?.catalogId ??
+                      recorded?.directControlSelections?.[0]?.directControlId
+                    }
+                    notUsedRecorded={Boolean(recorded?.notUsed?.length)}
+                    onSelectDirectControl={(directControlId) => {
+                      setChosenControls((list) => {
+                        const rest = list.filter((c) => c.exposureId !== he.exposureId);
+                        return [...rest, { exposureId: he.exposureId, directControlId }];
+                      });
+                    }}
+                    onSaveNotUsed={(payload) => patch("recordNotUsedStrategy", payload)}
+                  />
                 </article>
-              ))
+                );
+              })
             )}
             <h2 className="text-xl font-bold">How are we controlling it?</h2>
             {(extraction?.controls ?? []).map((c, i) => (
@@ -358,17 +437,19 @@ export function BriefWizard({ id }: { id: string }) {
             ) : (
               <BigButton
                 onClick={async () => {
-                  if (extraction?.highEnergy.length) {
-                    await patch("crewConfirmBriefing", {
-                      exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
-                      controls: extraction.controls
-                        .filter((c) => c.catalogId && c.origin === "ai_suggested")
-                        .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName })),
-                    });
-                  } else {
-                    await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+                  try {
+                    if (extraction?.highEnergy.length) {
+                      await patch("crewConfirmBriefing", {
+                        exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
+                        controls: controlsToConfirm(),
+                      });
+                    } else {
+                      await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+                    }
+                    setStep(2);
+                  } catch {
+                    return;
                   }
-                  setStep(2);
                 }}
               >
                 This is what we briefed
@@ -385,6 +466,11 @@ export function BriefWizard({ id }: { id: string }) {
             <article className="rounded-2xl bg-[#121a2b] p-4">
               <h2 className="text-lg font-bold">Job</h2>
               <p>{extraction?.workDescription || version?.workDescriptionEdited || "Needs attention"}</p>
+              {confirmedTasks.length ? (
+                <p className="mt-2"><span className="font-bold">EEI task: </span>{confirmedTasks.map((t: { name: string }) => t.name).join("; ")}</p>
+              ) : (
+                <p className="mt-2">EEI task not confirmed — go back to Talk Through the Job and confirm a library task.</p>
+              )}
               <h2 className="mt-3 text-lg font-bold">Location</h2>
               <p>{formatJobLocation({ ...loc, ...form, ...jrb })}</p>
               <h2 className="mt-3 text-lg font-bold">What can seriously hurt or kill us</h2>
@@ -405,6 +491,7 @@ export function BriefWizard({ id }: { id: string }) {
             ))}
             {data.readiness?.gaps?.length ? (
               <div className="space-y-2">
+                <p className="text-lg font-bold">Cannot release yet</p>
                 {data.readiness.gaps.map((g: any) => (
                   <p key={g.code + g.message} className="rounded-xl bg-[#2a1d00] p-3">{g.message} Next: {g.nextAction}</p>
                 ))}
@@ -414,17 +501,42 @@ export function BriefWizard({ id }: { id: string }) {
             )}
             <h2 className="text-xl font-bold">Crew acknowledgment</h2>
             <p>I participated in the briefing, understand Stop Work and that significant changes require a rebrief, and understand my part of the job.</p>
-            <Field id="ackname" label="Name" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
+            {(version?.crewMembers ?? []).length === 0 ? (
+              <p>Identify the crew on the first screen before acknowledging.</p>
+            ) : (
+              (version?.crewMembers ?? []).map((m: any) => {
+                const acked = version.acknowledgments?.some((a: any) => a.name === m.name && a.jrbVersionAcknowledged === version.versionNumber);
+                return (
+                  <div key={m.id} className="rounded-xl bg-[#121a2b] p-3">
+                    <p>{m.name} — {acked ? "Acknowledged" : "Needs Attention"}</p>
+                    {acked ? null : (
+                      <BigButton onClick={() => patch("acknowledge", { name: m.name, employer: m.employer ?? "Electric Delivery" })}>
+                        Acknowledge for {m.name}
+                      </BigButton>
+                    )}
+                  </div>
+                );
+              })
+            )}
+            <Field id="ackname" label="Name (if someone is not in the list)" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
             <BigButton onClick={() => patch("acknowledge", { name: form.ackName, employer: "Electric Delivery" })}>Acknowledge this version</BigButton>
-            {(version?.crewMembers ?? []).map((m: any) => (
-              <p key={m.id}>{m.name} — {version.acknowledgments?.some((a: any) => a.name === m.name) ? "Acknowledged" : "Needs Attention"}</p>
-            ))}
             <BigButton
               onClick={async () => {
                 try {
-                  const res = await api(`/api/jrbs/${id}/release`, { method: "POST", body: "{}" });
+                  const res = await fetch(`/api/jrbs/${id}/release`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: "{}",
+                  });
+                  const payload = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    const gapText = (payload.readiness?.gaps ?? []).map((g: any) => `${g.message} Next: ${g.nextAction}`);
+                    setErrors([payload.error ?? "Cannot release", ...gapText].filter(Boolean));
+                    await refresh();
+                    return;
+                  }
                   setErrors([]);
-                  alert(res.notice ?? READY_NOTICE);
+                  alert(payload.notice ?? READY_NOTICE);
                   await refresh();
                 } catch (e) {
                   setErrors([e instanceof Error ? e.message : "Cannot release"]);

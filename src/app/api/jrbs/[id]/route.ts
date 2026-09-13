@@ -7,6 +7,7 @@ import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
 import { persistBriefingConversation, persistExtractedLocation } from "@/lib/conversation/persistBriefing";
 import { BriefingExtractionSchema } from "@/lib/conversation/types";
+import { DIRECT_CONTROL_NOT_USED_REASONS } from "@/lib/domain/controls";
 import { buildReadiness } from "@/lib/server/jrbReadiness";
 
 async function loadJrb(id: string) {
@@ -133,15 +134,25 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     });
     if (!task || task.contentStatus !== "published") return jsonError("That is not an approved EEI task.", 400);
     const tv = task.versions[0];
-    await prisma.jrbTaskSelection.create({
-      data: {
-        versionId: version.id,
-        taskId: task.id,
-        taskVersionId: tv?.id ?? "unknown",
-        confirmed: true,
-        confirmedAt: new Date(),
-      },
+    const already = await prisma.jrbTaskSelection.findFirst({
+      where: { versionId: version.id, taskId: task.id },
     });
+    if (already) {
+      await prisma.jrbTaskSelection.update({
+        where: { id: already.id },
+        data: { confirmed: true, confirmedAt: new Date(), taskVersionId: tv?.id ?? already.taskVersionId },
+      });
+    } else {
+      await prisma.jrbTaskSelection.create({
+        data: {
+          versionId: version.id,
+          taskId: task.id,
+          taskVersionId: tv?.id ?? "unknown",
+          confirmed: true,
+          confirmedAt: new Date(),
+        },
+      });
+    }
     await writeAudit({
       userId: user.id,
       action: "task_confirmation",
@@ -339,10 +350,12 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   }
 
   if (action === "acknowledge") {
+    const ackName = String(body.name ?? "").trim();
+    if (!ackName) return jsonError("Type the crew member's name before acknowledging.", 400);
     await prisma.jrbAcknowledgment.create({
       data: {
         versionId: version.id,
-        name: body.name,
+        name: ackName,
         employeeOrContractorId: body.employeeOrContractorId,
         employer: body.employer,
         acknowledgmentText:
@@ -508,6 +521,85 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       entityType: "jrb_version",
       entityId: jrb.id,
       newValue: { exposures: body.exposures, controls: body.controls },
+    });
+  }
+
+  if (action === "recordNotUsedStrategy") {
+    const exposureId = String(body.exposureId ?? "");
+    const reason = String(body.reason ?? "");
+    const explanation = String(body.explanation ?? "").trim();
+    if (!exposureId) return jsonError("Choose the High Energy exposure.", 400);
+    if (!(DIRECT_CONTROL_NOT_USED_REASONS as readonly string[]).includes(reason)) {
+      return jsonError("Choose an approved reason a Direct Control is not being used.", 400);
+    }
+    if (!explanation) return jsonError("Explain why a Direct Control is not being used.", 400);
+    const published = await prisma.highEnergyExposure.findUnique({ where: { id: exposureId } });
+    if (!published) return jsonError("That High Energy exposure is not in the inventory.", 400);
+    let exp = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId } });
+    if (!exp) {
+      exp = await prisma.jrbExposure.create({
+        data: {
+          versionId: version.id,
+          exposureId,
+          presence: Presence.present,
+          energySource: body.energySource,
+          sifOutcome: "Could cause serious injury or fatality",
+          crewConfirmed: true,
+          confirmedAt: new Date(),
+        },
+      });
+    } else {
+      await prisma.jrbExposure.update({
+        where: { id: exp.id },
+        data: { presence: Presence.present, crewConfirmed: true, confirmedAt: new Date() },
+      });
+    }
+    await prisma.directControlNotUsedReason.deleteMany({ where: { jrbExposureId: exp.id } });
+    await prisma.directControlNotUsedReason.create({
+      data: {
+        jrbExposureId: exp.id,
+        jrbId: id,
+        jrbVersion: version.versionNumber,
+        reason,
+        explanation,
+        userId: user.id,
+      },
+    });
+    const controls = Array.isArray(body.controls) ? body.controls : [];
+    await prisma.jrbAlternativeControl.deleteMany({ where: { jrbExposureId: exp.id } });
+    for (const item of controls) {
+      const category = await prisma.alternativeControlCategory.findFirst({
+        where: { OR: [{ id: String(item.categoryId ?? "") }, { exactName: String(item.category ?? "") }] },
+      });
+      if (!category) continue;
+      await prisma.jrbAlternativeControl.create({
+        data: {
+          jrbExposureId: exp.id,
+          categoryId: category.id,
+          catalogControlId: item.catalogControlId || null,
+          isOther: Boolean(item.isOther) || !item.catalogControlId,
+          description: String(item.description ?? category.exactName),
+          howReducesExposure: item.howReducesExposure,
+          howComplements: item.howComplements,
+          owner: item.owner,
+          verificationMethod: item.verificationMethod,
+          residualExposure: body.residualExposure,
+          stopWorkTrigger: body.stopWorkTrigger,
+          supervisorReviewed: Boolean(body.supervisorReviewed),
+          supervisorDecision: body.supervisorReviewed ? "reviewed" : null,
+        },
+      });
+    }
+    await prisma.jrbVersion.update({
+      where: { id: version.id },
+      data: { highEnergyReviewedAt: new Date() },
+    });
+    await writeAudit({
+      userId: user.id,
+      action: "direct_control_not_used",
+      entityType: "jrb_exposure",
+      entityId: exp.id,
+      newValue: { reason, explanation, residualExposure: body.residualExposure },
     });
   }
 

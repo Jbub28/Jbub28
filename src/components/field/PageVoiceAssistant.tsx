@@ -88,10 +88,10 @@ export function PageVoiceAssistant(props: {
   const visibleTranscript = [transcript, interim].filter(Boolean).join(" ").trim();
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-slate-600 bg-[#121a2b] p-4">
+    <section className="eg-card space-y-3 p-4">
       <button
         type="button"
-        className={`min-h-16 w-full rounded-2xl px-4 py-4 text-xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+        className={`min-h-16 w-full rounded-2xl px-4 py-4 text-xl font-bold ${listening ? "bg-[var(--accent)] text-[var(--accent-text)]" : "bg-[var(--navy)] text-white"}`}
         aria-pressed={listening}
         aria-label={listening ? "Stop talking" : "Talk to fill this page"}
         onClick={() => {
@@ -114,7 +114,7 @@ export function PageVoiceAssistant(props: {
       </p>
       {visibleTranscript ? (
         <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-yellow-300">Heard</p>
+          <p className="eg-kicker">Heard</p>
           <p className="text-lg">{visibleTranscript}</p>
         </div>
       ) : null}
@@ -132,15 +132,15 @@ export function PageVoiceAssistant(props: {
       ) : null}
       {proposed.length ? (
         <div className="space-y-2">
-          <p className="font-bold text-yellow-300">Location already entered</p>
+          <p className="font-bold text-[var(--navy)]">Location already entered</p>
           {proposed.map((change) => (
-            <div key={change.key} className="rounded-xl bg-[#3b2a00] p-3">
+            <div key={change.key} className="eg-alert p-3">
               <p className="font-bold">{change.label}</p>
               <p className="text-sm">Current: {change.current}</p>
               <p className="text-sm">Heard: {change.proposed}</p>
               <button
                 type="button"
-                className="mt-2 w-full rounded-xl bg-[#ffd000] py-2 text-lg font-bold text-black"
+                className="mt-2 w-full rounded-xl bg-[var(--navy)] py-2 text-lg font-bold text-white"
                 onClick={() => {
                   props.onApply({ [change.key]: change.proposed }, {
                     transcript: transcript,
@@ -169,12 +169,12 @@ export function PageVoiceAssistant(props: {
       ) : null}
       {extraction?.suggestions.length ? (
         <div className="space-y-2">
-          <p className="font-bold text-yellow-300">Suggested for Crew Review</p>
+          <p className="font-bold text-[var(--navy)]">Suggested for Crew Review</p>
           {extraction.suggestions.map((s) => (
             <button
               key={`${s.key}-${String(s.value)}`}
               type="button"
-              className="w-full rounded-xl bg-[#3b2a00] px-4 py-3 text-left text-lg font-bold"
+              className="eg-alert w-full px-4 py-3 text-left text-lg font-bold"
               onClick={() => props.onConfirmSuggestion?.(s)}
             >
               {s.label}

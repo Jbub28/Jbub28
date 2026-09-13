@@ -3,8 +3,8 @@
   "short_name": "EnergyGuard",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070b14",
-  "theme_color": "#070b14",
+  "background_color": "#f3f5f8",
+  "theme_color": "#0a3161",
   "description": "Job Risk Briefing for Electric Delivery crews",
   "icons": [
     { "src": "/icon", "sizes": "512x512", "type": "image/png", "purpose": "any" }

@@ -15,7 +15,7 @@ export function ConnectionStatus() {
     };
   }, []);
   return (
-    <p className="text-base font-bold" role="status" aria-live="polite">
+    <p className="text-sm font-bold" role="status" aria-live="polite">
       {online ? "Online" : "Offline"}
     </p>
   );

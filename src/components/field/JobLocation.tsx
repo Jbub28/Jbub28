@@ -6,7 +6,7 @@ import { formatJobLocation, type JobLocationFields } from "@/lib/domain/jobLocat
 
 export function JobLocationSummary({ jrb, title = "Job Location" }: { jrb: JobLocationFields; title?: string }) {
   return (
-    <article className="rounded-xl bg-[#121a2b] p-4">
+    <article className="eg-card p-4">
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="text-lg">{formatJobLocation(jrb)}</p>
     </article>
@@ -26,7 +26,7 @@ export function JobLocationFields(props: {
   onOptionalGps: () => void;
 }) {
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-slate-600 bg-[#121a2b] p-4">
+    <section className="eg-card space-y-3 p-4">
       <h2 className="text-xl font-bold">Job Location</h2>
       <p className="text-sm">Where is the work? GPS is optional — you can finish this brief by typing.</p>
       <Field
@@ -55,7 +55,7 @@ export function JobLocationFields(props: {
       />
       <button
         type="button"
-        className="min-h-14 w-full rounded-xl bg-[#1b2740] px-4 py-3 text-lg font-bold"
+        className="min-h-14 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-3 text-lg font-bold"
         onClick={props.onOptionalGps}
       >
         Use device GPS (optional)

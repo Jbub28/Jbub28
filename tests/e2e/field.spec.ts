@@ -270,12 +270,14 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
   await expect(page.getByText(/Fall from/i)).toBeVisible();
+  await expect(page.getByRole("img", { name: /Fall from Elevation/i }).first()).toBeVisible();
+  await expect(page.getByRole("img", { name: /Mobile Equipment\/Traffic with Workers on Foot/i }).first()).toBeVisible();
   await expect(page.getByText(/Fall protection|Fall arrest/i).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /Direct Control not used/ }).first()).toBeVisible();
   await page.getByRole("button", { name: "This is what we briefed" }).click();
   await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await expect(page.getByText(/High Energy is Present for Fall from/i)).toHaveCount(0);
-  for (const name of ["Jordan Miles", "James Carter", "Luis Rivera", "Mike Thompson"]) {
+  for (const name of ["Avery Cole", "Jordan Miles", "James Carter", "Luis Rivera", "Mike Thompson"]) {
     const btn = page.getByRole("button", { name: `Acknowledge for ${name}` });
     if (await btn.count()) {
       await btn.click();

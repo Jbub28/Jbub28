@@ -17,6 +17,7 @@ import { schemaForStep } from "@/lib/voice/pageSchemas";
 import type { ProposedChange } from "@/lib/voice/types";
 import { TaskConfirm } from "./TaskConfirm";
 import { ControlOverride } from "./ControlOverride";
+import { HighEnergyIcon } from "@/components/ui/HighEnergyIcon";
 
 async function api(url: string, init?: RequestInit) {
   const res = await fetch(url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
@@ -284,8 +285,22 @@ export function BriefWizard({ id }: { id: string }) {
               extraction={extraction}
             />
             {extraction?.workDescription ? <p className="text-lg"><span className="font-bold">The work: </span>{extraction.workDescription}</p> : null}
+            {extraction?.highEnergy.length ? (
+              <ul className="space-y-2">
+                {extraction.highEnergy.map((he) => (
+                  <li key={he.exposureId} className="eg-card p-3">
+                    <HighEnergyIcon
+                      compact
+                      energyKey={he.key}
+                      label={he.label}
+                      src={catalog?.exposures?.find((e: any) => e.id === he.exposureId)?.icon?.storagePath}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             {followUps.length ? (
-              <div className="space-y-2 rounded-2xl border-2 border-yellow-300 bg-[#2a1d00] p-4">
+              <div className="space-y-2 eg-alert p-4">
                 <p className="text-lg font-bold">{followUps[0].question}</p>
                 <p className="text-sm">{followUps[0].reason}</p>
                 <Field id="follow" label="Answer" textarea value={followAnswer} onChange={setFollowAnswer} />
@@ -306,7 +321,7 @@ export function BriefWizard({ id }: { id: string }) {
                 </BigButton>
               </div>
             ) : null}
-            <p className="text-sm text-slate-200">Scroll these fields while you talk. They fill in as a coach — edit anything that looks wrong.</p>
+            <p className="eg-muted text-sm">Scroll these fields while you talk. They fill in as a coach — edit anything that looks wrong.</p>
             <JobLocationFields
               values={{
                 jobLocation: form.jobLocation ?? loc.jobLocation,
@@ -339,6 +354,7 @@ export function BriefWizard({ id }: { id: string }) {
             <Field id="eic" label="Worker in Charge" value={eicName} />
             <Field id="crew" label="Crew members (one per line)" textarea value={form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
             <BigButton
+              primary
               onClick={async () => {
                 await goNext();
               }}
@@ -354,7 +370,7 @@ export function BriefWizard({ id }: { id: string }) {
               <ResumeStopWork id={id} onDone={refresh} />
             ) : null}
             {followUps.length ? (
-              <div className="space-y-2 rounded-2xl border-2 border-yellow-300 bg-[#2a1d00] p-4">
+              <div className="space-y-2 eg-alert p-4">
                 <p className="text-lg font-bold">{followUps[0].question}</p>
                 <p className="text-sm">{followUps[0].reason}</p>
                 <Field id="follow-2" label="Answer" textarea value={followAnswer} onChange={setFollowAnswer} />
@@ -388,9 +404,13 @@ export function BriefWizard({ id }: { id: string }) {
                   .map((dc) => ({ id: dc.id, exactName: dc.exactName, exposureIds: dc.exposureIds ?? [] }));
                 const recorded = (version?.exposures ?? []).find((row: any) => row.exposureId === he.exposureId);
                 return (
-                <article key={he.exposureId} className="rounded-2xl bg-[#121a2b] p-4">
-                  <p className="text-xl font-bold">{he.label}</p>
-                  <p className="text-sm">Identified from talk — not confirmed until you say it can hurt us.</p>
+                <article key={he.exposureId} className="eg-card p-4">
+                  <HighEnergyIcon
+                    energyKey={he.key}
+                    label={he.label}
+                    src={catalog?.exposures?.find((e: any) => e.id === he.exposureId)?.icon?.storagePath}
+                  />
+                  <p className="mt-2 text-sm">Identified from talk — not confirmed until you say it can hurt us.</p>
                   <p className="text-sm">Heard: {he.evidence}</p>
                   {suggested.length ? (
                     <p className="mt-2 text-sm">Heard controls: {suggested.map((c) => c.text).join("; ")}</p>
@@ -424,7 +444,7 @@ export function BriefWizard({ id }: { id: string }) {
             )}
             <h2 className="text-xl font-bold">How are we controlling it?</h2>
             {(extraction?.controls ?? []).map((c, i) => (
-              <article key={`${c.text}-${i}`} className="rounded-xl bg-[#121a2b] p-3">
+              <article key={`${c.text}-${i}`} className="eg-card p-3">
                 <p className="font-bold">{c.text}</p>
                 <p className="text-sm">{c.origin === "ai_suggested" ? "Suggested from the Direct Control Inventory" : "Identified from the conversation"}</p>
                 {c.catalogName && c.catalogName !== c.text ? <p className="text-sm">Inventory name: {c.catalogName}</p> : null}
@@ -433,9 +453,10 @@ export function BriefWizard({ id }: { id: string }) {
             {extraction?.ppe?.length ? <p><span className="font-bold">PPE heard: </span>{extraction.ppe.join(", ")}</p> : null}
             <p className="text-sm">EnergyGuard does not decide that work is safe. You confirm what the crew will actually use. Suggested inventory items are not confirmed until you say so.</p>
             {followUps.length ? (
-              <p className="rounded-xl bg-[#2a1d00] p-3">Answer the follow-up before confirming controls. EnergyGuard will not mark a control confirmed for you.</p>
+              <p className="eg-alert p-3">Answer the follow-up before confirming controls. EnergyGuard will not mark a control confirmed for you.</p>
             ) : (
               <BigButton
+                primary
                 onClick={async () => {
                   try {
                     if (extraction?.highEnergy.length) {
@@ -463,7 +484,7 @@ export function BriefWizard({ id }: { id: string }) {
             {jrb.status === "stop_work_active" ? (
               <ResumeStopWork id={id} onDone={refresh} />
             ) : null}
-            <article className="rounded-2xl bg-[#121a2b] p-4">
+            <article className="eg-card p-4">
               <h2 className="text-lg font-bold">Job</h2>
               <p>{extraction?.workDescription || version?.workDescriptionEdited || "Needs attention"}</p>
               {confirmedTasks.length ? (
@@ -474,7 +495,22 @@ export function BriefWizard({ id }: { id: string }) {
               <h2 className="mt-3 text-lg font-bold">Location</h2>
               <p>{formatJobLocation({ ...loc, ...form, ...jrb })}</p>
               <h2 className="mt-3 text-lg font-bold">What can seriously hurt or kill us</h2>
-              <p>{(extraction?.highEnergy ?? []).map((h) => h.label).join("; ") || "None confirmed from talk"}</p>
+              {(extraction?.highEnergy ?? []).length ? (
+                <ul className="mt-2 space-y-2">
+                  {(extraction?.highEnergy ?? []).map((h) => (
+                    <li key={h.exposureId}>
+                      <HighEnergyIcon
+                        compact
+                        energyKey={h.key}
+                        label={h.label}
+                        src={catalog?.exposures?.find((e: any) => e.id === h.exposureId)?.icon?.storagePath}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>None confirmed from talk</p>
+              )}
               <h2 className="mt-3 text-lg font-bold">Critical / Direct Controls</h2>
               <p>{(extraction?.controls ?? []).map((c) => c.text).join("; ") || "Review required"}</p>
               {extraction?.ppe?.length ? <p className="mt-2"><span className="font-bold">PPE: </span>{extraction.ppe.join(", ")}</p> : null}
@@ -487,13 +523,13 @@ export function BriefWizard({ id }: { id: string }) {
               ["Energy-source controls", extraction?.osha.energyControlsAddressed || version?.briefingAssessment?.energyControlsAddressed],
               ["PPE requirements", extraction?.osha.ppeAddressed || version?.briefingAssessment?.ppeAddressed],
             ].map(([label, ok]) => (
-              <p key={String(label)} className="rounded-xl bg-[#121a2b] p-3">{ok ? "Addressed in the briefing" : "Needs attention"} — {label}</p>
+              <p key={String(label)} className="eg-card p-3">{ok ? "Addressed in the briefing" : "Needs attention"} — {label}</p>
             ))}
             {data.readiness?.gaps?.length ? (
               <div className="space-y-2">
                 <p className="text-lg font-bold">Cannot release yet</p>
                 {data.readiness.gaps.map((g: any) => (
-                  <p key={g.code + g.message} className="rounded-xl bg-[#2a1d00] p-3">{g.message} Next: {g.nextAction}</p>
+                  <p key={g.code + g.message} className="eg-alert p-3">{g.message} Next: {g.nextAction}</p>
                 ))}
               </div>
             ) : (
@@ -507,7 +543,7 @@ export function BriefWizard({ id }: { id: string }) {
               (version?.crewMembers ?? []).map((m: any) => {
                 const acked = version.acknowledgments?.some((a: any) => a.name === m.name && a.jrbVersionAcknowledged === version.versionNumber);
                 return (
-                  <div key={m.id} className="rounded-xl bg-[#121a2b] p-3">
+                  <div key={m.id} className="eg-card p-3">
                     <p>{m.name} — {acked ? "Acknowledged" : "Needs Attention"}</p>
                     {acked ? null : (
                       <BigButton onClick={() => patch("acknowledge", { name: m.name, employer: m.employer ?? "Electric Delivery" })}>
@@ -521,6 +557,7 @@ export function BriefWizard({ id }: { id: string }) {
             <Field id="ackname" label="Name (if someone is not in the list)" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
             <BigButton onClick={() => patch("acknowledge", { name: form.ackName, employer: "Electric Delivery" })}>Acknowledge this version</BigButton>
             <BigButton
+              primary
               onClick={async () => {
                 try {
                   const res = await fetch(`/api/jrbs/${id}/release`, {
@@ -639,11 +676,11 @@ function JobTalk(props: {
 
   const visible = [transcript, interim].filter(Boolean).join(" ").trim();
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-yellow-300 bg-[#121a2b] p-4">
-      <div className="sticky top-0 z-10 bg-[#121a2b] pb-2">
+    <section className="eg-card space-y-3 p-4">
+      <div className="sticky top-0 z-10 bg-[var(--surface)] pb-2">
         <button
           type="button"
-          className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+          className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[var(--accent)] text-[var(--accent-text)]" : "bg-[var(--navy)] text-white"}`}
           aria-pressed={listening}
           aria-label={listening ? "Stop talking" : "Talk through the job"}
           onClick={() => {
@@ -664,6 +701,7 @@ function JobTalk(props: {
       {visible ? <p className="text-lg">{visible}</p> : null}
       <Field id="type-job" label="Or type the job" textarea value={typed} onChange={setTyped} />
       <BigButton
+        primary
         onClick={() => {
           const spoken = typed.trim();
           if (!spoken) return;
@@ -676,12 +714,12 @@ function JobTalk(props: {
       </BigButton>
       {props.proposed.length ? (
         <div className="space-y-2">
-          <p className="font-bold text-yellow-300">Location already entered</p>
+          <p className="font-bold text-[var(--navy)]">Location already entered</p>
           {props.proposed.map((change) => (
-            <div key={change.key} className="rounded-xl bg-[#3b2a00] p-3">
+            <div key={change.key} className="eg-alert p-3">
               <p>Current: {change.current}</p>
               <p>Heard: {change.proposed}</p>
-              <button type="button" className="mt-2 w-full rounded-xl bg-[#ffd000] py-2 text-lg font-bold text-black" onClick={() => props.onProposedUsed(change)}>
+              <button type="button" className="mt-2 w-full rounded-xl bg-[var(--navy)] py-2 text-lg font-bold text-white" onClick={() => props.onProposedUsed(change)}>
                 Use spoken {change.label}
               </button>
             </div>
@@ -710,7 +748,7 @@ function EventDialog(props: {
   return (
     <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" role="dialog" aria-modal="true">
       <form
-        className="w-full space-y-3 rounded-2xl bg-[#121a2b] p-5"
+        className="w-full space-y-3 eg-card p-5"
         onSubmit={async (e) => {
           e.preventDefault();
           const path = props.kind === "stop" ? "stop-work" : "rebrief";
@@ -747,14 +785,14 @@ function EventDialog(props: {
         <p>{props.kind === "rebrief" ? "What changed?" : "Talk through what happened. EnergyGuard cannot close Stop Work for you."}</p>
         <EventTalk value={talk} onChange={setTalk} kind={props.kind} />
         <label className="block text-lg font-bold" htmlFor="reason">Reason</label>
-        <select id="reason" className="w-full rounded-xl bg-[#070b14] p-3" value={props.form.eventReason ?? ""} onChange={(e) => props.setForm({ ...props.form, eventReason: e.target.value })}>
+        <select id="reason" className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={props.form.eventReason ?? ""} onChange={(e) => props.setForm({ ...props.form, eventReason: e.target.value })}>
           <option value="">Choose</option>
           {(props.kind === "rebrief" ? REBRIEF_REASONS : ["Immediate danger", "Control failed", "New hazard", "Other"]).map((r) => (
             <option key={r}>{r}</option>
           ))}
         </select>
-        <button type="submit" className="w-full rounded-xl bg-[#ffd000] py-3 text-xl font-bold text-black">Confirm</button>
-        <button type="button" className="w-full rounded-xl bg-[#1b2740] py-3 text-xl font-bold" onClick={props.onClose}>Cancel</button>
+        <button type="submit" className="w-full rounded-xl bg-[var(--navy)] py-3 text-xl font-bold text-white">Confirm</button>
+        <button type="button" className="w-full rounded-xl border border-[var(--border)] bg-white py-3 text-xl font-bold" onClick={props.onClose}>Cancel</button>
       </form>
     </div>
   );
@@ -776,7 +814,7 @@ function EventTalk(props: { value: string; onChange: (v: string) => void; kind: 
     <div className="space-y-2">
       <button
         type="button"
-        className={`min-h-16 w-full rounded-2xl px-4 py-4 text-xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+        className={`min-h-16 w-full rounded-2xl px-4 py-4 text-xl font-bold ${listening ? "bg-[var(--accent)] text-[var(--accent-text)]" : "bg-[var(--navy)] text-white"}`}
         aria-label={listening ? "Stop talking" : props.kind === "stop" ? "Talk through Stop Work" : "Talk through what changed"}
         onClick={() => {
           if (listening) {
@@ -805,7 +843,7 @@ function ResumeStopWork(props: { id: string; onDone: () => Promise<unknown> | un
   const [corrective, setCorrective] = useState("");
   const [error, setError] = useState<string | null>(null);
   return (
-    <div className="space-y-2 rounded-2xl border-2 border-red-400 bg-[#2a0d0d] p-4">
+    <div className="eg-danger space-y-2 p-4">
       <p className="text-lg font-bold">Stop Work is active</p>
       <p className="text-sm">EnergyGuard cannot close this. The Worker in Charge decides when work may resume.</p>
       <Field id="corrective" label="Corrective action" textarea value={corrective} onChange={setCorrective} />

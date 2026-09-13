@@ -6,6 +6,7 @@ import { BigButton, Field, voiceMark } from "@/components/field/FieldChrome";
 import { JobLocationSummary } from "@/components/field/JobLocation";
 import { PageVoiceAssistant } from "@/components/field/PageVoiceAssistant";
 import { schemaForStep } from "@/lib/voice/pageSchemas";
+import { AppHeader, PageShell } from "@/components/ui/AppHeader";
 
 export default function CloseoutPage() {
   const params = useParams<{ id: string }>();
@@ -33,9 +34,10 @@ export default function CloseoutPage() {
       });
   }, [params.id]);
   return (
-    <main className="mx-auto max-w-xl space-y-4 px-4 py-8">
-      <h1 className="text-3xl font-bold">Post-job review</h1>
-      <p>This is not used to score people.</p>
+    <div className="min-h-dvh">
+      <AppHeader title="Post-job review" subtitle="This is not used to score people." />
+      <PageShell>
+      <div className="space-y-4">
       {locationStatus === "loading" ? <p>Loading job location…</p> : null}
       {locationStatus === "missing" ? <p>Job Location is not available for this brief.</p> : null}
       {jrb ? <JobLocationSummary jrb={jrb} /> : null}
@@ -78,6 +80,8 @@ export default function CloseoutPage() {
       >
         Save closeout
       </BigButton>
-    </main>
+      </div>
+      </PageShell>
+    </div>
   );
 }

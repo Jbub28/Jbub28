@@ -68,12 +68,12 @@ export function TaskConfirm(props: {
   };
 
   return (
-    <section className="space-y-3 rounded-2xl border-2 border-yellow-300 bg-[#121a2b] p-4">
+    <section className="eg-card space-y-3 p-4">
       <h2 className="text-lg font-bold">EEI task — confirm it yourself</h2>
       {props.confirmed.length ? (
         <div className="space-y-1">
           {props.confirmed.map((task) => (
-            <p key={task.id} className="rounded-xl bg-[#1b2740] p-3 font-bold">
+            <p key={task.id} className="rounded-xl bg-[var(--ok-bg)] p-3 font-bold text-[var(--ok)]">
               Confirmed: {task.name}
             </p>
           ))}
@@ -83,7 +83,7 @@ export function TaskConfirm(props: {
       )}
       {props.unmatchedMessage && !props.suggestions.length ? <p className="text-sm">{props.unmatchedMessage}</p> : null}
       {props.suggestions.map((s) => (
-        <article key={s.taskId} className="rounded-xl bg-[#070b14] p-3">
+        <article key={s.taskId} className="rounded-xl bg-[var(--surface-2)] p-3">
           <p className="font-bold">{s.exactTaskName}</p>
           {s.activityExactName ? <p className="text-sm">{s.activityExactName}</p> : null}
           {s.explanation ? <p className="text-sm">{s.explanation}</p> : null}
@@ -98,7 +98,7 @@ export function TaskConfirm(props: {
         .filter((t) => !props.suggestions.some((s) => s.taskId === t.id))
         .slice(0, 6)
         .map((t) => (
-          <article key={t.id} className="rounded-xl bg-[#070b14] p-3">
+          <article key={t.id} className="rounded-xl bg-[var(--surface-2)] p-3">
             <p className="font-bold">{t.exactName}</p>
             <p className="text-sm">{t.activity} · {t.workType}</p>
             <BigButton selected={props.confirmed.some((c) => c.id === t.id)} onClick={() => void confirm(t.id)}>

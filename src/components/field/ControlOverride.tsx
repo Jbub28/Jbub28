@@ -76,7 +76,7 @@ export function ControlOverride(props: {
         <label className="block text-sm font-bold">
           Direct Control from the inventory
           <select
-            className="mt-1 w-full rounded-xl bg-[#070b14] p-3 text-base font-normal"
+            className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white p-3 text-base font-normal"
             value={props.selectedDirectControlId ?? ""}
             onChange={(e) => {
               if (e.target.value) props.onSelectDirectControl(e.target.value);
@@ -94,19 +94,19 @@ export function ControlOverride(props: {
         <p className="text-sm">No inventory Direct Control is attached yet for {props.exposureLabel}.</p>
       )}
       {props.notUsedRecorded ? (
-        <p className="rounded-xl bg-[#1b2740] p-3 text-sm">Direct Control not used is recorded. Complete Alternative Controls before release if they are still open.</p>
+        <p className="rounded-xl bg-[var(--ok-bg)] p-3 text-sm">Direct Control not used is recorded. Complete Alternative Controls before release if they are still open.</p>
       ) : null}
-      <button type="button" className="w-full rounded-xl bg-[#3b2a00] px-3 py-3 text-left text-lg font-bold" onClick={() => setOpen((v) => !v)}>
+      <button type="button" className="w-full rounded-xl border border-[var(--border)] bg-[var(--warn-bg)] px-3 py-3 text-left text-lg font-bold" onClick={() => setOpen((v) => !v)}>
         {open ? "Hide Direct Control not used" : "Direct Control not used / Alternative Controls"}
       </button>
       {open ? (
-        <div className="space-y-3 rounded-xl bg-[#070b14] p-3">
+        <div className="space-y-3 rounded-xl border border-[var(--border)] bg-white p-3">
           <p className="text-sm">
             Use this only when an approved Direct Control will not be used. EnergyGuard will not invent a barrier. Supervisor review is still required before Ready for Work.
           </p>
           <label className="block text-sm font-bold">
             Why a Direct Control is not used
-            <select className="mt-1 w-full rounded-xl bg-[#121a2b] p-3 text-base font-normal" value={reason} onChange={(e) => setReason(e.target.value)}>
+            <select className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white p-3 text-base font-normal" value={reason} onChange={(e) => setReason(e.target.value)}>
               {DIRECT_CONTROL_NOT_USED_REASONS.map((item) => (
                 <option key={item}>{item}</option>
               ))}
@@ -114,12 +114,12 @@ export function ControlOverride(props: {
           </label>
           <Field id={`${props.exposureId}-why`} label="Explanation" textarea value={explanation} onChange={setExplanation} />
           <p className="font-bold">Alternative Control 1</p>
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={firstCategory} onChange={(e) => setFirstCategory(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstCategory} onChange={(e) => setFirstCategory(e.target.value)}>
             {categoryNames.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={firstControlId} onChange={(e) => setFirstControlId(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstControlId} onChange={(e) => setFirstControlId(e.target.value)}>
             <option value="">Choose from this category</option>
             {firstOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.exactName}</option>
@@ -127,18 +127,18 @@ export function ControlOverride(props: {
             <option value="other">Other</option>
           </select>
           <Field id={`${props.exposureId}-o1`} label="Person responsible" value={firstOwner} onChange={setFirstOwner} />
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={firstVerify} onChange={(e) => setFirstVerify(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstVerify} onChange={(e) => setFirstVerify(e.target.value)}>
             {VERIFICATION_METHODS.map((m) => (
               <option key={m}>{m}</option>
             ))}
           </select>
           <p className="font-bold">Alternative Control 2 (different category)</p>
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={secondCategory} onChange={(e) => setSecondCategory(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondCategory} onChange={(e) => setSecondCategory(e.target.value)}>
             {categoryNames.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={secondControlId} onChange={(e) => setSecondControlId(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondControlId} onChange={(e) => setSecondControlId(e.target.value)}>
             <option value="">Choose from this category</option>
             {secondOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.exactName}</option>
@@ -146,7 +146,7 @@ export function ControlOverride(props: {
             <option value="other">Other</option>
           </select>
           <Field id={`${props.exposureId}-o2`} label="Person responsible" value={secondOwner} onChange={setSecondOwner} />
-          <select className="w-full rounded-xl bg-[#121a2b] p-3" value={secondVerify} onChange={(e) => setSecondVerify(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondVerify} onChange={(e) => setSecondVerify(e.target.value)}>
             {VERIFICATION_METHODS.map((m) => (
               <option key={m}>{m}</option>
             ))}

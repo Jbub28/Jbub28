@@ -14,6 +14,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
+  themeColor: "#0a3161",
 };
 
 export const metadata: Metadata = {
@@ -21,13 +22,13 @@ export const metadata: Metadata = {
   description: "Job Risk Briefing for Electric Delivery crews",
   applicationName: "EnergyGuard JRB",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "EnergyGuard JRB", statusBarStyle: "black-translucent" },
+  appleWebApp: { capable: true, title: "EnergyGuard JRB", statusBarStyle: "default" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={sans.variable}>
-      <body className="min-h-full bg-[#070b14] text-white antialiased">
+      <body className="min-h-full bg-[var(--bg)] text-[var(--text)] antialiased">
         {children}
         <ServiceWorkerRegister />
       </body>

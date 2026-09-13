@@ -41,7 +41,6 @@ export function PageVoiceAssistant(props: {
   onConfirmSuggestion?: (suggestion: VoiceSuggestion) => void;
 }) {
   const sessionRef = useRef("");
-  const pendingExtract = useRef(false);
   const propsRef = useRef(props);
   useEffect(() => {
     propsRef.current = props;
@@ -57,37 +56,30 @@ export function PageVoiceAssistant(props: {
       setInterim("");
     },
     onInterim: (spoken) => setInterim(spoken),
+    onSessionEnd: (spoken) => {
+      setTranscript(spoken);
+      sessionRef.current = spoken;
+      setBusy(true);
+      const current = propsRef.current;
+      void extractForPage(current.schema.stepKey, spoken, current.schema, current.context ?? {})
+        .then((result) => {
+          setExtraction(result);
+          const applied = applyVoicePrefill({
+            schema: current.schema,
+            current: current.currentValues,
+            extraction: result,
+          });
+          current.onApply(applied.updates, {
+            transcript: spoken,
+            appliedKeys: applied.appliedKeys,
+            preservedKeys: applied.preservedKeys,
+            suggestions: result.suggestions,
+            extraction: result,
+          });
+        })
+        .finally(() => setBusy(false));
+    },
   });
-
-  useEffect(() => {
-    if (listening) {
-      pendingExtract.current = true;
-      return;
-    }
-    if (!pendingExtract.current) return;
-    pendingExtract.current = false;
-    const spoken = sessionRef.current.trim();
-    if (!spoken) return;
-    const current = propsRef.current;
-    setBusy(true);
-    void extractForPage(current.schema.stepKey, spoken, current.schema, current.context ?? {})
-      .then((result) => {
-        setExtraction(result);
-        const applied = applyVoicePrefill({
-          schema: current.schema,
-          current: current.currentValues,
-          extraction: result,
-        });
-        current.onApply(applied.updates, {
-          transcript: spoken,
-          appliedKeys: applied.appliedKeys,
-          preservedKeys: applied.preservedKeys,
-          suggestions: result.suggestions,
-          extraction: result,
-        });
-      })
-      .finally(() => setBusy(false));
-  }, [listening]);
 
   const visibleTranscript = [transcript, interim].filter(Boolean).join(" ").trim();
 

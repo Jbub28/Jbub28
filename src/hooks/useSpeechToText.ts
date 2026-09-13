@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getSpeechRecognitionConstructor,
+  joinSpokenText,
   permissionMessage,
   speechSupportMessage,
   type SpeechRecognitionLike,
@@ -11,6 +12,7 @@ import {
 type Options = {
   onFinal: (text: string) => void;
   onInterim?: (text: string) => void;
+  onSessionEnd?: (text: string) => void;
 };
 
 type Session = {
@@ -26,6 +28,7 @@ export function useSpeechToText(options: Options) {
   const [error, setError] = useState<string | null>(null);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const listeningRef = useRef(false);
+  const sessionTextRef = useRef("");
   const optionsRef = useRef(options);
   useEffect(() => {
     optionsRef.current = options;
@@ -85,7 +88,10 @@ export function useSpeechToText(options: Options) {
         else interim += piece[0].transcript;
       }
       if (interim) optionsRef.current.onInterim?.(interim);
-      if (finals.trim()) optionsRef.current.onFinal(finals);
+      if (finals.trim()) {
+        sessionTextRef.current = joinSpokenText(sessionTextRef.current, finals);
+        optionsRef.current.onFinal(finals);
+      }
     };
     rec.onerror = (event) => {
       setError(permissionMessage(event.error));
@@ -94,6 +100,9 @@ export function useSpeechToText(options: Options) {
     };
     rec.onend = () => {
       if (activeSession?.rec === rec) activeSession = null;
+      const spoken = sessionTextRef.current.trim();
+      sessionTextRef.current = "";
+      if (spoken) optionsRef.current.onSessionEnd?.(spoken);
       if (recRef.current === rec) becomeIdle();
     };
     const session: Session = {
@@ -111,6 +120,7 @@ export function useSpeechToText(options: Options) {
     };
     recRef.current = rec;
     activeSession = session;
+    sessionTextRef.current = "";
     try {
       rec.start();
       listeningRef.current = true;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Field, FieldChrome, BigButton, STEPS } from "./FieldChrome";
 import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLocation";
 import { REBRIEF_REASONS } from "@/lib/domain/controls";
@@ -23,6 +24,7 @@ async function api(url: string, init?: RequestInit) {
 }
 
 export function BriefWizard({ id }: { id: string }) {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<any>(null);
   const [catalog, setCatalog] = useState<any>(null);
@@ -136,6 +138,47 @@ export function BriefWizard({ id }: { id: string }) {
   };
 
   const saveStart = () => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
+  const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
+  const eicName = jrb?.employeeInCharge?.displayName ?? "Employee in Charge";
+
+  const saveDraft = async () => {
+    setErrors([]);
+    const names = String(form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "")
+      .split("\n")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    if (names.length) {
+      await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
+    }
+    await saveStart();
+    if (extraction) await patch("saveBriefing", { extraction });
+  };
+
+  const goNext = async () => {
+    if (step === 0) {
+      await saveDraft();
+      if (extraction) await patch("saveBriefing", { extraction, markStartComplete: true });
+      setStep(1);
+      return;
+    }
+    if (step === 1) {
+      if (followUps.length) {
+        setErrors(["Answer the follow-up before confirming controls."]);
+        return;
+      }
+      if (extraction?.highEnergy.length) {
+        await patch("crewConfirmBriefing", {
+          exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
+          controls: extraction.controls
+            .filter((c) => c.catalogId && c.origin === "ai_suggested")
+            .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName })),
+        });
+      } else if (extraction) {
+        await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+      }
+      setStep(2);
+    }
+  };
 
   if (!jrb || !catalog) {
     return (
@@ -148,9 +191,6 @@ export function BriefWizard({ id }: { id: string }) {
     );
   }
 
-  const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
-  const eicName = jrb.employeeInCharge?.displayName ?? "Employee in Charge";
-
   return (
     <>
       <FieldChrome
@@ -158,13 +198,25 @@ export function BriefWizard({ id }: { id: string }) {
         title={STEPS[step].label}
         saveState={saveState}
         errorSummary={errors}
-        onBack={() => setStep((s) => Math.max(0, s - 1))}
-        onNext={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-        onSave={() => saveStart()}
+        onBack={() => {
+          if (step === 0) {
+            router.push("/briefs");
+            return;
+          }
+          setStep((s) => Math.max(0, s - 1));
+        }}
+        onNext={() => {
+          void goNext();
+        }}
+        onSave={() => {
+          void saveDraft();
+        }}
         onHelp={() => undefined}
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
         nextLabel={step === STEPS.length - 1 ? "Stay here" : "Next"}
+        backLabel={step === 0 ? "My briefs" : "Back"}
+        helpText={STEPS[step].question}
         briefId={id}
       >
         <p className="text-xl">{STEPS[step].question}</p>
@@ -173,18 +225,6 @@ export function BriefWizard({ id }: { id: string }) {
           <div className="space-y-4">
             <p className="text-lg">JRB {jrb.jrbNumber} · {jrb.status.replaceAll("_", " ")}</p>
             {jrb.status === "stop_work_active" ? <ResumeStopWork id={id} onDone={refresh} /> : null}
-            <JobLocationFields
-              values={{
-                jobLocation: form.jobLocation ?? loc.jobLocation,
-                streetAddress: form.streetAddress ?? loc.streetAddress,
-                gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
-                locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
-              }}
-              highlights={voiceKeys}
-              gpsStatus={gpsStatus}
-              onChange={(key, value) => setForm({ ...form, [key]: value })}
-              onOptionalGps={capture}
-            />
             <JobTalk
               catalog={briefingCatalog}
               currentValues={{
@@ -225,6 +265,19 @@ export function BriefWizard({ id }: { id: string }) {
                 </BigButton>
               </div>
             ) : null}
+            <p className="text-sm text-slate-200">Scroll these fields while you talk. They fill in as a coach — edit anything that looks wrong.</p>
+            <JobLocationFields
+              values={{
+                jobLocation: form.jobLocation ?? loc.jobLocation,
+                streetAddress: form.streetAddress ?? loc.streetAddress,
+                gpsCoordinates: form.gpsCoordinates ?? loc.gpsCoordinates,
+                locationIdentifier: form.locationIdentifier ?? loc.locationIdentifier,
+              }}
+              highlights={voiceKeys}
+              gpsStatus={gpsStatus}
+              onChange={(key, value) => setForm({ ...form, [key]: value })}
+              onOptionalGps={capture}
+            />
             {matches?.result?.suggestions?.length ? (
               <div className="space-y-2">
                 <p className="font-bold text-yellow-300">Suggested EEI task — confirm it yourself</p>
@@ -243,11 +296,7 @@ export function BriefWizard({ id }: { id: string }) {
             <Field id="crew" label="Crew members (one per line)" textarea value={form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? ""} onChange={(v) => setForm({ ...form, crewText: v })} />
             <BigButton
               onClick={async () => {
-                const names = String(form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "").split("\n").map((n) => n.trim()).filter(Boolean);
-                await patch("saveCrew", { crewMembers: names.map((name: string) => ({ name, employer: "Electric Delivery" })) });
-                await saveStart();
-                if (extraction) await patch("saveBriefing", { extraction, markStartComplete: true });
-                setStep(1);
+                await goNext();
               }}
             >
               Continue
@@ -479,24 +528,26 @@ function JobTalk(props: {
   const visible = [transcript, interim].filter(Boolean).join(" ").trim();
   return (
     <section className="space-y-3 rounded-2xl border-2 border-yellow-300 bg-[#121a2b] p-4">
-      <button
-        type="button"
-        className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
-        aria-pressed={listening}
-        aria-label={listening ? "Stop talking" : "Talk through the job"}
-        onClick={() => {
-          if (listening) {
-            stop();
-            return;
-          }
-          sessionRef.current = "";
-          setTranscript("");
-          setInterim("");
-          toggle();
-        }}
-      >
-        {listening ? "Listening… Stop" : "Talk through the job"}
-      </button>
+      <div className="sticky top-0 z-10 bg-[#121a2b] pb-2">
+        <button
+          type="button"
+          className={`min-h-20 w-full rounded-2xl px-4 py-5 text-2xl font-bold ${listening ? "bg-[#ffd000] text-black" : "bg-[#1b2740]"}`}
+          aria-pressed={listening}
+          aria-label={listening ? "Stop talking" : "Talk through the job"}
+          onClick={() => {
+            if (listening) {
+              stop();
+              return;
+            }
+            sessionRef.current = "";
+            setTranscript("");
+            setInterim("");
+            toggle();
+          }}
+        >
+          {listening ? "Listening… Stop" : "Talk through the job"}
+        </button>
+      </div>
       <p className="text-lg" role="status">{error ?? (listening ? "Listening..." : busy ? "Matching the discussion to the job…" : "Talk naturally. You can still type.")}</p>
       {visible ? <p className="text-lg">{visible}</p> : null}
       <Field id="type-job" label="Or type the job" textarea value={typed} onChange={setTyped} />

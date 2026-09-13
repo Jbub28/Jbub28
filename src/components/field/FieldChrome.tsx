@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ConnectionStatus } from "./ConnectionStatus";
 
 export const STEPS = [
@@ -8,6 +9,26 @@ export const STEPS = [
   { key: "exposures", label: "What Can Kill Us", question: "What can seriously hurt us, and how are we controlling it?" },
   { key: "ready", label: "Ready for Work", question: "Do we understand the job, the serious exposures, and the controls?" },
 ];
+
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const covered = window.innerHeight - viewport.height;
+      setOpen(covered > 120);
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, []);
+  return open;
+}
 
 export function FieldChrome(props: {
   stepIndex: number;
@@ -20,29 +41,40 @@ export function FieldChrome(props: {
   onStop: () => void;
   onRebrief: () => void;
   nextLabel?: string;
+  backLabel?: string;
+  helpText?: string;
   briefId?: string;
   children: React.ReactNode;
   errorSummary?: string[];
 }) {
   const total = STEPS.length;
+  const keyboardOpen = useKeyboardOpen();
+  const [helpOpen, setHelpOpen] = useState(false);
+  const help = props.helpText ?? STEPS[props.stepIndex]?.question;
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col px-4 pb-[22rem] pt-4">
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-yellow-300">
-            Step {props.stepIndex + 1} of {total}
-          </p>
-          <h1 className="text-2xl font-bold">{props.title}</h1>
-        </div>
-        <div className="text-right">
-          <ConnectionStatus />
-          <p className="text-sm" role="status" aria-live="polite">
-            {props.saveState}
-          </p>
+    <div className="mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="shrink-0 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-wide text-yellow-300">
+              Step {props.stepIndex + 1} of {total}
+            </p>
+            <h1 className="text-2xl font-bold">{props.title}</h1>
+          </div>
+          <div className="text-right">
+            <ConnectionStatus />
+            <p className="text-sm" role="status" aria-live="polite">
+              {props.saveState}
+            </p>
+            <Link href="/briefs" className="text-sm font-bold underline">
+              My briefs
+            </Link>
+          </div>
         </div>
       </header>
       {props.errorSummary && props.errorSummary.length > 0 ? (
-        <div className="mb-4 rounded-xl border-2 border-yellow-300 bg-[#2a1d00] p-4" role="alert">
+        <div className="mb-3 shrink-0 rounded-xl border-2 border-yellow-300 bg-[#2a1d00] p-4" role="alert">
           <h2 className="text-lg font-bold">Needs attention</h2>
           <ul className="list-disc pl-5">
             {props.errorSummary.map((e) => (
@@ -51,42 +83,72 @@ export function FieldChrome(props: {
           </ul>
         </div>
       ) : null}
-      <div className="flex-1 space-y-4">{props.children}</div>
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-600 bg-[#070b14] p-3">
-        <div className="mx-auto grid max-w-xl grid-cols-2 gap-2">
-          <button type="button" className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold" onClick={props.onBack}>
-            Back
-          </button>
-          <button type="button" className="rounded-xl bg-[#ffd000] px-4 text-lg font-bold text-black" onClick={props.onNext}>
-            {props.nextLabel ?? "Next"}
-          </button>
-          <button type="button" className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold" onClick={props.onSave}>
-            Save Draft
-          </button>
-          <button type="button" className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold" onClick={props.onHelp}>
-            Help
-          </button>
-          <button type="button" className="col-span-1 rounded-xl bg-[#5b1b1b] px-4 text-lg font-bold" onClick={props.onStop}>
-            Stop Work
-          </button>
-          <button type="button" className="col-span-1 rounded-xl bg-[#3b2a00] px-4 text-lg font-bold" onClick={props.onRebrief}>
-            Conditions Changed / Rebrief
-          </button>
-        </div>
-        <p className="mx-auto mt-2 max-w-xl text-center text-sm">
-          <Link href="/briefs" className="underline">
-            My briefs
-          </Link>
-          {props.briefId ? (
-            <>
-              {" · "}
-              <Link href={`/briefs/${props.briefId}/closeout`} className="underline">
-                Post-job review
-              </Link>
-            </>
-          ) : null}
-        </p>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4 [-webkit-overflow-scrolling:touch]">
+        {props.children}
       </div>
+      {keyboardOpen ? (
+        <p className="shrink-0 py-2 text-center text-sm text-slate-200" role="status">
+          Keyboard open — scroll the form. Close the keyboard for Save, Next, and Stop Work.
+        </p>
+      ) : (
+        <nav
+          className="shrink-0 border-t border-slate-600 bg-[#070b14] pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+          aria-label="Job brief actions"
+        >
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold" onClick={props.onBack}>
+              {props.backLabel ?? "Back"}
+            </button>
+            <button type="button" className="rounded-xl bg-[#ffd000] px-4 text-lg font-bold text-black" onClick={props.onNext}>
+              {props.nextLabel ?? "Next"}
+            </button>
+            <button type="button" className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold" onClick={props.onSave}>
+              Save Draft
+            </button>
+            <button
+              type="button"
+              className="rounded-xl bg-[#1b2740] px-4 text-lg font-bold"
+              onClick={() => {
+                props.onHelp();
+                setHelpOpen(true);
+              }}
+            >
+              Help
+            </button>
+            <button type="button" className="rounded-xl bg-[#5b1b1b] px-4 text-lg font-bold" onClick={props.onStop}>
+              Stop Work
+            </button>
+            <button type="button" className="rounded-xl bg-[#3b2a00] px-4 text-lg font-bold" onClick={props.onRebrief}>
+              Conditions Changed / Rebrief
+            </button>
+          </div>
+          <p className="mt-2 text-center text-sm">
+            <Link href="/briefs" className="underline">
+              My briefs
+            </Link>
+            {props.briefId ? (
+              <>
+                {" · "}
+                <Link href={`/briefs/${props.briefId}/closeout`} className="underline">
+                  Post-job review
+                </Link>
+              </>
+            ) : null}
+          </p>
+        </nav>
+      )}
+      {helpOpen ? (
+        <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" role="dialog" aria-modal="true" aria-labelledby="help-title">
+          <div className="w-full space-y-3 rounded-2xl bg-[#121a2b] p-5">
+            <h2 id="help-title" className="text-2xl font-bold">Help</h2>
+            <p className="text-lg">{help}</p>
+            <p className="text-sm">Talk through the job, then scroll the fields to check what was captured. EnergyGuard does not decide that work is safe. Back returns to your briefs on the first screen.</p>
+            <button type="button" className="w-full rounded-xl bg-[#ffd000] py-3 text-xl font-bold text-black" onClick={() => setHelpOpen(false)}>
+              Close help
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

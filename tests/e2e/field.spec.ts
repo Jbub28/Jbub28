@@ -230,3 +230,22 @@ test("Stop Work talk captures cover-up failure and stays open", async ({ page })
   await expect(page.getByText(/Stop Work is active/)).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("button", { name: "Work may resume" })).toBeVisible();
 });
+
+test("Back returns to My briefs, Help opens, and the action bar stays at the bottom", async ({ page }) => {
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+
+  const stop = page.getByRole("button", { name: "Stop Work" });
+  const box = await stop.boundingBox();
+  expect(box?.y ?? 0).toBeGreaterThan(500);
+
+  await page.getByRole("button", { name: "Help" }).click();
+  await expect(page.getByRole("heading", { name: "Help" })).toBeVisible();
+  await page.getByRole("button", { name: "Close help" }).click();
+
+  await page.getByRole("button", { name: "My briefs" }).click();
+  await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
+});

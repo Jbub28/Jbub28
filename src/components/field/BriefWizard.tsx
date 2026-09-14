@@ -271,6 +271,16 @@ export function BriefWizard({ id }: { id: string }) {
         onHelp={() => undefined}
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
+        onDiscard={
+          jrb.status === "closed" || jrb.discardedAt
+            ? undefined
+            : () => {
+                if (!window.confirm("Discard this brief? It will move to Archived. You can put it back later.")) return;
+                void patch("discardBrief", {})
+                  .then(() => router.push("/briefs"))
+                  .catch(() => undefined);
+              }
+        }
         nextLabel={step === STEPS.length - 1 ? "Review remaining gaps" : "Next"}
         backLabel={step === 0 ? "My briefs" : "Back"}
         helpText={STEPS[step].question}
@@ -280,7 +290,7 @@ export function BriefWizard({ id }: { id: string }) {
 
         {step === 0 && (
           <div className="space-y-4">
-            <p className="text-lg">JRB {jrb.jrbNumber} · {plainStatus(jrb.status)}</p>
+            <p className="text-lg">JRB {jrb.jrbNumber} · {plainStatus(jrb.status, jrb.discardedAt)}</p>
             {(() => {
               const timing = jobTiming(jrb);
               return timing.line ? <p className="eg-muted text-sm">{timing.line}</p> : null;

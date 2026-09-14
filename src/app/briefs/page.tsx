@@ -4,18 +4,31 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ConnectionStatus } from "@/components/field/ConnectionStatus";
 import { AppHeader, PageFooter, PageShell, StatusChip, canSeeLibraries, canSeeSupervisorLog } from "@/components/ui/AppHeader";
-import { briefListBucket, briefTitle, jobTiming, plainStatus, statusTone } from "@/lib/domain/briefPresentation";
+import {
+  briefListBucket,
+  briefTitle,
+  jobTiming,
+  plainStatus,
+  statusTone,
+  type BriefListFolder,
+} from "@/lib/domain/briefPresentation";
 
-type ListFilter = "current" | "archived";
+const FOLDERS: { id: BriefListFolder; label: string }[] = [
+  { id: "in_progress", label: "In progress" },
+  { id: "completed", label: "Completed" },
+  { id: "archived", label: "Archived" },
+];
 
 export default function BriefsPage() {
   const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [me, setMe] = useState<any>(null);
-  const [filter, setFilter] = useState<ListFilter>("current");
+  const [filter, setFilter] = useState<BriefListFolder>("in_progress");
   const [now, setNow] = useState(() => Date.now());
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const load = () => fetch("/api/jrbs").then((r) => r.json()).then((d) => setJrbs(d.jrbs ?? []));
   useEffect(() => {
     fetch("/api/auth/session").then((r) => r.json()).then(setMe);
-    fetch("/api/jrbs").then((r) => r.json()).then((d) => setJrbs(d.jrbs ?? []));
+    load();
   }, []);
   useEffect(() => {
     const tick = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -24,16 +37,35 @@ export default function BriefsPage() {
   const roles = me?.user?.roles as string[] | undefined;
   const grouped = useMemo(() => {
     const list = jrbs ?? [];
-    const current: any[] = [];
+    const in_progress: any[] = [];
+    const completed: any[] = [];
     const archived: any[] = [];
     for (const j of list) {
       const bucket = briefListBucket(j);
-      if (bucket === "archived" || bucket === "unfinished") archived.push(j);
-      else current.push(j);
+      if (bucket === "completed") completed.push(j);
+      else if (bucket === "archived") archived.push(j);
+      else in_progress.push(j);
     }
-    return { current, archived };
+    return { in_progress, completed, archived };
   }, [jrbs]);
-  const shown = filter === "current" ? grouped.current : grouped.archived;
+  const shown = grouped[filter];
+  const moveBrief = async (id: string, action: "discardBrief" | "restoreBrief") => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/jrbs/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Could not update this brief.");
+      }
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
   return (
     <div className="min-h-dvh">
       <AppHeader
@@ -45,50 +77,75 @@ export default function BriefsPage() {
         <Link href="/briefs/new" className="block rounded-2xl bg-[var(--navy)] py-4 text-center text-xl font-bold text-white">
           Start a Job Brief
         </Link>
-        <div className="mt-6 grid grid-cols-2 gap-2" role="tablist" aria-label="Job brief lists">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={filter === "current"}
-            className={`rounded-xl py-3 font-bold ${filter === "current" ? "bg-[var(--navy)] text-white" : "border border-[var(--border)] bg-white"}`}
-            onClick={() => setFilter("current")}
-          >
-            Current jobs ({grouped.current.length})
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={filter === "archived"}
-            className={`rounded-xl py-3 font-bold ${filter === "archived" ? "bg-[var(--navy)] text-white" : "border border-[var(--border)] bg-white"}`}
-            onClick={() => setFilter("archived")}
-          >
-            Archived ({grouped.archived.length})
-          </button>
+        <div className="mt-6 grid grid-cols-3 gap-2" role="tablist" aria-label="Job brief folders">
+          {FOLDERS.map((folder) => (
+            <button
+              key={folder.id}
+              type="button"
+              role="tab"
+              aria-selected={filter === folder.id}
+              className={`rounded-xl px-2 py-3 text-sm font-bold ${filter === folder.id ? "bg-[var(--navy)] text-white" : "border border-[var(--border)] bg-white"}`}
+              onClick={() => setFilter(folder.id)}
+            >
+              {folder.label} ({grouped[folder.id].length})
+            </button>
+          ))}
         </div>
         <p className="eg-muted mt-3 text-sm">
-          {filter === "current"
-            ? "Jobs you are still working on. Empty old starts are in Archived."
-            : "Completed jobs and unfinished starts that were never filled in."}
+          {filter === "in_progress"
+            ? "Jobs you are still working on."
+            : filter === "completed"
+              ? "Jobs that finished the post-job review."
+              : "Briefs you discarded, or empty starts that were never filled in."}
         </p>
         {shown.length === 0 ? (
           <p className="eg-card mt-6 p-4 eg-muted">
-            {filter === "current" ? "No current jobs. Start a brief or check Archived." : "Nothing archived yet."}
+            {filter === "in_progress"
+              ? "No jobs in progress. Start a brief or check Completed and Archived."
+              : filter === "completed"
+                ? "No completed jobs yet."
+                : "Nothing archived yet."}
           </p>
         ) : null}
         <ul className="mt-6 space-y-3">
           {shown.map((j) => {
             const title = briefTitle(j);
             const timing = jobTiming(j, new Date(now));
+            const folder = briefListBucket(j);
             return (
-              <li key={j.id}>
-                <Link href={`/briefs/${j.id}`} className="eg-card block p-4">
+              <li key={j.id} className="eg-card p-4">
+                <Link href={`/briefs/${j.id}`} className="block">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-xl font-bold">{title}</p>
-                    <StatusChip tone={statusTone(j.status)}>{plainStatus(j.status)}</StatusChip>
+                    <StatusChip tone={statusTone(j.status, j.discardedAt)}>{plainStatus(j.status, j.discardedAt)}</StatusChip>
                   </div>
                   <p className="mt-1 text-sm">{j.jrbNumber}</p>
                   {timing.line ? <p className="eg-muted mt-1 text-sm">{timing.line}</p> : null}
                 </Link>
+                {folder === "in_progress" && j.status !== "closed" ? (
+                  <button
+                    type="button"
+                    className="mt-3 w-full rounded-xl border border-[var(--border)] py-3 font-bold"
+                    disabled={busyId === j.id}
+                    onClick={() => {
+                      if (window.confirm("Discard this brief? It will move to Archived. You can put it back later.")) {
+                        void moveBrief(j.id, "discardBrief");
+                      }
+                    }}
+                  >
+                    Discard
+                  </button>
+                ) : null}
+                {folder === "archived" ? (
+                  <button
+                    type="button"
+                    className="mt-3 w-full rounded-xl border border-[var(--border)] py-3 font-bold"
+                    disabled={busyId === j.id}
+                    onClick={() => void moveBrief(j.id, "restoreBrief")}
+                  >
+                    Put back in progress
+                  </button>
+                ) : null}
               </li>
             );
           })}

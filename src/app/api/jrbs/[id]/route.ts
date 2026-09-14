@@ -609,6 +609,19 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     });
   }
 
+  if (action === "discardBrief") {
+    if (jrb.status === "closed") {
+      return jsonError("A completed job stays in Completed. It cannot be discarded.", 409);
+    }
+    await prisma.jrbRecord.update({ where: { id }, data: { discardedAt: new Date() } });
+    await writeAudit({ userId: user.id, action: "jrb_discard", entityType: "jrb_record", entityId: id });
+  }
+
+  if (action === "restoreBrief") {
+    await prisma.jrbRecord.update({ where: { id }, data: { discardedAt: null } });
+    await writeAudit({ userId: user.id, action: "jrb_restore", entityType: "jrb_record", entityId: id });
+  }
+
   if (action === "saveCloseout") {
     const review = body.review ?? {};
     const markDone = Boolean(review.completed);

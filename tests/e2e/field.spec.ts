@@ -346,6 +346,7 @@ test("supervisor can open the desk, go home, and open a CSRA scorecard", async (
   await expect(page.getByRole("link", { name: "Home" }).first()).toBeVisible();
   await page.getByRole("link", { name: "Home" }).first().click();
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: /Current jobs/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /In progress/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Completed/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Archived/ })).toBeVisible();
 });

@@ -14,11 +14,12 @@ export const WRITING_STATUSES = [
   "ready_for_work",
 ] as const;
 
-export function plainStatus(status?: string | null): string {
+export function plainStatus(status?: string | null, discardedAt?: Date | string | null): string {
+  if (discardedAt) return "Discarded";
   switch (status) {
     case "draft":
     case "in_progress":
-      return "Still writing";
+      return "In progress";
     case "needs_attention":
       return "Needs attention";
     case "supervisor_review_required":
@@ -36,11 +37,12 @@ export function plainStatus(status?: string | null): string {
     case "closed":
       return "Completed";
     default:
-      return status ? status.replaceAll("_", " ") : "Still writing";
+      return status ? status.replaceAll("_", " ") : "In progress";
   }
 }
 
-export function statusTone(status?: string | null): "ok" | "warn" | "neutral" {
+export function statusTone(status?: string | null, discardedAt?: Date | string | null): "ok" | "warn" | "neutral" {
+  if (discardedAt) return "neutral";
   if (status === "closed") return "ok";
   if (status === "released_for_work") return "ok";
   if (status === "stop_work_active" || status === "rebrief_required" || status === "needs_attention") return "warn";
@@ -94,21 +96,25 @@ export function briefHasContent(input: {
   return false;
 }
 
+export type BriefListFolder = "in_progress" | "completed" | "archived";
+
 export function briefListBucket(
   input: {
     status?: string | null;
     updatedAt?: Date | string | null;
     createdAt?: Date | string | null;
+    discardedAt?: Date | string | null;
   } & Parameters<typeof briefHasContent>[0],
   now = Date.now(),
-): "current" | "unfinished" | "archived" {
-  if (input.status === "closed") return "archived";
-  if (ACTIVE_JOB_STATUSES.includes(input.status as (typeof ACTIVE_JOB_STATUSES)[number])) return "current";
-  if (briefHasContent(input)) return "current";
+): BriefListFolder {
+  if (input.discardedAt) return "archived";
+  if (input.status === "closed") return "completed";
+  if (ACTIVE_JOB_STATUSES.includes(input.status as (typeof ACTIVE_JOB_STATUSES)[number])) return "in_progress";
+  if (briefHasContent(input)) return "in_progress";
   const stamp = new Date(input.updatedAt ?? input.createdAt ?? 0).getTime();
   const hours = (now - stamp) / 3_600_000;
-  if (hours <= 12) return "current";
-  return "unfinished";
+  if (hours <= 12) return "in_progress";
+  return "archived";
 }
 
 export function briefTitle(input: Parameters<typeof shortWorkName>[0] & Parameters<typeof shortPlaceName>[0] & { jrbNumber?: string }): string {
@@ -164,10 +170,11 @@ export function jobOpenedAt(input: {
 export function jobEndedAt(input: {
   status?: string | null;
   updatedAt?: Date | string | null;
+  discardedAt?: Date | string | null;
 }): Date | null {
-  if (input.status !== "closed") return null;
-  if (!input.updatedAt) return null;
-  const date = input.updatedAt instanceof Date ? input.updatedAt : new Date(input.updatedAt);
+  const raw = input.discardedAt || (input.status === "closed" ? input.updatedAt : null);
+  if (!raw) return null;
+  const date = raw instanceof Date ? raw : new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -176,6 +183,7 @@ export function jobTiming(
     createdAt?: Date | string | null;
     date?: Date | string | null;
     updatedAt?: Date | string | null;
+    discardedAt?: Date | string | null;
     status?: string | null;
     versions?: { releasedAt?: Date | string | null }[];
   },
@@ -194,7 +202,13 @@ export function jobTiming(
   const end = endedAt ?? now;
   const durationLabel = formatDuration(end.getTime() - openedAt.getTime());
   const openedLabel = formatClockTime(openedAt, now);
-  const durationPhrase = endedAt ? `Lasted ${durationLabel}` : durationLabel;
+  const durationPhrase = input.discardedAt
+    ? durationLabel === "just opened"
+      ? "Discarded"
+      : `Discarded after ${durationLabel}`
+    : endedAt
+      ? `Lasted ${durationLabel}`
+      : durationLabel;
   return {
     openedAt,
     openedLabel,

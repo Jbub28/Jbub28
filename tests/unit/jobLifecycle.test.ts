@@ -8,7 +8,7 @@ describe("plain status labels", () => {
   it("uses words a child can read", () => {
     expect(plainStatus("released_for_work")).toBe("Job in progress");
     expect(plainStatus("closed")).toBe("Completed");
-    expect(plainStatus("draft")).toBe("Still writing");
+    expect(plainStatus("draft")).toBe("In progress");
     expect(plainStatus("stop_work_active")).toBe("Stop work");
   });
 });
@@ -31,16 +31,17 @@ describe("brief titles and lists", () => {
     ).toMatch(/4200 N West Ave/);
   });
 
-  it("archives completed jobs and unfinished empty starts", () => {
-    expect(briefListBucket({ status: "closed", jobLocation: "Main St" })).toBe("archived");
-    expect(briefListBucket({ status: "released_for_work", jobLocation: "Main St" })).toBe("current");
+  it("puts completed jobs in Completed and discarded or empty leftover starts in Archived", () => {
+    expect(briefListBucket({ status: "closed", jobLocation: "Main St" })).toBe("completed");
+    expect(briefListBucket({ status: "released_for_work", jobLocation: "Main St" })).toBe("in_progress");
+    expect(briefListBucket({ status: "draft", discardedAt: new Date(), jobLocation: "Main St" })).toBe("archived");
     expect(
       briefListBucket({
         status: "draft",
         createdAt: new Date(Date.now() - 48 * 3600_000),
         updatedAt: new Date(Date.now() - 48 * 3600_000),
       }),
-    ).toBe("unfinished");
+    ).toBe("archived");
   });
 });
 

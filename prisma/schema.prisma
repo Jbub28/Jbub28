@@ -192,6 +192,7 @@ model JrbRecord {
   syncStatus              SyncStatus @default(local_only)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
+  discardedAt             DateTime?
   versions                JrbVersion[]
   stopWorkEvents          StopWorkEvent[]
   rebriefEvents           RebriefEvent[]

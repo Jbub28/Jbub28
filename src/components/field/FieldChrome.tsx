@@ -83,6 +83,7 @@ export function FieldChrome(props: {
   onHelp: () => void;
   onStop: () => void;
   onRebrief: () => void;
+  onDiscard?: () => void;
   nextLabel?: string;
   backLabel?: string;
   helpText?: string;
@@ -191,6 +192,11 @@ export function FieldChrome(props: {
                 <Link href={`/briefs/${props.briefId}/closeout`} className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline">
                   Post-job review
                 </Link>
+              ) : null}
+              {props.onDiscard ? (
+                <button type="button" className="eg-dock-btn border border-[var(--border)] bg-white font-bold" onClick={props.onDiscard}>
+                  Discard
+                </button>
               ) : null}
               <Link href="/briefs" className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline md:hidden">
                 My briefs

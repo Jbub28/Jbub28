@@ -483,13 +483,17 @@ export function BriefWizard({ id }: { id: string }) {
                     }
                     notUsedRecorded={Boolean(recorded?.notUsed?.length)}
                     onSelectDirectControl={(directControlId) => {
+                      setErrors([]);
                       setChosenControls((list) => {
                         const rest = list.filter((c) => c.exposureId !== he.exposureId);
                         if (!directControlId) return rest;
                         return [...rest, { exposureId: he.exposureId, directControlId }];
                       });
                     }}
-                    onSaveNotUsed={(payload) => patch("recordNotUsedStrategy", payload).catch(() => undefined)}
+                    onSaveNotUsed={async (payload) => {
+                      await patch("recordNotUsedStrategy", payload);
+                      setErrors([]);
+                    }}
                   />
                 </article>
                 );

@@ -4,7 +4,7 @@
     "slug": "energyguard-jrb",
     "ios": {
       "bundleIdentifier": "com.jbub28.energyguardjrb",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "infoPlist": {
         "CFBundleDisplayName": "EnergyGuard JRB",
         "NSMicrophoneUsageDescription": "EnergyGuard JRB uses the microphone so the crew can talk through the job. You can type instead.",

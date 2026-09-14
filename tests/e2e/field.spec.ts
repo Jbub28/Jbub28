@@ -25,6 +25,22 @@ async function openMoreActions(page: import("@playwright/test").Page) {
   await expect(help).toBeVisible();
 }
 
+async function chooseInventoryDirectControls(page: import("@playwright/test").Page) {
+  const selects = page.getByLabel("Direct Control from the inventory");
+  const count = await selects.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    const select = selects.nth(i);
+    const values = await select.locator("option").evaluateAll((opts) =>
+      (opts as HTMLOptionElement[])
+        .map((o) => o.value)
+        .filter((v) => v && v !== "__no_direct_control_available__"),
+    );
+    expect(values.length, "inventory Direct Control options").toBeGreaterThan(0);
+    await select.selectOption(values[0]!);
+  }
+}
+
 test("sign-in is usable on a mobile viewport and has no critical axe violations", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByRole("heading", { name: "EnergyGuard JRB" })).toBeVisible();
@@ -296,7 +312,16 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await expect(page.getByRole("img", { name: /Fall from Elevation/i }).first()).toBeVisible();
   await expect(page.getByRole("img", { name: /Mobile Equipment\/Traffic with Workers on Foot/i }).first()).toBeVisible();
   await expect(page.getByText(/Fall protection|Fall arrest/i).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /Direct Control not used/ }).first()).toBeVisible();
+  const dcSelect = page.getByLabel("Direct Control from the inventory").first();
+  await expect(dcSelect).toBeVisible();
+  await expect(dcSelect.locator("option", { hasText: "No direct control available" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: /Direct Control not used/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "This is what we briefed" }).click();
+  await expect(page.getByText(/Choose a Direct Control from the inventory/)).toBeVisible();
+  await expect(page.getByText(/Step 3 of 3/)).toHaveCount(0);
+  await dcSelect.selectOption({ label: "No direct control available" });
+  await expect(page.getByRole("heading", { name: "Select Alternative Controls" })).toBeVisible();
+  await chooseInventoryDirectControls(page);
   await page.getByRole("button", { name: "This is what we briefed" }).click();
   await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await expect(page.getByText(/High Energy is Present for Fall from/i)).toHaveCount(0);

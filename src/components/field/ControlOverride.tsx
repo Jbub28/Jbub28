@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { ALT_CATEGORIES } from "@/lib/domain/alternativeControls";
-import { DIRECT_CONTROL_NOT_USED_REASONS, VERIFICATION_METHODS } from "@/lib/domain/controls";
+import {
+  DIRECT_CONTROL_NOT_USED_REASONS,
+  NO_DIRECT_CONTROL_AVAILABLE,
+  NO_DIRECT_CONTROL_AVAILABLE_LABEL,
+  VERIFICATION_METHODS,
+  isNoDirectControlAvailable,
+} from "@/lib/domain/controls";
 import { BigButton, Field } from "./FieldChrome";
 
 type CatalogControl = { id: string; exactName: string; exposureIds: string[] };
@@ -44,9 +50,11 @@ export function ControlOverride(props: {
   const categoryNames = (props.categories.map((c) => c.exactName).filter(Boolean) as string[]).length
     ? props.categories.map((c) => c.exactName)
     : [...ALT_CATEGORIES];
-  const [open, setOpen] = useState(false);
+  const noneSelected = isNoDirectControlAvailable(props.selectedDirectControlId);
   const [reason, setReason] = useState<string>(DIRECT_CONTROL_NOT_USED_REASONS[0]);
-  const [explanation, setExplanation] = useState("");
+  const [explanation, setExplanation] = useState(
+    "No Direct Control is available from the inventory for this High Energy.",
+  );
   const [residual, setResidual] = useState("");
   const [stopTrigger, setStopTrigger] = useState("If an Alternative Control cannot be kept in place, stop and rebrief.");
   const [supervisorReviewed, setSupervisorReviewed] = useState(false);
@@ -70,39 +78,45 @@ export function ControlOverride(props: {
     [props.categories, secondCategory],
   );
 
+  const selectId = `${props.exposureId}-direct-control`;
+  const selectValue = props.selectedDirectControlId ?? "";
+
   return (
     <div className="mt-3 space-y-2">
-      {props.inventoryControls.length ? (
-        <label className="block text-sm font-bold">
-          Direct Control from the inventory
-          <select
-            className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white p-3 text-base font-normal"
-            value={props.selectedDirectControlId ?? ""}
-            onChange={(e) => {
-              if (e.target.value) props.onSelectDirectControl(e.target.value);
-            }}
-          >
-            <option value="">Choose a Direct Control</option>
-            {props.inventoryControls.map((dc) => (
-              <option key={dc.id} value={dc.id}>
-                {dc.exactName}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : (
-        <p className="text-sm">No inventory Direct Control is attached yet for {props.exposureLabel}.</p>
-      )}
-      {props.notUsedRecorded ? (
-        <p className="rounded-xl bg-[var(--ok-bg)] p-3 text-sm">Direct Control not used is recorded. Complete Alternative Controls before release if they are still open.</p>
+      <label className="block text-sm font-bold" htmlFor={selectId}>
+        Direct Control from the inventory
+        <span className="ml-1 font-bold text-[var(--danger)]">(required)</span>
+        <select
+          id={selectId}
+          required
+          aria-required="true"
+          aria-label="Direct Control from the inventory"
+          className="mt-1 w-full rounded-xl border border-[var(--border)] bg-white p-3 text-base font-normal"
+          value={selectValue}
+          onChange={(e) => props.onSelectDirectControl(e.target.value)}
+        >
+          <option value="">Choose a Direct Control</option>
+          {props.inventoryControls.map((dc) => (
+            <option key={dc.id} value={dc.id}>
+              {dc.exactName}
+            </option>
+          ))}
+          <option value={NO_DIRECT_CONTROL_AVAILABLE}>{NO_DIRECT_CONTROL_AVAILABLE_LABEL}</option>
+        </select>
+      </label>
+      {props.inventoryControls.length === 0 ? (
+        <p className="text-sm">No inventory Direct Control is attached yet for {props.exposureLabel}. Choose No direct control available, then select Alternative Controls.</p>
       ) : null}
-      <button type="button" className="w-full rounded-xl border border-[var(--border)] bg-[var(--warn-bg)] px-3 py-3 text-left text-lg font-bold" onClick={() => setOpen((v) => !v)}>
-        {open ? "Hide Direct Control not used" : "Direct Control not used / Alternative Controls"}
-      </button>
-      {open ? (
+      {props.notUsedRecorded ? (
+        <p className="rounded-xl bg-[var(--ok-bg)] p-3 text-sm">No Direct Control is recorded as available. Complete Alternative Controls before release if they are still open.</p>
+      ) : null}
+      {noneSelected ? (
         <div className="space-y-3 rounded-xl border border-[var(--border)] bg-white p-3">
+          <h3 className="text-lg font-bold">Select Alternative Controls</h3>
           <p className="text-sm">
-            Use this only when an approved Direct Control will not be used. EnergyGuard will not invent a barrier. Supervisor review is still required before Ready for Work.
+            No Direct Control is available from the inventory for this High Energy. Choose Alternative Controls from two
+            different approved categories. EnergyGuard will not invent a barrier. Supervisor review is still required
+            before Ready for Work.
           </p>
           <label className="block text-sm font-bold">
             Why a Direct Control is not used
@@ -114,12 +128,12 @@ export function ControlOverride(props: {
           </label>
           <Field id={`${props.exposureId}-why`} label="Explanation" textarea value={explanation} onChange={setExplanation} />
           <p className="font-bold">Alternative Control 1</p>
-          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstCategory} onChange={(e) => setFirstCategory(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstCategory} onChange={(e) => { setFirstCategory(e.target.value); setFirstControlId(""); }}>
             {categoryNames.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
-          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstControlId} onChange={(e) => setFirstControlId(e.target.value)}>
+          <select aria-label={`Alternative Control 1 for ${props.exposureLabel}`} className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={firstControlId} onChange={(e) => setFirstControlId(e.target.value)}>
             <option value="">Choose from this category</option>
             {firstOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.exactName}</option>
@@ -133,12 +147,12 @@ export function ControlOverride(props: {
             ))}
           </select>
           <p className="font-bold">Alternative Control 2 (different category)</p>
-          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondCategory} onChange={(e) => setSecondCategory(e.target.value)}>
+          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondCategory} onChange={(e) => { setSecondCategory(e.target.value); setSecondControlId(""); }}>
             {categoryNames.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
-          <select className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondControlId} onChange={(e) => setSecondControlId(e.target.value)}>
+          <select aria-label={`Alternative Control 2 for ${props.exposureLabel}`} className="w-full rounded-xl border border-[var(--border)] bg-white p-3" value={secondControlId} onChange={(e) => setSecondControlId(e.target.value)}>
             <option value="">Choose from this category</option>
             {secondOptions.map((c) => (
               <option key={c.id} value={c.id}>{c.exactName}</option>
@@ -163,6 +177,18 @@ export function ControlOverride(props: {
               setBusy(true);
               setError(null);
               try {
+                if (!firstControlId || !secondControlId) {
+                  throw new Error("Choose an Alternative Control from each category.");
+                }
+                if (firstCategory === secondCategory) {
+                  throw new Error("Choose a control from another category.");
+                }
+                if (!explanation.trim()) {
+                  throw new Error("Explain why a Direct Control is not available.");
+                }
+                if (!residual.trim()) {
+                  throw new Error("Document the remaining exposure.");
+                }
                 const describe = (category: string, controlId: string, options: { id: string; exactName: string }[]) => {
                   if (controlId === "other" || !controlId) {
                     return { category, description: `Other ${category} control`, catalogControlId: null, isOther: true };
@@ -191,7 +217,6 @@ export function ControlOverride(props: {
                     { ...two, owner: secondOwner, verificationMethod: secondVerify },
                   ],
                 });
-                setOpen(false);
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Could not save the override.");
               } finally {
@@ -199,7 +224,7 @@ export function ControlOverride(props: {
               }
             }}
           >
-            {busy ? "Saving…" : "Save not-used and Alternative Controls"}
+            {busy ? "Saving…" : "Save Alternative Controls"}
           </BigButton>
         </div>
       ) : null}

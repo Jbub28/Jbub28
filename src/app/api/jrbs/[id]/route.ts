@@ -7,7 +7,10 @@ import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
 import { persistBriefingConversation, persistExtractedLocation } from "@/lib/conversation/persistBriefing";
 import { BriefingExtractionSchema } from "@/lib/conversation/types";
-import { DIRECT_CONTROL_NOT_USED_REASONS } from "@/lib/domain/controls";
+import {
+  DIRECT_CONTROL_NOT_USED_REASONS,
+  isInventoryDirectControlId,
+} from "@/lib/domain/controls";
 import { canMarkCompleted } from "@/lib/domain/briefPresentation";
 import { buildReadiness } from "@/lib/server/jrbReadiness";
 
@@ -475,6 +478,23 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 
   if (action === "crewConfirmBriefing") {
     const eicName = jrb.employeeInChargeId ? (await prisma.user.findUnique({ where: { id: jrb.employeeInChargeId } }))?.displayName ?? "Employee in Charge" : "Employee in Charge";
+    const requestedControls = Array.isArray(body.controls) ? body.controls : [];
+    for (const item of body.exposures ?? []) {
+      const existing = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId: item.exposureId } });
+      const hasInventoryControl = requestedControls.some(
+        (c: { exposureId?: string; directControlId?: string }) =>
+          c.exposureId === item.exposureId && isInventoryDirectControlId(c.directControlId),
+      );
+      const notUsed = existing
+        ? await prisma.directControlNotUsedReason.findFirst({ where: { jrbExposureId: existing.id } })
+        : null;
+      if (!hasInventoryControl && !notUsed) {
+        return jsonError(
+          "Choose a Direct Control from the inventory for each High Energy, or choose No direct control available and save Alternative Controls.",
+          400,
+        );
+      }
+    }
     for (const item of body.exposures ?? []) {
       const existing = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId: item.exposureId } });
       const data = {
@@ -488,7 +508,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       else await prisma.jrbExposure.create({ data: { versionId: version.id, exposureId: item.exposureId, ...data } });
     }
     for (const item of body.controls ?? []) {
-      if (!item.directControlId) continue;
+      if (!isInventoryDirectControlId(item.directControlId)) continue;
       const exp = await prisma.jrbExposure.findFirst({ where: { versionId: version.id, exposureId: item.exposureId } });
       if (!exp) continue;
       const already = await prisma.jrbDirectControlSelection.findFirst({

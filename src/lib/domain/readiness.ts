@@ -138,7 +138,7 @@ export function evaluateReadiness(input: ReadinessInput): ReadinessResult {
       gaps.push({
         code: "need_dc",
         message: `High Energy is Present for ${exp.label} without a verified Direct Control.`,
-        nextAction: "Select a Direct Control",
+        nextAction: "Choose a Direct Control from the inventory, or choose No direct control available",
       });
       continue;
     }

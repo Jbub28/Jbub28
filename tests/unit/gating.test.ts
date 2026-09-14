@@ -6,6 +6,10 @@ import { RoleName } from "@prisma/client";
 import { MockSpeechProvider } from "@/lib/providers/speech";
 import { AzureOpenAiProvider } from "@/lib/providers/ai";
 import { validateUpload } from "@/lib/providers/storage";
+import {
+  missingDirectControlChoice,
+  NO_DIRECT_CONTROL_AVAILABLE,
+} from "@/lib/domain/controls";
 
 const completeBriefing = {
   hazards: true,
@@ -17,6 +21,59 @@ const completeBriefing = {
   crewIdentified: true,
   conditions: true,
 };
+
+describe("direct control inventory choice", () => {
+  it("requires a selection for each High Energy", () => {
+    const gap = missingDirectControlChoice([
+      {
+        exposureId: "he-fall",
+        exposureLabel: "Fall from Elevation ≥ 4'",
+        selectedDirectControlId: null,
+        notUsedRecorded: false,
+      },
+    ]);
+    expect(gap).toMatch(/Choose a Direct Control from the inventory/);
+    expect(gap).toMatch(/No direct control available/);
+  });
+
+  it("accepts an inventory Direct Control", () => {
+    expect(
+      missingDirectControlChoice([
+        {
+          exposureId: "he-fall",
+          exposureLabel: "Fall from Elevation ≥ 4'",
+          selectedDirectControlId: "dc-fall",
+          notUsedRecorded: false,
+        },
+      ]),
+    ).toBeNull();
+  });
+
+  it("prompts for Alternative Controls when no Direct Control is available", () => {
+    const gap = missingDirectControlChoice([
+      {
+        exposureId: "he-fall",
+        exposureLabel: "Fall from Elevation ≥ 4'",
+        selectedDirectControlId: NO_DIRECT_CONTROL_AVAILABLE,
+        notUsedRecorded: false,
+      },
+    ]);
+    expect(gap).toMatch(/Select Alternative Controls/);
+  });
+
+  it("accepts no Direct Control available after Alternative Controls are recorded", () => {
+    expect(
+      missingDirectControlChoice([
+        {
+          exposureId: "he-fall",
+          exposureLabel: "Fall from Elevation ≥ 4'",
+          selectedDirectControlId: NO_DIRECT_CONTROL_AVAILABLE,
+          notUsedRecorded: true,
+        },
+      ]),
+    ).toBeNull();
+  });
+});
 
 describe("alternative controls", () => {
   it("rejects two controls from the same category", () => {

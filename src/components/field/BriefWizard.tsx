@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field, FieldChrome, BigButton, STEPS, usePeekOpen } from "./FieldChrome";
 import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLocation";
-import { REBRIEF_REASONS } from "@/lib/domain/controls";
+import {
+  isInventoryDirectControlId,
+  missingDirectControlChoice,
+  NO_DIRECT_CONTROL_AVAILABLE,
+  REBRIEF_REASONS,
+} from "@/lib/domain/controls";
 import { READY_NOTICE } from "@/lib/domain/readiness";
 import { formatGps, formatJobLocation, locationFromRecord, persistableLocation } from "@/lib/domain/jobLocation";
 import { jobTiming, plainStatus, isJobInProgress } from "@/lib/domain/briefPresentation";
@@ -178,18 +183,54 @@ export function BriefWizard({ id }: { id: string }) {
     .filter((t: any) => t.confirmed)
     .map((t: any) => ({ id: t.taskId, name: t.task?.exactName ?? "EEI task" }));
 
-  const controlsToConfirm = () => {
-    const fromTalk = (extraction?.controls ?? [])
-      .filter((c) => c.catalogId && (c.origin === "ai_suggested" || c.origin === "ai_extracted"))
-      .map((c) => ({ exposureId: c.exposureId, directControlId: c.catalogId, personResponsible: eicName }));
-    const extra = chosenControls.map((c) => ({ ...c, personResponsible: eicName }));
-    const merged = [...fromTalk];
-    for (const item of extra) {
-      if (!merged.some((m) => m.directControlId === item.directControlId && m.exposureId === item.exposureId)) {
-        merged.push(item);
-      }
+  const controlChoices = () =>
+    (extraction?.highEnergy ?? []).map((he) => {
+      const recorded = (version?.exposures ?? []).find((row: any) => row.exposureId === he.exposureId);
+      const chosen = chosenControls.find((c) => c.exposureId === he.exposureId)?.directControlId;
+      const recordedNone = Boolean(recorded?.notUsed?.length);
+      const recordedDc = recorded?.directControlSelections?.[0]?.directControlId as string | undefined;
+      return {
+        exposureId: he.exposureId,
+        exposureLabel: he.label,
+        selectedDirectControlId:
+          chosen ?? (recordedNone ? NO_DIRECT_CONTROL_AVAILABLE : recordedDc) ?? null,
+        notUsedRecorded: recordedNone,
+      };
+    });
+
+  const controlsToConfirm = () =>
+    controlChoices()
+      .filter((c) => isInventoryDirectControlId(c.selectedDirectControlId))
+      .map((c) => ({
+        exposureId: c.exposureId,
+        directControlId: c.selectedDirectControlId as string,
+        personResponsible: eicName,
+      }));
+
+  const confirmBriefing = async () => {
+    if (followUps.length) {
+      setErrors(["Answer the follow-up before confirming controls."]);
+      return false;
     }
-    return merged.filter((c) => c.directControlId && c.exposureId);
+    const gap = missingDirectControlChoice(controlChoices());
+    if (gap) {
+      setErrors([gap]);
+      return false;
+    }
+    try {
+      if (extraction?.highEnergy.length) {
+        await patch("crewConfirmBriefing", {
+          exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
+          controls: controlsToConfirm(),
+        });
+      } else if (extraction) {
+        await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
+      }
+      setErrors([]);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const saveDraft = async () => {
@@ -217,23 +258,8 @@ export function BriefWizard({ id }: { id: string }) {
       return;
     }
     if (step === 1) {
-      if (followUps.length) {
-        setErrors(["Answer the follow-up before confirming controls."]);
-        return;
-      }
-      try {
-        if (extraction?.highEnergy.length) {
-          await patch("crewConfirmBriefing", {
-            exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
-            controls: controlsToConfirm(),
-          });
-        } else if (extraction) {
-          await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
-        }
-        setStep(2);
-      } catch {
-        return;
-      }
+      const ok = await confirmBriefing();
+      if (ok) setStep(2);
     }
   };
 
@@ -451,13 +477,15 @@ export function BriefWizard({ id }: { id: string }) {
                     eicName={eicName}
                     selectedDirectControlId={
                       chosenControls.find((c) => c.exposureId === he.exposureId)?.directControlId ??
-                      suggested.find((c) => c.catalogId)?.catalogId ??
-                      recorded?.directControlSelections?.[0]?.directControlId
+                      (recorded?.notUsed?.length
+                        ? NO_DIRECT_CONTROL_AVAILABLE
+                        : recorded?.directControlSelections?.[0]?.directControlId)
                     }
                     notUsedRecorded={Boolean(recorded?.notUsed?.length)}
                     onSelectDirectControl={(directControlId) => {
                       setChosenControls((list) => {
                         const rest = list.filter((c) => c.exposureId !== he.exposureId);
+                        if (!directControlId) return rest;
                         return [...rest, { exposureId: he.exposureId, directControlId }];
                       });
                     }}
@@ -483,19 +511,8 @@ export function BriefWizard({ id }: { id: string }) {
               <BigButton
                 primary
                 onClick={async () => {
-                  try {
-                    if (extraction?.highEnergy.length) {
-                      await patch("crewConfirmBriefing", {
-                        exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
-                        controls: controlsToConfirm(),
-                      });
-                    } else if (extraction) {
-                      await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
-                    }
-                    setStep(2);
-                  } catch {
-                    return;
-                  }
+                  const ok = await confirmBriefing();
+                  if (ok) setStep(2);
                 }}
               >
                 This is what we briefed

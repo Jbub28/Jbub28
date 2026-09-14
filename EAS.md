@@ -20,15 +20,27 @@ eas submit --platform ios --id <BUILD_ID> --profile production
 
 App Store Connect Apple ID is `6811939293` (`eas.json` → `submit.production.ios.ascAppId`). Bundle ID is `com.jbub28.energyguardjrb`. Apple Team ID is `L7ZVZDDF3G`.
 
-EAS already has a distribution certificate and an App Store Connect API key, but those were first used for `com.saferoute.nav`. The EnergyGuard bundle needs its own App Store provisioning profile. Cloud builds pass `EXPO_APPLE_TEAM_ID` so EAS can create that profile without an interactive Apple login. Do not submit an IPA signed as `com.saferoute.nav` to app `6811939293`.
+Do not submit an IPA signed as `com.saferoute.nav` to app `6811939293`. Expo still has store credentials only for that old bundle. The EnergyGuard identifier needs its own App Store provisioning profile on the Expo project before a GitHub/cloud build can sign.
 
-If a later iOS build still fails with “Credentials are not set up”, run this once on a machine logged into Expo and Apple:
+### One-time signing setup (required)
+
+On a machine logged into Expo **and** Apple Developer, from this repo:
 
 ```bash
 npx eas-cli credentials -p ios
 ```
 
-Choose bundle `com.jbub28.energyguardjrb` and set up all credentials (reuse the existing distribution certificate).
+1. Select the `@jbub28s-team/joshua-menninger` project.
+2. Choose bundle identifier `com.jbub28.energyguardjrb` (add it if Expo only lists `com.saferoute.nav`).
+3. **Set up all** build credentials. Reuse the existing Apple Distribution certificate (team `L7ZVZDDF3G`). Let EAS create or download an App Store provisioning profile for `com.jbub28.energyguardjrb`.
+
+Alternatively, in a browser:
+
+1. [Apple Developer → Identifiers](https://developer.apple.com/account/resources/identifiers/list) — confirm App ID `com.jbub28.energyguardjrb`.
+2. [Apple Developer → Profiles](https://developer.apple.com/account/resources/profiles/list) — create an **App Store** profile for that App ID, using the same distribution certificate already on Expo.
+3. Upload that profile under [Expo iOS credentials](https://expo.dev/accounts/jbub28s-team/projects/joshua-menninger/credentials) for identifier `com.jbub28.energyguardjrb`.
+
+After that, `eas build --platform ios --profile production --auto-submit` can run non-interactively.
 
 ## How it works
 

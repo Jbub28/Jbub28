@@ -1,11 +1,11 @@
 build:
-  name: SafeRoute Nav iOS production
+  name: EnergyGuard JRB iOS
   steps:
     - eas/checkout
     - eas/install_node_modules
     - eas/resolve_build_config
     - run:
-        name: Build Next.js static export
+        name: Prepare iOS web shell
         command: npm run build:ios
     - run:
         name: Sync Capacitor iOS project

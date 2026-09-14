@@ -146,21 +146,16 @@ export function JobLocationFields(props: {
 export function useOptionalGps(onCoords: (lat: number, lng: number) => void) {
   const [gpsStatus, setGpsStatus] = useState("GPS is optional. Type an address if you do not share location.");
   const capture = () => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setGpsStatus("This device cannot share GPS. Type the address or coordinates.");
-      return;
-    }
     setGpsStatus("Trying optional GPS…");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        onCoords(pos.coords.latitude, pos.coords.longitude);
+    void import("@/lib/device/gps")
+      .then(({ readDeviceGps }) => readDeviceGps())
+      .then((pos) => {
+        onCoords(pos.latitude, pos.longitude);
         setGpsStatus("GPS captured. You can still edit it.");
-      },
-      () => {
+      })
+      .catch(() => {
         setGpsStatus("GPS was not used. Type the address or coordinates.");
-      },
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
-    );
+      });
   };
   return { gpsStatus, capture };
 }

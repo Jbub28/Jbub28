@@ -13,7 +13,7 @@ describe("browser speech helpers", () => {
   });
 
   it("tells the user to type when speech is unavailable", () => {
-    expect(speechSupportMessage({ online: true, supported: false })).toMatch(/type instead/i);
+    expect(speechSupportMessage({ online: true, supported: false })).toMatch(/type the job instead/i);
     expect(speechSupportMessage({ online: false, supported: true })).toMatch(/type/i);
     expect(speechSupportMessage({ online: true, supported: true })).toBeNull();
   });

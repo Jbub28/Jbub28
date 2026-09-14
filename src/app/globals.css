@@ -24,11 +24,14 @@
 html,
 body {
   min-height: 100%;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans), "Atkinson Hyperlegible", system-ui, sans-serif;
+  font-family: var(--font-sans), "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
   font-size: 1.125rem;
   line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
 }
 
 *:focus-visible {
@@ -42,6 +45,7 @@ input,
 select,
 textarea {
   min-height: 56px;
+  touch-action: manipulation;
 }
 
 button.eg-compact-btn,

@@ -22,7 +22,11 @@ export const metadata: Metadata = {
   description: "Job Risk Briefing for Electric Delivery crews",
   applicationName: "EnergyGuard JRB",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "EnergyGuard JRB", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "EnergyGuard JRB", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

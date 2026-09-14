@@ -1,10 +1,10 @@
 build:
-  name: SafeRoute Nav iOS simulator
+  name: EnergyGuard JRB iOS simulator
   steps:
     - eas/checkout
     - eas/install_node_modules
     - run:
-        name: Build Next.js static export
+        name: Prepare iOS web shell
         command: npm run build:ios
     - run:
         name: Sync Capacitor iOS project

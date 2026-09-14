@@ -38,7 +38,7 @@ export function speechSupportMessage(input: {
   supported: boolean;
 }): string | null {
   if (!input.supported) {
-    return "Talk to text is not available in this browser. Type instead.";
+    return "Talk to text is not available on this iPhone yet. Type the job instead.";
   }
   if (!input.online) {
     return "Talk to text needs a connection here. You can still type.";

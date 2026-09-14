@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>EnergyGuard JRB</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family: -apple-system, system-ui, sans-serif;
+        background: #0a3161;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: max(1.5rem, env(safe-area-inset-top)) 1.25rem max(1.5rem, env(safe-area-inset-bottom));
+      }
+      main {
+        width: min(28rem, 100%);
+        background: #ffffff;
+        color: #12263a;
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+      }
+      h1 { margin: 0 0 0.35rem; font-size: 1.6rem; }
+      p { margin: 0 0 1rem; line-height: 1.4; }
+      label { display: block; font-weight: 700; margin-bottom: 0.4rem; }
+      input {
+        width: 100%;
+        min-height: 56px;
+        font-size: 1.125rem;
+        border: 2px solid #d0d7e2;
+        border-radius: 0.85rem;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      button {
+        width: 100%;
+        min-height: 56px;
+        border: 0;
+        border-radius: 0.85rem;
+        background: #0a3161;
+        color: #fff;
+        font-size: 1.125rem;
+        font-weight: 700;
+      }
+      .muted { color: #5b6b7c; font-size: 0.95rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="muted">Electric Delivery</p>
+      <h1>EnergyGuard JRB</h1>
+      <p>Open the job brief on this iPhone. If the address changes after a DNS error, paste the new HTTPS link and connect again.</p>
+      <label for="server">Server address</label>
+      <input id="server" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://" />
+      <button type="button" id="connect">Connect</button>
+    </main>
+    <script>
+      const KEY = "energyguard.serverUrl";
+      const input = document.getElementById("server");
+      const connect = document.getElementById("connect");
+
+      function normalize(value) {
+        const trimmed = String(value || "").trim();
+        if (!trimmed) return "";
+        try {
+          const url = new URL(trimmed.includes("://") ? trimmed : `https://${trimmed}`);
+          if (url.protocol !== "https:" && url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
+            throw new Error("Use https");
+          }
+          return url.origin;
+        } catch {
+          return "";
+        }
+      }
+
+      function go(url) {
+        localStorage.setItem(KEY, url);
+        window.location.replace(url);
+      }
+
+      fetch("./server-default.json")
+        .then((r) => r.json())
+        .then((data) => {
+          input.value = normalize(localStorage.getItem(KEY)) || normalize(data.url);
+        })
+        .catch(() => {
+          input.value = normalize(localStorage.getItem(KEY));
+        });
+
+      connect.addEventListener("click", () => {
+        const url = normalize(input.value);
+        if (!url) {
+          input.focus();
+          return;
+        }
+        go(url);
+      });
+    </script>
+  </body>
+</html>

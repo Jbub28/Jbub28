@@ -315,9 +315,10 @@ test("acknowledge without a name stays on the form and explains what to type", a
   await page.getByRole("link", { name: "Start a Job Brief" }).click();
   await page.getByRole("button", { name: "Electric Distribution" }).click();
   await page.getByRole("button", { name: "Create draft" }).click();
-  await page.getByRole("button", { name: "Next" }).click();
-  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
-  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByText(/Step 1 of 3/)).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByText(/Step 2 of 3/)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "This is what we briefed" }).click();
   await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await page.getByRole("button", { name: "Acknowledge this version" }).click();
   await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();

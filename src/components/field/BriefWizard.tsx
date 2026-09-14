@@ -473,7 +473,7 @@ export function BriefWizard({ id }: { id: string }) {
                         exposures: extraction.highEnergy.map((he) => ({ exposureId: he.exposureId, energySource: he.evidence })),
                         controls: controlsToConfirm(),
                       });
-                    } else {
+                    } else if (extraction) {
                       await patch("saveBriefing", { extraction, markHighEnergyReviewed: true });
                     }
                     setStep(2);

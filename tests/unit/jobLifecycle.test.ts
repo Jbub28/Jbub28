@@ -37,6 +37,7 @@ describe("brief titles and lists", () => {
     expect(
       briefListBucket({
         status: "draft",
+        workType: { exactName: "Electric Distribution" },
         createdAt: new Date(Date.now() - 48 * 3600_000),
         updatedAt: new Date(Date.now() - 48 * 3600_000),
       }),

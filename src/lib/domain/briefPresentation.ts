@@ -85,12 +85,12 @@ export function briefHasContent(input: {
   streetAddress?: string | null;
   workOrderNumber?: string | null;
   versions?: { workDescriptionEdited?: string | null; workDescriptionOriginal?: string | null }[];
-  workType?: { exactName?: string | null } | null;
 }): boolean {
   if (input.jobLocation?.trim()) return true;
   if (input.locationIdentifier?.trim()) return true;
   if (input.workOrderNumber?.trim()) return true;
-  if (shortWorkName(input)) return true;
+  const version = input.versions?.[0];
+  if (version?.workDescriptionEdited?.trim() || version?.workDescriptionOriginal?.trim()) return true;
   return false;
 }
 

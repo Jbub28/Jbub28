@@ -33,6 +33,8 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>EnergyGuard JRB uses the microphone so the crew can talk through the job. You can type instead.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>EnergyGuard JRB can use your location to fill optional GPS on the job brief. Location is not required.</string>
+	<string>EnergyGuard JRB uses your location to record the job site location on a Job Risk Briefing when you choose to use location services.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>EnergyGuard JRB uses location services to record the job site location on a Job Risk Briefing when location access is enabled.</string>
 </dict>
 </plist>

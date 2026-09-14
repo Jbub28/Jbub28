@@ -8,7 +8,8 @@
       "infoPlist": {
         "CFBundleDisplayName": "EnergyGuard JRB",
         "NSMicrophoneUsageDescription": "EnergyGuard JRB uses the microphone so the crew can talk through the job. You can type instead.",
-        "NSLocationWhenInUseUsageDescription": "EnergyGuard JRB can use your location to fill optional GPS on the job brief. Location is not required.",
+        "NSLocationWhenInUseUsageDescription": "EnergyGuard JRB uses your location to record the job site location on a Job Risk Briefing when you choose to use location services.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "EnergyGuard JRB uses location services to record the job site location on a Job Risk Briefing when location access is enabled.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

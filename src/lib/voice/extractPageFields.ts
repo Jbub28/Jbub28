@@ -90,20 +90,96 @@ function extractJobLocation(text: string): { value: string; confidence: VoiceCon
   return extractSubstation(text);
 }
 
+const US_STATES: Record<string, string> = {
+  alabama: "AL",
+  alaska: "AK",
+  arizona: "AZ",
+  arkansas: "AR",
+  california: "CA",
+  colorado: "CO",
+  connecticut: "CT",
+  delaware: "DE",
+  florida: "FL",
+  georgia: "GA",
+  hawaii: "HI",
+  idaho: "ID",
+  illinois: "IL",
+  indiana: "IN",
+  iowa: "IA",
+  kansas: "KS",
+  kentucky: "KY",
+  louisiana: "LA",
+  maine: "ME",
+  maryland: "MD",
+  massachusetts: "MA",
+  michigan: "MI",
+  minnesota: "MN",
+  mississippi: "MS",
+  missouri: "MO",
+  montana: "MT",
+  nebraska: "NE",
+  nevada: "NV",
+  "new hampshire": "NH",
+  "new jersey": "NJ",
+  "new mexico": "NM",
+  "new york": "NY",
+  "north carolina": "NC",
+  "north dakota": "ND",
+  ohio: "OH",
+  oklahoma: "OK",
+  oregon: "OR",
+  pennsylvania: "PA",
+  "rhode island": "RI",
+  "south carolina": "SC",
+  "south dakota": "SD",
+  tennessee: "TN",
+  texas: "TX",
+  utah: "UT",
+  vermont: "VT",
+  virginia: "VA",
+  washington: "WA",
+  "west virginia": "WV",
+  wisconsin: "WI",
+  wyoming: "WY",
+};
+
+function looksLikePoleOrStructure(value: string): boolean {
+  return /^(pole|poteet|port\s+t|structure|tower|equipment)\b/i.test(value.trim());
+}
+
 function extractAddress(text: string): { value: string; confidence: VoiceConfidence; evidence: string } | null {
   const labeled = extractLabeled(text, ["911 address", "street address", "address"]);
   if (
     labeled &&
     /\d/.test(labeled.value) &&
-    /\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct)\b/i.test(labeled.value)
+    /\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct)\b/i.test(labeled.value) &&
+    !looksLikePoleOrStructure(labeled.value)
   ) {
-    return labeled;
+    return { ...labeled, value: normalizeSpokenAddress(labeled.value, "") };
   }
   const m = text.match(
-    /\b(\d{1,6}\s+(?:[A-Za-z]\.?|[A-Za-z][A-Za-z0-9]*)(?:\s+(?:[A-Za-z]\.?|[A-Za-z][A-Za-z0-9]*)){0,4}\s+(?:street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|way|circle|court|ct))\b/i,
+    /\b(\d{1,6}\s+(?:[NSEW]\.?\s+)?(?:[A-Za-z][A-Za-z0-9']*\.?)(?:\s+[A-Za-z][A-Za-z0-9']*\.?){0,4}\s+(?:street|st\.?|avenue|ave\.?|road|rd\.?|drive|dr\.?|lane|ln\.?|boulevard|blvd\.?|way|circle|court|ct\.?))\b/i,
   );
-  if (!m) return null;
-  return { value: m[1].trim(), confidence: "high", evidence: m[0] };
+  if (!m || m.index == null) return null;
+  const rest = text.slice(m.index + m[0].length);
+  return {
+    value: normalizeSpokenAddress(m[1], rest),
+    confidence: "high",
+    evidence: m[0],
+  };
+}
+
+function normalizeSpokenAddress(streetRaw: string, restRaw: string): string {
+  const street = streetRaw.replace(/\./g, "").replace(/\s+/g, " ").trim();
+  const rest = restRaw.replace(/^[.,\s]+/, "");
+  const cityState = rest.match(
+    /^(?:in\s+)?([A-Za-z][A-Za-z .']{1,40}?)(?:\s+(Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New Hampshire|New Jersey|New Mexico|New York|North Carolina|North Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode Island|South Carolina|South Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West Virginia|Wisconsin|Wyoming|AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY))?(?=\s+at\b|\s+this\b|\s+work\b|[.,;]|$)/i,
+  );
+  if (!cityState) return street;
+  const city = cityState[1].replace(/\s+/g, " ").trim().replace(/\s+in$/i, "");
+  const stateRaw = (cityState[2] ?? "").trim();
+  const state = US_STATES[stateRaw.toLowerCase()] ?? (stateRaw.length === 2 ? stateRaw.toUpperCase() : stateRaw);
+  return [street, city, state].filter(Boolean).join(", ");
 }
 
 function extractLabeled(text: string, labels: string[]): { value: string; confidence: VoiceConfidence; evidence: string } | null {
@@ -281,16 +357,21 @@ function fillFor(field: PageFieldDef, text: string): ExtractedFill | VoiceSugges
     return hit ? { key: field.key, label: field.label, ...hit } : null;
   }
   if (field.key === "streetAddress" || field.key === "addressOrCoordinates") {
-    const hit = extractAddress(text);
-    return hit ? { key: field.key, label: field.label, ...hit } : null;
+    const hospital = extractLabeled(text, ["911 hospital", "trauma hospital", "nearest hospital", "trauma center"]);
+    return hospital ? { key: field.key, label: field.label, ...hospital } : null;
   }
   if (field.key === "gpsCoordinates") {
     const hit = extractGps(text);
     return hit ? { key: field.key, label: field.label, ...hit } : null;
   }
   if (field.key === "jobLocation" || field.key === "workLocation") {
-    const hit = extractJobLocation(text);
-    return hit ? { key: field.key, label: field.label, ...hit } : null;
+    const addr = extractAddress(text);
+    const named = extractJobLocation(text);
+    if (addr) return { key: field.key, label: field.label, ...addr };
+    if (named && !looksLikePoleOrStructure(named.value)) {
+      return { key: field.key, label: field.label, ...named };
+    }
+    return null;
   }
   if (field.key === "crewText") {
     const hit = extractCrew(text);
@@ -375,17 +456,14 @@ export function extractPageFields(input: { transcript: string; schema: PageVoice
 
   const hasJobLocationField = input.schema.fields.some((f) => f.key === "jobLocation");
   if (hasJobLocationField && !fills.some((f) => f.key === "jobLocation")) {
-    const ident = fills.find((f) => f.key === "locationIdentifier");
-    const addr = fills.find((f) => f.key === "streetAddress");
-    const parts = [ident?.value, addr?.value].filter((v): v is string => typeof v === "string" && Boolean(v.trim()));
-    const composed = [...new Set(parts)].join(", ");
-    if (composed) {
+    const addr = extractAddress(transcript);
+    if (addr) {
       fills.push({
         key: "jobLocation",
         label: "Job Location",
-        value: composed,
-        confidence: ident?.confidence ?? addr!.confidence,
-        evidence: ident?.evidence ?? addr?.evidence ?? composed,
+        value: addr.value,
+        confidence: addr.confidence,
+        evidence: addr.evidence,
       });
     }
   }

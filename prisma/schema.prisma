@@ -180,6 +180,11 @@ model JrbRecord {
   gpsLongitude            Float?
   gpsPermissionGranted    Boolean   @default(false)
   gpsCapturedAt           DateTime?
+  nearestTraumaHospital            String?
+  nearestTraumaHospitalAddress     String?
+  nearestTraumaHospitalLevel       String?
+  nearestTraumaHospitalDistanceMiles Float?
+  geocodeSource                    String?
   contractorInvolved      Boolean   @default(false)
   contractorCompany       String?
   emergencyAccess         String?
@@ -190,6 +195,7 @@ model JrbRecord {
   versions                JrbVersion[]
   stopWorkEvents          StopWorkEvent[]
   rebriefEvents           RebriefEvent[]
+  qualityAssessments      JrbQualityAssessment[]
   @@map("jrb_records")
 }
 
@@ -334,6 +340,22 @@ model JrbQuestion {
   resolved        Boolean @default(false)
   createdAt       DateTime @default(now())
   @@map("jrb_questions")
+}
+
+model JrbQualityAssessment {
+  id                  String   @id @default(uuid())
+  jrbId               String
+  jrb                 JrbRecord @relation(fields: [jrbId], references: [id], onDelete: Cascade)
+  observerUserId      String
+  observerName        String
+  observerRole        String
+  answers             Json
+  totalWeightedScore  Int
+  maxScore            Int      @default(57)
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  @@map("jrb_quality_assessments")
 }
 
 model JrbPostJobReview {

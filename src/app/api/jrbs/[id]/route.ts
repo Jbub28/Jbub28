@@ -8,6 +8,7 @@ import { jsonError, originAllowed } from "@/lib/server/http";
 import { persistBriefingConversation, persistExtractedLocation } from "@/lib/conversation/persistBriefing";
 import { BriefingExtractionSchema } from "@/lib/conversation/types";
 import { DIRECT_CONTROL_NOT_USED_REASONS } from "@/lib/domain/controls";
+import { canMarkCompleted } from "@/lib/domain/briefPresentation";
 import { buildReadiness } from "@/lib/server/jrbReadiness";
 
 async function loadJrb(id: string) {
@@ -99,6 +100,11 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         gpsLongitude: body.gpsLongitude ?? null,
         gpsPermissionGranted: Boolean(body.gpsPermissionGranted),
         gpsCapturedAt: body.gpsCapturedAt ? new Date(body.gpsCapturedAt) : null,
+        nearestTraumaHospital: body.nearestTraumaHospital ?? null,
+        nearestTraumaHospitalAddress: body.nearestTraumaHospitalAddress ?? null,
+        nearestTraumaHospitalLevel: body.nearestTraumaHospitalLevel ?? null,
+        nearestTraumaHospitalDistanceMiles: body.nearestTraumaHospitalDistanceMiles ?? null,
+        geocodeSource: body.geocodeSource ?? null,
         contractorInvolved: Boolean(body.contractorInvolved),
         contractorCompany: body.contractorCompany,
         emergencyAccess: body.emergencyAccess,
@@ -604,12 +610,48 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   }
 
   if (action === "saveCloseout") {
+    const review = body.review ?? {};
+    const markDone = Boolean(review.completed);
+    const reviewData = {
+      completed: markDone,
+      holdOrdersReleased: Boolean(review.holdOrdersReleased),
+      travelPlanReviewed: Boolean(review.travelPlanReviewed),
+      finalCircleOfSafety: Boolean(review.finalCircleOfSafety),
+      groundsRemoved: Boolean(review.groundsRemoved),
+      cargoSecured: Boolean(review.cargoSecured),
+      spotterUseCompleted: Boolean(review.spotterUseCompleted),
+      noIssues: Boolean(review.noIssues),
+      rebriefWasNecessary: Boolean(review.rebriefWasNecessary),
+      stopWorkUsed: Boolean(review.stopWorkUsed),
+      whatWentWell: review.whatWentWell ?? null,
+      whatNeedsImprovement: review.whatNeedsImprovement ?? null,
+      bestPractices: review.bestPractices ?? null,
+      employeeInChargeName: review.employeeInChargeName ?? null,
+      reviewedBy: review.reviewedBy ?? null,
+      completedAt: markDone ? new Date() : null,
+      closeoutStatus: markDone ? "completed" : "in_progress",
+    };
     await prisma.jrbPostJobReview.deleteMany({ where: { versionId: version.id } });
     await prisma.jrbPostJobReview.create({
-      data: { versionId: version.id, ...body.review, completedAt: new Date() },
+      data: {
+        versionId: version.id,
+        ...reviewData,
+      },
     });
-    await prisma.jrbRecord.update({ where: { id }, data: { status: "closed" } });
-    await writeAudit({ userId: user.id, action: "post_job_closeout", entityType: "jrb_post_job_review", entityId: jrb.id });
+    if (markDone) {
+      if (!canMarkCompleted(jrb.status)) {
+        return jsonError("Submit the job brief first. A job can only be Completed after it is in progress and the post-job review is finished.", 409);
+      }
+      await prisma.jrbRecord.update({ where: { id }, data: { status: "closed" } });
+      await prisma.jrbVersion.update({ where: { id: version.id }, data: { status: "closed" } });
+    }
+    await writeAudit({
+      userId: user.id,
+      action: markDone ? "post_job_complete" : "post_job_review_saved",
+      entityType: "jrb_post_job_review",
+      entityId: jrb.id,
+      newValue: { completed: markDone },
+    });
   }
 
   await writeAudit({

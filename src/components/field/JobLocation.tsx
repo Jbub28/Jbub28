@@ -1,14 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Field } from "./FieldChrome";
 import { formatJobLocation, type JobLocationFields } from "@/lib/domain/jobLocation";
 
 export function JobLocationSummary({ jrb, title = "Job Location" }: { jrb: JobLocationFields; title?: string }) {
+  const hospital = jrb.nearestTraumaHospital
+    ? `${jrb.nearestTraumaHospital}${jrb.nearestTraumaHospitalLevel ? ` (${jrb.nearestTraumaHospitalLevel})` : ""}`
+    : "";
   return (
     <article className="eg-card p-4">
       <h2 className="text-lg font-bold">{title}</h2>
       <p className="text-lg">{formatJobLocation(jrb)}</p>
+      {hospital ? (
+        <p className="mt-2 text-sm">
+          <span className="font-bold">911 / nearest trauma hospital: </span>
+          {hospital}
+          {jrb.nearestTraumaHospitalAddress ? ` — ${jrb.nearestTraumaHospitalAddress}` : ""}
+        </p>
+      ) : null}
     </article>
   );
 }
@@ -23,24 +33,83 @@ export function JobLocationFields(props: {
   highlights: string[];
   gpsStatus?: string;
   onChange: (key: string, value: string) => void;
+  onResolved?: (update: Record<string, string | number | null>) => void;
   onOptionalGps: () => void;
 }) {
+  const [lookupStatus, setLookupStatus] = useState("");
+  const autoGps = useRef("");
+  const autoHospital = useRef("");
+  const lastQuery = useRef("");
+
+  useEffect(() => {
+    const query = props.values.jobLocation.trim();
+    if (
+      query.length < 8 ||
+      /^(pole|structure|tower)\b/i.test(query) ||
+      !/\d/.test(query) ||
+      !/\b(st|street|ave|avenue|rd|road|dr|drive|ln|lane|blvd|way|circle|ct|court)\b/i.test(query)
+    ) {
+      return;
+    }
+    if (query === lastQuery.current) return;
+    const handle = window.setTimeout(() => {
+      lastQuery.current = query;
+      setLookupStatus("Matching the address on the map…");
+      fetch(`/api/location/resolve?address=${encodeURIComponent(query)}`)
+        .then(async (r) => {
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.error ?? "Lookup failed");
+          const gps = data.geocode?.gpsCoordinates as string | undefined;
+          const hospitalText = String(data.hospitalText ?? "");
+          const next: Record<string, string | number | null> = {};
+          if (gps && (!props.values.gpsCoordinates || props.values.gpsCoordinates === autoGps.current)) {
+            autoGps.current = gps;
+            next.gpsCoordinates = gps;
+            next.gpsLatitude = data.geocode.latitude;
+            next.gpsLongitude = data.geocode.longitude;
+            next.geocodeSource = data.geocode.source;
+          }
+          if (hospitalText && (!props.values.streetAddress || props.values.streetAddress === autoHospital.current)) {
+            autoHospital.current = hospitalText;
+            next.streetAddress = hospitalText;
+            next.nearestTraumaHospital = data.hospital?.name ?? "";
+            next.nearestTraumaHospitalAddress = data.hospital
+              ? `${data.hospital.address}, ${data.hospital.city}, ${data.hospital.state}`
+              : "";
+            next.nearestTraumaHospitalLevel = data.hospital?.level ?? "";
+            next.nearestTraumaHospitalDistanceMiles = data.hospital?.distanceMiles ?? null;
+          }
+          if (Object.keys(next).length) props.onResolved?.(next);
+          setLookupStatus(data.notice ?? "");
+        })
+        .catch(() => {
+          setLookupStatus("Could not match that address. Type GPS and the 911 hospital if you know them.");
+        });
+    }, 700);
+    return () => window.clearTimeout(handle);
+    // Only re-run when the work address changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.values.jobLocation]);
+
   return (
     <section className="eg-card space-y-3 p-4">
       <h2 className="text-xl font-bold">Job Location</h2>
-      <p className="text-sm">Where is the work? GPS is optional — you can finish this brief by typing.</p>
+      <p className="text-sm">
+        Type the street address of the work. Pole and structure numbers stay in their own field. GPS and the nearest Level II+
+        trauma hospital fill in from the address when we can match it.
+      </p>
       <Field
         id="job-location"
         label="Job Location"
-        help="Primary place the crew will work."
+        help="Street address or named place where the crew will work. Do not put the pole number here."
         highlight={props.highlights.includes("jobLocation")}
         value={props.values.jobLocation}
         onChange={(v) => props.onChange("jobLocation", v)}
       />
       <Field
         id="street-address"
-        label="911/street address"
-        help="Street or 911 address from the briefing form."
+        label="911 / nearest trauma hospital"
+        help="Nearest hospital with at least a Level II trauma center, based on the job address. Edit if the crew needs a different destination."
         highlight={props.highlights.includes("streetAddress")}
         value={props.values.streetAddress}
         onChange={(v) => props.onChange("streetAddress", v)}
@@ -48,7 +117,7 @@ export function JobLocationFields(props: {
       <Field
         id="gps"
         label="GPS coordinates"
-        help="Optional. Example 41.87810, -87.62980"
+        help="Filled from the job address when the map finds it. Example 41.87810, -87.62980"
         highlight={props.highlights.includes("gpsCoordinates")}
         value={props.values.gpsCoordinates}
         onChange={(v) => props.onChange("gpsCoordinates", v)}
@@ -61,6 +130,7 @@ export function JobLocationFields(props: {
         Use device GPS (optional)
       </button>
       {props.gpsStatus ? <p className="text-sm" role="status">{props.gpsStatus}</p> : null}
+      {lookupStatus ? <p className="text-sm" role="status">{lookupStatus}</p> : null}
       <Field
         id="location-id"
         label="Pole, structure, equipment, or other identifier"
@@ -74,10 +144,10 @@ export function JobLocationFields(props: {
 }
 
 export function useOptionalGps(onCoords: (lat: number, lng: number) => void) {
-  const [gpsStatus, setGpsStatus] = useState("GPS is optional. Type an address or pole number if you do not share location.");
+  const [gpsStatus, setGpsStatus] = useState("GPS is optional. Type an address if you do not share location.");
   const capture = () => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setGpsStatus("This device cannot share GPS. Type the address, coordinates, or a pole number.");
+      setGpsStatus("This device cannot share GPS. Type the address or coordinates.");
       return;
     }
     setGpsStatus("Trying optional GPS…");
@@ -87,7 +157,7 @@ export function useOptionalGps(onCoords: (lat: number, lng: number) => void) {
         setGpsStatus("GPS captured. You can still edit it.");
       },
       () => {
-        setGpsStatus("GPS was not used. Type the address, coordinates, or a pole number.");
+        setGpsStatus("GPS was not used. Type the address or coordinates.");
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
     );

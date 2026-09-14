@@ -8,6 +8,11 @@ export type JobLocationFields = {
   gpsLongitude?: number | null;
   gpsPermissionGranted?: boolean | null;
   gpsCapturedAt?: Date | string | null;
+  nearestTraumaHospital?: string | null;
+  nearestTraumaHospitalAddress?: string | null;
+  nearestTraumaHospitalLevel?: string | null;
+  nearestTraumaHospitalDistanceMiles?: number | null;
+  geocodeSource?: string | null;
 };
 
 export const LOCATION_FIELD_KEYS = [
@@ -43,16 +48,40 @@ export function locationFromRecord(jrb: JobLocationFields): {
   streetAddress: string;
   locationIdentifier: string;
   gpsCoordinates: string;
+  nearestTraumaHospital: string;
+  nearestTraumaHospitalAddress: string;
+  nearestTraumaHospitalLevel: string;
+  nearestTraumaHospitalDistanceMiles: string;
 } {
   return {
     jobLocation: (jrb.jobLocation || jrb.workLocation || "").trim(),
-    streetAddress: streetFromLegacy(jrb.streetAddress) || streetFromLegacy(jrb.addressOrCoordinates),
+    streetAddress: hospitalFromRecord(jrb),
     locationIdentifier: (jrb.locationIdentifier || "").trim(),
     gpsCoordinates:
       formatGps(jrb.gpsLatitude, jrb.gpsLongitude) ||
       gpsFromLegacy(jrb.addressOrCoordinates) ||
       gpsFromLegacy(jrb.streetAddress),
+    nearestTraumaHospital: (jrb.nearestTraumaHospital || "").trim(),
+    nearestTraumaHospitalAddress: (jrb.nearestTraumaHospitalAddress || "").trim(),
+    nearestTraumaHospitalLevel: (jrb.nearestTraumaHospitalLevel || "").trim(),
+    nearestTraumaHospitalDistanceMiles:
+      jrb.nearestTraumaHospitalDistanceMiles != null ? String(jrb.nearestTraumaHospitalDistanceMiles) : "",
   };
+}
+
+function hospitalFromRecord(jrb: JobLocationFields): string {
+  if (jrb.nearestTraumaHospital) {
+    const level = jrb.nearestTraumaHospitalLevel ? ` (${jrb.nearestTraumaHospitalLevel})` : "";
+    const addr = jrb.nearestTraumaHospitalAddress ? ` — ${jrb.nearestTraumaHospitalAddress}` : "";
+    const miles =
+      jrb.nearestTraumaHospitalDistanceMiles != null
+        ? ` · ${jrb.nearestTraumaHospitalDistanceMiles < 10 ? jrb.nearestTraumaHospitalDistanceMiles.toFixed(1) : Math.round(jrb.nearestTraumaHospitalDistanceMiles)} mi`
+        : "";
+    return `${jrb.nearestTraumaHospital}${level}${addr}${miles}`;
+  }
+  const street = streetFromLegacy(jrb.streetAddress) || streetFromLegacy(jrb.addressOrCoordinates);
+  if (/hospital|trauma|medical center/i.test(street)) return street;
+  return street;
 }
 
 function streetFromLegacy(combined?: string | null): string {
@@ -76,7 +105,7 @@ function gpsFromLegacy(combined?: string | null): string {
 
 export function formatJobLocation(jrb: JobLocationFields): string {
   const loc = locationFromRecord(jrb);
-  const parts = [loc.jobLocation, loc.streetAddress, loc.locationIdentifier, loc.gpsCoordinates].filter(Boolean);
+  const parts = [loc.jobLocation, loc.locationIdentifier, loc.gpsCoordinates].filter(Boolean);
   const unique = [...new Set(parts)];
   return unique.join(" · ") || "Location not entered";
 }
@@ -107,6 +136,11 @@ export function persistableLocation(form: Record<string, unknown>): {
   gpsLongitude: number | null;
   gpsPermissionGranted: boolean;
   gpsCapturedAt: Date | null;
+  nearestTraumaHospital: string | null;
+  nearestTraumaHospitalAddress: string | null;
+  nearestTraumaHospitalLevel: string | null;
+  nearestTraumaHospitalDistanceMiles: number | null;
+  geocodeSource: string | null;
 } {
   const jobLocation = String(form.jobLocation ?? "").trim() || null;
   const streetAddress = String(form.streetAddress ?? "").trim() || null;
@@ -132,5 +166,10 @@ export function persistableLocation(form: Record<string, unknown>): {
     gpsLongitude,
     gpsPermissionGranted: Boolean(form.gpsPermissionGranted),
     gpsCapturedAt: gpsCleared ? null : asDate(form.gpsCapturedAt),
+    nearestTraumaHospital: String(form.nearestTraumaHospital ?? "").trim() || null,
+    nearestTraumaHospitalAddress: String(form.nearestTraumaHospitalAddress ?? "").trim() || null,
+    nearestTraumaHospitalLevel: String(form.nearestTraumaHospitalLevel ?? "").trim() || null,
+    nearestTraumaHospitalDistanceMiles: asNumber(form.nearestTraumaHospitalDistanceMiles),
+    geocodeSource: String(form.geocodeSource ?? "").trim() || null,
   };
 }

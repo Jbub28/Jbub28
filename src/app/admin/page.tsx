@@ -43,7 +43,7 @@ export default function AdminPage() {
           {canSeeSupervisorLog(roles) ? (
             <>
               {" · "}
-              <Link href="/admin/supervisor-log" className="font-bold text-[var(--navy)] underline">Supervisor log</Link>
+          <Link href="/admin/supervisor" className="font-bold text-[var(--navy)] underline">Supervisor</Link>
             </>
           ) : null}
         </p>

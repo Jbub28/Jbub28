@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 export function BrandMark(props: { compact?: boolean }) {
   const size = props.compact ? 36 : 44;
   return (
@@ -32,6 +35,7 @@ export function AppHeader(props: {
         </div>
         {props.right}
       </div>
+      <SiteNav />
       <div className="h-1 bg-[#f0c43a]" aria-hidden />
       <div className="border-t border-white/10 bg-[#134074]">
         <div className="mx-auto max-w-5xl px-4 py-3">
@@ -40,6 +44,35 @@ export function AppHeader(props: {
         </div>
       </div>
     </header>
+  );
+}
+
+function SiteNav() {
+  const [roles, setRoles] = useState<string[]>([]);
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((d) => setRoles(d.user?.roles ?? []))
+      .catch(() => undefined);
+  }, []);
+  return (
+    <nav className="border-t border-white/10 bg-[#0c3a6e] px-4 py-2" aria-label="Main">
+      <div className="mx-auto flex max-w-5xl flex-wrap gap-x-4 gap-y-1 text-sm font-bold">
+        <Link className="underline decoration-white/40 underline-offset-4" href="/briefs">
+          Home
+        </Link>
+        {canSeeSupervisorLog(roles) ? (
+          <Link className="underline decoration-white/40 underline-offset-4" href="/admin/supervisor">
+            Supervisor
+          </Link>
+        ) : null}
+        {canSeeLibraries(roles) ? (
+          <Link className="underline decoration-white/40 underline-offset-4" href="/admin">
+            Libraries
+          </Link>
+        ) : null}
+      </div>
+    </nav>
   );
 }
 

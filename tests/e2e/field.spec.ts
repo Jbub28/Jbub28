@@ -91,8 +91,8 @@ test("one Talk button prefills the current page from natural speech", async ({ p
   await expect(page.getByRole("button", { name: /Talk to fill Work order/ })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Talk through the job" }).click();
-  await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(/Pole 1847/, { timeout: 10_000 });
-  await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/);
+  await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/, { timeout: 10_000 });
+  await expect(page.getByRole("textbox", { name: "Job Location" })).not.toHaveValue(/Pole 1847/);
   await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/John/);
   await expect(page.getByRole("textbox", { name: "Crew members (one per line)" })).toHaveValue(/Steve/);
   await expect(page.getByRole("textbox", { name: "Work order number" })).toHaveValue("");
@@ -114,9 +114,9 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   const workOrderBox = await workOrder.boundingBox();
   expect(jobBox?.y ?? 0).toBeLessThan(workOrderBox?.y ?? 0);
 
-  await expect(page.getByText("Where is the work? GPS is optional")).toBeVisible();
+  await expect(page.getByText("Type the street address of the work")).toBeVisible();
   await page.getByRole("textbox", { name: "Job Location" }).fill("Lincoln substation");
-  await page.getByRole("textbox", { name: "911/street address" }).fill("500 Main Street");
+  await page.getByRole("textbox", { name: "911 / nearest trauma hospital" }).fill("Manual hospital entry");
   await page.getByRole("textbox", { name: /Pole, structure, equipment/ }).fill("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
   await openMoreActions(page);
@@ -127,7 +127,7 @@ test("Job Location is first, GPS is optional, and typed location persists", asyn
   expect(briefId).toBeTruthy();
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue("Lincoln substation");
-  await expect(page.getByRole("textbox", { name: "911/street address" })).toHaveValue("500 Main Street");
+  await expect(page.getByRole("textbox", { name: "911 / nearest trauma hospital" })).toHaveValue("Manual hospital entry");
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue("Pole 12");
   await expect(page.getByRole("textbox", { name: "GPS coordinates" })).toHaveValue("");
 
@@ -185,11 +185,9 @@ test("Talk does not overwrite an existing Job Location without confirmation", as
   await page.getByRole("button", { name: "Create draft" }).click();
   await page.getByRole("textbox", { name: "Job Location" }).fill("Substation gate");
   await page.getByRole("button", { name: "Talk through the job" }).click();
-  await expect(page.getByText("Location already entered")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue("Substation gate");
   await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/);
-  await page.getByRole("button", { name: /Use spoken Job Location/ }).click();
-  await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(/Pole 1847/);
+  await expect(page.getByRole("button", { name: /Use spoken Job Location/ })).toHaveCount(0);
 });
 
 test("typed incomplete high-energy briefing asks a control question and does not advance", async ({ page }) => {
@@ -286,6 +284,9 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await expect(crew).toHaveValue(/Luis Rivera/);
   await expect(crew).toHaveValue(/Mike Thompson/);
   await expect(crew).not.toHaveValue(/replace a damaged/i);
+  await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(/4200 N West Ave/i);
+  await expect(page.getByRole("textbox", { name: "Job Location" })).not.toHaveValue(/1847/);
+  await expect(page.getByRole("textbox", { name: /Pole, structure, equipment/ })).toHaveValue(/Pole 1847/);
   await expect(page.getByRole("heading", { name: /EEI task/i })).toBeVisible();
   await page.getByRole("button", { name: "Confirm this task" }).first().click();
   await expect(page.getByText(/^Confirmed:/)).toBeVisible({ timeout: 10_000 });
@@ -306,8 +307,8 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
       await expect(page.getByText(`${name} — Acknowledged`)).toBeVisible({ timeout: 10_000 });
     }
   }
-  await page.getByRole("button", { name: "Release JRB for Work" }).click();
-  await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Submit brief — job in progress" }).click();
+  await expect(page.getByText(/job is now in progress/i)).toBeVisible({ timeout: 15_000 });
 });
 
 test("acknowledge without a name stays on the form and explains what to type", async ({ page }) => {
@@ -326,22 +327,25 @@ test("acknowledge without a name stays on the form and explains what to type", a
   await expect(page.getByRole("heading", { name: "Ready for Work" })).toBeVisible();
 });
 
-test("field crews do not see the supervisor log", async ({ page }) => {
+test("field crews do not see the supervisor desk", async ({ page }) => {
   await signInAsEic(page);
-  await expect(page.getByRole("link", { name: "Supervisor log" })).toHaveCount(0);
-  await page.goto("/admin/supervisor-log");
+  await expect(page.getByRole("link", { name: "Supervisor", exact: true })).toHaveCount(0);
+  await page.goto("/admin/supervisor");
   await expect(page.getByText("Not allowed.")).toBeVisible();
-  await expect(page.getByText("Not active in this version")).toHaveCount(0);
 });
 
-test("supervisor can open the inactive JRB log", async ({ page }) => {
+test("supervisor can open the desk, go home, and open a CSRA scorecard", async ({ page }) => {
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill("supervisor@energyguard.local");
   await page.getByLabel("Password").fill("ChangeMe!LocalOnly");
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("link", { name: "Supervisor log" }).click();
-  await expect(page.getByRole("heading", { name: "Supervisor log" })).toBeVisible();
-  await expect(page.getByText("Not active in this version")).toBeVisible();
-  await expect(page.getByText(/No review, comment, or approval actions/)).toBeVisible();
+  await page.getByRole("link", { name: "Supervisor", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "Supervisor desk" })).toBeVisible();
+  await expect(page.getByText(/ordered by what needs a look first/i)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Home" }).first()).toBeVisible();
+  await page.getByRole("link", { name: "Home" }).first().click();
+  await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Current jobs/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Archived/ })).toBeVisible();
 });

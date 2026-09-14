@@ -82,9 +82,10 @@ describe("conversation briefing extraction", () => {
       transcript: "Job is at 500 Main Street at pole 6742 on circuit 412.",
       catalog,
     });
-    expect(result.location.streetAddress).toMatch(/500 Main Street/i);
+    expect(result.location.jobLocation).toMatch(/500 Main Street/i);
     expect(result.location.locationIdentifier).toBe("Pole 6742");
     expect(result.location.circuitNumber).toBe("412");
+    expect(result.location.streetAddress).toBeUndefined();
   });
 
   it("does not guess when a safety-critical statement is uncertain", () => {
@@ -127,6 +128,9 @@ describe("conversation briefing extraction", () => {
     expect(result.workDescription).toMatch(/replace a damaged 50 kVA overhead transformer/i);
     expect(result.location.workOrderNumber).toBe("77218");
     expect(result.location.circuitNumber).toBe("1324");
+    expect(result.location.jobLocation).toMatch(/4200 N West Ave/i);
+    expect(result.location.jobLocation).not.toMatch(/1847/);
+    expect(result.location.locationIdentifier).toBe("Pole 1847");
     expect(result.highEnergy.map((h) => h.key)).toEqual(
       expect.arrayContaining(["electrical_contact_50v", "suspended_load", "fall_from_elevation_4ft", "mobile_equipment_workers_on_foot"]),
     );

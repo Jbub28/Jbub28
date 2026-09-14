@@ -225,7 +225,7 @@ export function evaluateReadiness(input: ReadinessInput): ReadinessResult {
 }
 
 export const READY_NOTICE =
-  "The briefing is complete. Continue to monitor the work and stop or rebrief if conditions change.";
+  "The briefing is complete. This job is now in progress. When the work is done, finish the post-job review — that is how it becomes Completed.";
 
 export const PLANNING_NOTICE =
   "This application supports job planning and documentation. Follow applicable regulations, approved work methods, switching and clearance procedures, Safe Work Practices, qualified-person requirements, and stop-work authority.";

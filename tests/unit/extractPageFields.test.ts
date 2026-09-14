@@ -15,7 +15,7 @@ describe("page field extraction", () => {
     const identifier = result.fills.find((f) => f.key === "locationIdentifier");
     const crew = result.fills.find((f) => f.key === "crewText");
     expect(identifier?.value).toBe("Pole 1847");
-    expect(jobLocation?.value).toBe("Pole 1847");
+    expect(jobLocation).toBeUndefined();
     expect(crew?.value).toEqual(["John", "Mike", "Steve"]);
     expect(result.fills.some((f) => f.key === "edited")).toBe(false);
     expect(result.fills.some((f) => f.key === "workOrderNumber")).toBe(false);
@@ -35,9 +35,22 @@ describe("page field extraction", () => {
       transcript: "Job location is Lincoln substation. Address is 500 Main Street. Coordinates 41.87810, -87.62980.",
       schema,
     });
-    expect(result.fills.find((f) => f.key === "jobLocation")?.value).toMatch(/Lincoln substation/i);
-    expect(result.fills.find((f) => f.key === "streetAddress")?.value).toMatch(/500 Main Street/i);
+    expect(result.fills.find((f) => f.key === "jobLocation")?.value).toMatch(/500 Main Street/i);
+    expect(result.fills.find((f) => f.key === "streetAddress")).toBeUndefined();
     expect(String(result.fills.find((f) => f.key === "gpsCoordinates")?.value)).toMatch(/41\.8781/);
+  });
+
+  it("puts a spoken street in Job Location and keeps the pole in the identifier", () => {
+    const schema = schemaForStep("start")!;
+    const result = extractPageFields({
+      transcript:
+        "we're at 4200 N. West Ave. in Tampa Florida at Poteet 1847 this is circuit test 1324",
+      schema,
+    });
+    expect(String(result.fills.find((f) => f.key === "jobLocation")?.value)).toMatch(/4200 N West Ave/i);
+    expect(String(result.fills.find((f) => f.key === "jobLocation")?.value)).toMatch(/Tampa/i);
+    expect(String(result.fills.find((f) => f.key === "jobLocation")?.value)).not.toMatch(/1847/);
+    expect(result.fills.find((f) => f.key === "locationIdentifier")?.value).toBe("Pole 1847");
   });
 
   it("does not invent facts that were not said", () => {
@@ -80,8 +93,7 @@ describe("voice prefill merge", () => {
       extraction,
     });
     expect(applied.updates.jobLocation).toBeUndefined();
-    expect(applied.preservedKeys).toContain("jobLocation");
-    expect(applied.proposedChanges.some((c) => c.key === "jobLocation" && c.proposed === "Pole 1847")).toBe(true);
+    expect(applied.updates.locationIdentifier).toBe("Pole 1847");
     expect(applied.updates.crewText).toBe("John\nMike\nSteve");
   });
 

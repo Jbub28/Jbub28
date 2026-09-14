@@ -7,6 +7,7 @@ import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLoca
 import { REBRIEF_REASONS } from "@/lib/domain/controls";
 import { READY_NOTICE } from "@/lib/domain/readiness";
 import { formatGps, formatJobLocation, locationFromRecord, persistableLocation } from "@/lib/domain/jobLocation";
+import { plainStatus, isJobInProgress } from "@/lib/domain/briefPresentation";
 import { saveDraftLocal } from "@/lib/offline/store";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { joinSpokenText } from "@/lib/speech/browserSpeech";
@@ -279,7 +280,7 @@ export function BriefWizard({ id }: { id: string }) {
 
         {step === 0 && (
           <div className="space-y-4">
-            <p className="text-lg">JRB {jrb.jrbNumber} · {jrb.status.replaceAll("_", " ")}</p>
+            <p className="text-lg">JRB {jrb.jrbNumber} · {plainStatus(jrb.status)}</p>
             {jrb.status === "stop_work_active" ? <ResumeStopWork id={id} onDone={refresh} /> : null}
             <JobTalk
               catalog={briefingCatalog}
@@ -344,6 +345,7 @@ export function BriefWizard({ id }: { id: string }) {
               highlights={voiceKeys}
               gpsStatus={gpsStatus}
               onChange={(key, value) => setForm({ ...form, [key]: value })}
+              onResolved={(update) => setForm((f) => ({ ...f, ...update }))}
               onOptionalGps={capture}
             />
             <TaskConfirm
@@ -560,6 +562,7 @@ export function BriefWizard({ id }: { id: string }) {
             )}
             <Field id="ackname" label="Name (if someone is not in the list)" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
             <BigButton onClick={() => void acknowledgeCrew(form.ackName)}>Acknowledge this version</BigButton>
+            {jrb.status !== "released_for_work" && jrb.status !== "closed" ? (
             <BigButton
               primary
               onClick={async () => {
@@ -572,7 +575,7 @@ export function BriefWizard({ id }: { id: string }) {
                   const payload = await res.json().catch(() => ({}));
                   if (!res.ok) {
                     const gapText = (payload.readiness?.gaps ?? []).map((g: any) => `${g.message} Next: ${g.nextAction}`);
-                    setErrors([payload.error ?? "Cannot release", ...gapText].filter(Boolean));
+                    setErrors([payload.error ?? "Cannot submit this brief", ...gapText].filter(Boolean));
                     await refresh();
                     return;
                   }
@@ -580,14 +583,23 @@ export function BriefWizard({ id }: { id: string }) {
                   alert(payload.notice ?? READY_NOTICE);
                   await refresh();
                 } catch (e) {
-                  setErrors([e instanceof Error ? e.message : "Cannot release"]);
+                  setErrors([e instanceof Error ? e.message : "Cannot submit this brief"]);
                   await refresh();
                 }
               }}
             >
-              Release JRB for Work
+              Submit brief — job in progress
             </BigButton>
-            {jrb.status === "released_for_work" ? <p>{READY_NOTICE}</p> : null}
+            ) : null}
+            {isJobInProgress(jrb.status) ? (
+              <p>
+                {READY_NOTICE}{" "}
+                <a className="font-bold underline" href={`/briefs/${id}/closeout`}>
+                  Open post-job review
+                </a>
+              </p>
+            ) : null}
+            {jrb.status === "closed" ? <p className="font-bold">This job is Completed.</p> : null}
           </div>
         )}
       </FieldChrome>

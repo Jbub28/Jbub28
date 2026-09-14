@@ -10,9 +10,19 @@ export async function GET() {
   const user = await requireUser();
   const jrbs = await prisma.jrbRecord.findMany({
     where: { organizationId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    include: { workType: true, versions: { orderBy: { versionNumber: "desc" }, take: 1 } },
+    orderBy: { updatedAt: "desc" },
+    take: 80,
+    include: {
+      workType: true,
+      versions: {
+        orderBy: { versionNumber: "desc" },
+        take: 1,
+        select: {
+          workDescriptionEdited: true,
+          workDescriptionOriginal: true,
+        },
+      },
+    },
   });
   return NextResponse.json({ jrbs });
 }

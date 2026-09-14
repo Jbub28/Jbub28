@@ -49,5 +49,5 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     entityId: version.id,
     newValue: { version: version.versionNumber, snapshot },
   });
-  return NextResponse.json({ status: "Ready for Work", notice: READY_NOTICE, snapshot });
+  return NextResponse.json({ status: "Job in progress", notice: READY_NOTICE, snapshot });
 }

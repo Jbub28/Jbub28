@@ -3,7 +3,6 @@ import { RoleName } from "@prisma/client";
 export const FIELD_ROLES: RoleName[] = [
   RoleName.field_team_member,
   RoleName.employee_in_charge,
-  RoleName.supervisor,
 ];
 
 export function hasRole(roles: RoleName[], role: RoleName): boolean {

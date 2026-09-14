@@ -1,12 +1,24 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-async function signInAsEic(page: import("@playwright/test").Page) {
+async function signInAs(page: import("@playwright/test").Page, email: string, heading: string) {
   await page.goto("/sign-in");
-  await page.getByLabel("Email").fill("eic@energyguard.local");
-  await page.getByLabel("Password").fill("ChangeMe!LocalOnly");
+  await expect(page.getByLabel("Password")).toHaveCount(0);
+  await page.getByLabel("Sign in as").selectOption(email);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: heading })).toBeVisible({ timeout: 15_000 });
+}
+
+async function signInAsMike(page: import("@playwright/test").Page) {
+  await signInAs(page, "worker.test@energyguardjrb.com", "My job briefs");
+}
+
+async function signInAsSarah(page: import("@playwright/test").Page) {
+  await signInAs(page, "supervisor.test@energyguardjrb.com", "Supervisor desk");
+}
+
+async function signInAsEic(page: import("@playwright/test").Page) {
+  await signInAsMike(page);
 }
 
 async function openTypedBriefing(page: import("@playwright/test").Page) {
@@ -44,6 +56,8 @@ async function chooseInventoryDirectControls(page: import("@playwright/test").Pa
 test("sign-in is usable on a mobile viewport and has no critical axe violations", async ({ page }) => {
   await page.goto("/sign-in");
   await expect(page.getByRole("heading", { name: "EnergyGuard JRB" })).toBeVisible();
+  await expect(page.getByLabel("Sign in as")).toBeVisible();
+  await expect(page.getByLabel("Password")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   const critical = results.violations.filter((v) => v.impact === "critical");
@@ -325,7 +339,7 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await page.getByRole("button", { name: "This is what we briefed" }).click();
   await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
   await expect(page.getByText(/High Energy is Present for Fall from/i)).toHaveCount(0);
-  for (const name of ["Avery Cole", "Jordan Miles", "James Carter", "Luis Rivera", "Mike Thompson"]) {
+  for (const name of ["Mike Torres", "James Carter", "Luis Rivera", "Mike Thompson"]) {
     const btn = page.getByRole("button", { name: `Acknowledge for ${name}` });
     if (await btn.count()) {
       await btn.click();
@@ -353,24 +367,23 @@ test("acknowledge without a name stays on the form and explains what to type", a
 });
 
 test("field crews do not see the supervisor desk", async ({ page }) => {
-  await signInAsEic(page);
+  await signInAsMike(page);
   await expect(page.getByRole("link", { name: "Supervisor", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Start a Job Brief" })).toBeVisible();
   await page.goto("/admin/supervisor");
   await expect(page.getByText("Not allowed.")).toBeVisible();
 });
 
-test("supervisor can open the desk, go home, and open a CSRA scorecard", async ({ page }) => {
-  await page.goto("/sign-in");
-  await page.getByLabel("Email").fill("supervisor@energyguard.local");
-  await page.getByLabel("Password").fill("ChangeMe!LocalOnly");
-  await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible({ timeout: 15_000 });
-  await page.getByRole("link", { name: "Supervisor", exact: true }).first().click();
+test("supervisor can open the desk, go home, and cannot start a crew brief", async ({ page }) => {
+  await signInAsSarah(page);
   await expect(page.getByRole("heading", { name: "Supervisor desk" })).toBeVisible();
-  await expect(page.getByText(/ordered by what needs a look first/i)).toBeVisible();
+  await expect(page.getByText(/Line Crew 14 briefs you supervise/i)).toBeVisible();
+  await expect(page.getByRole("tab", { name: /In progress/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /Submitted \/ completed/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Home" }).first()).toBeVisible();
   await page.getByRole("link", { name: "Home" }).first().click();
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start a Job Brief" })).toHaveCount(0);
   await expect(page.getByRole("tab", { name: /In progress/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Completed/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Archived/ })).toBeVisible();

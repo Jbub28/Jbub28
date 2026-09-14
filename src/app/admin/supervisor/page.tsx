@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatJobLocation } from "@/lib/domain/jobLocation";
-import { jobTiming } from "@/lib/domain/briefPresentation";
+import { jobTiming, type SupervisorDeskFolder } from "@/lib/domain/briefPresentation";
 import { AppHeader, PageFooter, PageShell, StatusChip } from "@/components/ui/AppHeader";
+
+const FOLDERS: { id: SupervisorDeskFolder; label: string }[] = [
+  { id: "in_progress", label: "In progress" },
+  { id: "submitted", label: "Submitted / completed" },
+];
 
 export default function SupervisorDeskPage() {
   const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [folder, setFolder] = useState<SupervisorDeskFolder>("in_progress");
 
   useEffect(() => {
     fetch("/api/admin/supervisor")
@@ -25,6 +31,15 @@ export default function SupervisorDeskPage() {
     return () => window.clearInterval(tick);
   }, []);
 
+  const grouped = useMemo(() => {
+    const list = jrbs ?? [];
+    return {
+      in_progress: list.filter((j) => j.deskFolder !== "submitted"),
+      submitted: list.filter((j) => j.deskFolder === "submitted"),
+    };
+  }, [jrbs]);
+  const shown = grouped[folder];
+
   return (
     <div className="min-h-dvh">
       <AppHeader
@@ -36,12 +51,26 @@ export default function SupervisorDeskPage() {
           <p className="eg-danger p-3" role="alert">{error}</p>
         ) : (
           <p className="eg-card p-4">
-            Use this list to see who is working and which briefs need a supervisor or safety professional in person.
-            Open a job to watch the briefing, then use the CSRA pre-job meeting scorecard to record the quality of that conversation.
+            Line Crew 14 briefs you supervise. In progress means the crew is still writing. Submitted / completed means the brief was released for work or closed after post-job review.
+            Open a job to review the briefing. Use the CSRA pre-job meeting scorecard to record the quality of that conversation. You cannot change the crew form.
           </p>
         )}
+        <div className="mt-6 grid grid-cols-2 gap-2" role="tablist" aria-label="Supervisor brief folders">
+          {FOLDERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={folder === item.id}
+              className={`rounded-xl px-2 py-3 text-sm font-bold ${folder === item.id ? "bg-[var(--navy)] text-white" : "border border-[var(--border)] bg-white"}`}
+              onClick={() => setFolder(item.id)}
+            >
+              {item.label} ({grouped[item.id].length})
+            </button>
+          ))}
+        </div>
         <ul className="mt-6 space-y-3">
-          {(jrbs ?? []).map((j) => {
+          {shown.map((j) => {
             const timing = jobTiming(j, new Date(now));
             return (
             <li key={j.id} className="eg-card p-4">
@@ -56,7 +85,7 @@ export default function SupervisorDeskPage() {
                   </StatusChip>
                 </div>
               </div>
-              <p className="mt-1 text-sm">{j.jrbNumber} · Worker in Charge: {j.employeeInCharge?.displayName ?? "Not identified"}</p>
+              <p className="mt-1 text-sm">{j.jrbNumber} · {j.createdByName ?? j.employeeInCharge?.displayName ?? "Crew member"} · Worker in Charge: {j.employeeInCharge?.displayName ?? "Not identified"}</p>
               {timing.line ? <p className="text-sm">{timing.line}</p> : null}
               <p className="eg-muted text-sm">{formatJobLocation(j) || "Location not entered"}</p>
               <ul className="mt-2 list-disc pl-5 text-sm">
@@ -77,7 +106,11 @@ export default function SupervisorDeskPage() {
             );
           })}
         </ul>
-        {jrbs && jrbs.length === 0 && !error ? <p className="eg-muted mt-6">No active job briefs right now.</p> : null}
+        {jrbs && shown.length === 0 && !error ? (
+          <p className="eg-muted mt-6">
+            {folder === "in_progress" ? "No in-progress briefs from crews you supervise." : "No submitted or completed briefs from crews you supervise."}
+          </p>
+        ) : null}
       </PageShell>
       <PageFooter />
     </div>

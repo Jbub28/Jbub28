@@ -88,6 +88,7 @@ export function FieldChrome(props: {
   backLabel?: string;
   helpText?: string;
   briefId?: string;
+  readOnly?: boolean;
   children: React.ReactNode;
   errorSummary?: string[];
 }) {
@@ -96,6 +97,7 @@ export function FieldChrome(props: {
   const [helpOpen, setHelpOpen] = useState(false);
   const dock = usePeekOpen(false, { hoverDelayMs: 250 });
   const help = props.helpText ?? STEPS[props.stepIndex]?.question;
+  const readOnly = Boolean(props.readOnly);
 
   return (
     <div className="mx-auto flex h-[100dvh] max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[var(--bg)] md:max-w-3xl">
@@ -166,9 +168,11 @@ export function FieldChrome(props: {
               id="brief-more-actions"
               className="absolute inset-x-2 bottom-full z-20 mb-1 grid grid-cols-2 gap-1 rounded-xl border border-[var(--border)] bg-white p-2 shadow-lg md:grid-cols-3"
             >
+              {readOnly ? null : (
               <button type="button" className="eg-dock-btn border border-[var(--border)] bg-white font-bold md:hidden" onClick={props.onSave}>
                 Save Draft
               </button>
+              )}
               <button
                 type="button"
                 className="eg-dock-btn border border-[var(--border)] bg-white font-bold"
@@ -180,6 +184,7 @@ export function FieldChrome(props: {
               >
                 Help
               </button>
+              {readOnly ? null : (
               <button
                 type="button"
                 className="eg-dock-btn bg-[var(--warn-bg)] font-bold text-[var(--warn)]"
@@ -188,16 +193,17 @@ export function FieldChrome(props: {
               >
                 Rebrief
               </button>
+              )}
               {props.briefId ? (
                 <Link href={`/briefs/${props.briefId}/closeout`} className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline">
                   Post-job review
                 </Link>
               ) : null}
-              {props.onDiscard ? (
+              {readOnly || !props.onDiscard ? null : (
                 <button type="button" className="eg-dock-btn border border-[var(--border)] bg-white font-bold" onClick={props.onDiscard}>
                   Discard
                 </button>
-              ) : null}
+              )}
               <Link href="/briefs" className="eg-dock-btn inline-flex items-center justify-center font-bold text-[var(--navy)] underline md:hidden">
                 My briefs
               </Link>
@@ -210,12 +216,16 @@ export function FieldChrome(props: {
             <button type="button" className="eg-dock-btn min-w-0 flex-[1.2] truncate bg-[var(--navy)] font-bold text-white" onClick={props.onNext}>
               {props.nextLabel ?? "Next"}
             </button>
+            {readOnly ? null : (
             <button type="button" className="eg-dock-btn hidden flex-1 border border-[var(--border)] bg-white font-bold md:block" onClick={props.onSave}>
               Save Draft
             </button>
+            )}
+            {readOnly ? null : (
             <button type="button" className="eg-dock-btn bg-[var(--danger)] font-bold text-white" onClick={props.onStop}>
               Stop Work
             </button>
+            )}
             <button
               type="button"
               className="eg-dock-btn border border-[var(--border)] bg-white px-3 font-bold"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import { canSupervisorReview } from "@/lib/auth/rbac";
+import { canReadJrb } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { jsonError, originAllowed } from "@/lib/server/http";
 import { writeAudit } from "@/lib/server/audit";
@@ -11,16 +12,17 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
   const user = await requireUser();
   if (!canSupervisorReview(user.roles)) return jsonError("Not allowed.", 403);
   const { id } = await context.params;
-  const jrb = await prisma.jrbRecord.findFirst({
-    where: { id, organizationId: user.organizationId },
+  const jrb = await prisma.jrbRecord.findUnique({
+    where: { id },
     include: {
       workType: true,
+      createdBy: { select: { displayName: true } },
       employeeInCharge: { select: { displayName: true } },
       versions: { orderBy: { versionNumber: "desc" }, take: 1, select: { workDescriptionEdited: true, workDescriptionOriginal: true } },
       qualityAssessments: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   });
-  if (!jrb) return jsonError("Job brief not found.", 404);
+  if (!jrb || !(await canReadJrb(user, jrb))) return jsonError("Job brief not found.", 404);
   return NextResponse.json({
     jrb: {
       id: jrb.id,
@@ -30,6 +32,7 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
       plainStatus: plainStatus(jrb.status),
       jobLocation: jrb.jobLocation,
       employeeInCharge: jrb.employeeInCharge,
+      createdBy: jrb.createdBy,
     },
     items: CSRA_SCORECARD_ITEMS,
     maxScore: CSRA_MAX_SCORE,
@@ -43,8 +46,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const user = await requireUser();
   if (!canSupervisorReview(user.roles)) return jsonError("Not allowed.", 403);
   const { id } = await context.params;
-  const jrb = await prisma.jrbRecord.findFirst({ where: { id, organizationId: user.organizationId } });
-  if (!jrb) return jsonError("Job brief not found.", 404);
+  const jrb = await prisma.jrbRecord.findUnique({ where: { id } });
+  if (!jrb || !(await canReadJrb(user, jrb))) return jsonError("Job brief not found.", 404);
   const body = await request.json().catch(() => ({}));
   const answers = (body.answers ?? {}) as Record<string, boolean | null>;
   for (const item of CSRA_SCORECARD_ITEMS) {

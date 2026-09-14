@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ConnectionStatus } from "@/components/field/ConnectionStatus";
 import { AppHeader, PageFooter, PageShell, StatusChip, canSeeLibraries, canSeeSupervisorLog } from "@/components/ui/AppHeader";
+import { canWriteJrb } from "@/lib/auth/rbac";
 import {
   briefListBucket,
   briefTitle,
@@ -35,6 +36,8 @@ export default function BriefsPage() {
     return () => window.clearInterval(tick);
   }, []);
   const roles = me?.user?.roles as string[] | undefined;
+  const rolesLoaded = Boolean(me?.user);
+  const canCreate = canWriteJrb((roles ?? []) as Parameters<typeof canWriteJrb>[0]);
   const grouped = useMemo(() => {
     const list = jrbs ?? [];
     const in_progress: any[] = [];
@@ -74,9 +77,15 @@ export default function BriefsPage() {
         right={<ConnectionStatus />}
       />
       <PageShell>
-        <Link href="/briefs/new" className="block rounded-2xl bg-[var(--navy)] py-4 text-center text-xl font-bold text-white">
-          Start a Job Brief
-        </Link>
+        {!rolesLoaded ? null : canCreate ? (
+          <Link href="/briefs/new" className="block rounded-2xl bg-[var(--navy)] py-4 text-center text-xl font-bold text-white">
+            Start a Job Brief
+          </Link>
+        ) : (
+          <p className="eg-card p-4">
+            Supervisors review crew briefs. Start a Job Brief is only for field crew members.
+          </p>
+        )}
         <div className="mt-6 grid grid-cols-3 gap-2" role="tablist" aria-label="Job brief folders">
           {FOLDERS.map((folder) => (
             <button
@@ -119,10 +128,10 @@ export default function BriefsPage() {
                     <p className="text-xl font-bold">{title}</p>
                     <StatusChip tone={statusTone(j.status, j.discardedAt)}>{plainStatus(j.status, j.discardedAt)}</StatusChip>
                   </div>
-                  <p className="mt-1 text-sm">{j.jrbNumber}</p>
+                  <p className="mt-1 text-sm">{j.jrbNumber}{j.createdBy?.displayName ? ` · ${j.createdBy.displayName}` : ""}</p>
                   {timing.line ? <p className="eg-muted mt-1 text-sm">{timing.line}</p> : null}
                 </Link>
-                {folder === "in_progress" && j.status !== "closed" ? (
+                {canCreate && folder === "in_progress" && j.status !== "closed" ? (
                   <button
                     type="button"
                     className="mt-3 w-full rounded-xl border border-[var(--border)] py-3 font-bold"
@@ -136,7 +145,7 @@ export default function BriefsPage() {
                     Discard
                   </button>
                 ) : null}
-                {folder === "archived" ? (
+                {canCreate && folder === "archived" ? (
                   <button
                     type="button"
                     className="mt-3 w-full rounded-xl border border-[var(--border)] py-3 font-bold"

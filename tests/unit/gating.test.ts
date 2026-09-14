@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { evaluateAlternativeControls } from "@/lib/domain/alternativeControls";
 import { evaluateReadiness } from "@/lib/domain/readiness";
-import { canInitiateStopWork, canPublishEei, canReleaseJrb, canWriteJrb } from "@/lib/auth/rbac";
+import { canInitiateStopWork, canPublishEei, canReleaseJrb, canSupervisorReview, canWriteJrb } from "@/lib/auth/rbac";
 import { RoleName } from "@prisma/client";
 import { MockSpeechProvider } from "@/lib/providers/speech";
 import { AzureOpenAiProvider } from "@/lib/providers/ai";
@@ -196,10 +196,13 @@ describe("ready for work gating", () => {
 describe("authorization", () => {
   it("stops field users from publishing EEI libraries", () => {
     expect(canWriteJrb([RoleName.field_team_member])).toBe(true);
+    expect(canWriteJrb([RoleName.supervisor])).toBe(false);
     expect(canReleaseJrb([RoleName.field_team_member])).toBe(false);
     expect(canReleaseJrb([RoleName.employee_in_charge])).toBe(true);
     expect(canPublishEei([RoleName.field_team_member])).toBe(false);
     expect(canPublishEei([RoleName.eei_task_library_administrator])).toBe(true);
+    expect(canSupervisorReview([RoleName.supervisor])).toBe(true);
+    expect(canSupervisorReview([RoleName.field_team_member])).toBe(false);
   });
 });
 

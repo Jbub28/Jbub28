@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { JrbStatus } from "@prisma/client";
 import { requireUser } from "@/lib/auth/session";
-import { canReleaseJrb } from "@/lib/auth/rbac";
+import { canSubmitJrb } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
@@ -11,10 +11,11 @@ import { READY_NOTICE } from "@/lib/domain/readiness";
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   if (!originAllowed(request)) return jsonError("Invalid origin", 403);
   const user = await requireUser();
-  if (!canReleaseJrb(user.roles)) return jsonError("Only the Employee in Charge can release this brief.", 403);
   const { id } = await context.params;
   const jrb = await prisma.jrbRecord.findUnique({ where: { id } });
-  if (!jrb) return jsonError("Job brief not found.", 404);
+  if (!jrb || !(await canSubmitJrb(user, jrb))) {
+    return jsonError("Only the Worker in Charge can release this brief.", 403);
+  }
   if (jrb.syncStatus !== "synchronized") {
     return jsonError("This brief is not synchronized. It cannot be released yet.", 409);
   }

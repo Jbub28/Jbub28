@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import { canSupervisorReview } from "@/lib/auth/rbac";
+import { jrbVisibleWhere } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { jsonError } from "@/lib/server/http";
 import { attentionBandLabel, supervisorAttention } from "@/lib/domain/supervisorAttention";
-import { briefTitle, plainStatus } from "@/lib/domain/briefPresentation";
+import { briefTitle, plainStatus, supervisorDeskFolder } from "@/lib/domain/briefPresentation";
 import { CSRA_MAX_SCORE } from "@/lib/domain/csraScorecard";
 
 export async function GET() {
@@ -12,14 +13,13 @@ export async function GET() {
   if (!canSupervisorReview(user.roles)) return jsonError("Not allowed.", 403);
   const jrbs = await prisma.jrbRecord.findMany({
     where: {
-      organizationId: user.organizationId,
-      status: { not: "closed" },
-      discardedAt: null,
+      AND: [await jrbVisibleWhere(user), { discardedAt: null }],
     },
     orderBy: { updatedAt: "desc" },
     take: 100,
     include: {
       workType: true,
+      createdBy: { select: { displayName: true } },
       employeeInCharge: { select: { displayName: true } },
       qualityAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
       stopWorkEvents: { orderBy: { createdAt: "desc" }, take: 3 },
@@ -44,6 +44,8 @@ export async function GET() {
         title: briefTitle(j),
         status: j.status,
         plainStatus: plainStatus(j.status, j.discardedAt),
+        deskFolder: supervisorDeskFolder(j.status),
+        createdByName: j.createdBy.displayName,
         jobLocation: j.jobLocation,
         locationIdentifier: j.locationIdentifier,
         discardedAt: j.discardedAt,

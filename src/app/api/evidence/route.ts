@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import { canWriteJrb } from "@/lib/auth/rbac";
+import { canMutateJrb } from "@/lib/auth/jrbAccess";
 import { getStorageProvider, malwareScanHook } from "@/lib/providers/storage";
 import { prisma } from "@/lib/db";
 import { jsonError, originAllowed } from "@/lib/server/http";
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
   if (!(file instanceof File)) return jsonError("Choose a photo or PDF.", 400);
   const association = String(form.get("association") ?? "other");
   const versionId = String(form.get("versionId") ?? "");
+  if (versionId) {
+    const version = await prisma.jrbVersion.findUnique({
+      where: { id: versionId },
+      include: { jrb: true },
+    });
+    if (!version?.jrb || !(await canMutateJrb(user, version.jrb))) {
+      return jsonError("Job brief not found.", 404);
+    }
+  }
   const buffer = Buffer.from(await file.arrayBuffer());
   const stored = await getStorageProvider().save({
     buffer,

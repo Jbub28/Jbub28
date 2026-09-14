@@ -49,6 +49,7 @@ export function BriefWizard({ id }: { id: string }) {
   const [chosenControls, setChosenControls] = useState<{ exposureId: string; directControlId: string }[]>([]);
   const version = data?.jrb?.versions?.[0];
   const jrb = data?.jrb;
+  const canEdit = data?.canEdit !== false;
   const loc = locationFromRecord(jrb ?? {});
   const { gpsStatus, capture } = useOptionalGps((lat, lng) => {
     setForm((f) => ({ ...f, gpsCoordinates: formatGps(lat, lng), gpsLatitude: lat, gpsLongitude: lng, gpsPermissionGranted: true }));
@@ -182,6 +183,36 @@ export function BriefWizard({ id }: { id: string }) {
   const confirmedTasks = (version?.taskSelections ?? [])
     .filter((t: any) => t.confirmed)
     .map((t: any) => ({ id: t.taskId, name: t.task?.exactName ?? "EEI task" }));
+  const displayHighEnergy: { exposureId: string; key: string; label: string; evidence: string }[] =
+    extraction?.highEnergy?.length
+      ? extraction.highEnergy.map((he) => ({
+          exposureId: he.exposureId,
+          key: he.key,
+          label: he.label,
+          evidence: he.evidence,
+        }))
+      : (version?.exposures ?? []).map((row: any) => ({
+          exposureId: String(row.exposureId),
+          key: String(row.exposure?.key ?? ""),
+          label: String(row.exposure?.formLabelExact ?? row.exposure?.dcInventoryLabelExact ?? row.exposure?.key ?? ""),
+          evidence: String(row.energySource ?? ""),
+        }));
+  const displayControls: { text: string; exposureId: string; origin?: string; catalogName?: string }[] =
+    extraction?.controls?.length
+      ? extraction.controls.map((c) => ({
+          text: c.text,
+          exposureId: c.exposureId ?? "",
+          origin: c.origin,
+          catalogName: c.catalogName ?? undefined,
+        }))
+      : (version?.exposures ?? []).flatMap((row: any) =>
+          (row.directControlSelections ?? []).map((sel: any) => ({
+            text: String(sel.directControl?.exactName ?? "Direct Control"),
+            exposureId: String(row.exposureId),
+            origin: "inventory",
+            catalogName: sel.directControl?.exactName,
+          })),
+        );
 
   const controlChoices = () =>
     (extraction?.highEnergy ?? []).map((he) => {
@@ -234,6 +265,7 @@ export function BriefWizard({ id }: { id: string }) {
   };
 
   const saveDraft = async () => {
+    if (!canEdit) return;
     setErrors([]);
     const names = String(form.crewText ?? version?.crewMembers?.map((m: any) => m.name).join("\n") ?? "")
       .split("\n")
@@ -247,6 +279,10 @@ export function BriefWizard({ id }: { id: string }) {
   };
 
   const goNext = async () => {
+    if (!canEdit) {
+      setStep((s) => Math.min(STEPS.length - 1, s + 1));
+      return;
+    }
     if (step === 0) {
       try {
         await saveDraft();
@@ -298,7 +334,7 @@ export function BriefWizard({ id }: { id: string }) {
         onStop={() => setDialog("stop")}
         onRebrief={() => setDialog("rebrief")}
         onDiscard={
-          jrb.status === "closed" || jrb.discardedAt
+          !canEdit || jrb.status === "closed" || jrb.discardedAt
             ? undefined
             : () => {
                 if (!window.confirm("Discard this brief? It will move to Archived. You can put it back later.")) return;
@@ -311,7 +347,13 @@ export function BriefWizard({ id }: { id: string }) {
         backLabel={step === 0 ? "My briefs" : "Back"}
         helpText={STEPS[step].question}
         briefId={id}
+        readOnly={!canEdit}
       >
+        {!canEdit ? (
+          <p className="eg-card p-3" role="status">
+            Review only. Supervisors cannot change the crew briefing. Use the CSRA scorecard from the Supervisor desk.
+          </p>
+        ) : null}
         <p className="text-xl">{STEPS[step].question}</p>
 
         {step === 0 && (
@@ -322,6 +364,7 @@ export function BriefWizard({ id }: { id: string }) {
               return timing.line ? <p className="eg-muted text-sm">{timing.line}</p> : null;
             })()}
             {jrb.status === "stop_work_active" ? <ResumeStopWork id={id} onDone={refresh} /> : null}
+            {canEdit ? (
             <JobTalk
               catalog={briefingCatalog}
               currentValues={{
@@ -339,6 +382,12 @@ export function BriefWizard({ id }: { id: string }) {
               onExtracted={(result, current) => applyExtraction(result, current)}
               extraction={extraction}
             />
+            ) : (
+              <article className="eg-card p-4">
+                <h2 className="text-lg font-bold">Briefing</h2>
+                <p>{version?.workDescriptionEdited || version?.workDescriptionOriginal || version?.briefingTranscript || "No talk captured yet."}</p>
+              </article>
+            )}
             {extraction?.workDescription ? <p className="text-lg"><span className="font-bold">The work: </span>{extraction.workDescription}</p> : null}
             {extraction?.highEnergy.length ? (
               <div className="space-y-2">
@@ -375,6 +424,7 @@ export function BriefWizard({ id }: { id: string }) {
               </div>
             ) : null}
             <p className="eg-muted text-sm">Scroll these fields while you talk. They fill in as a coach — edit anything that looks wrong.</p>
+            {canEdit ? (
             <JobLocationFields
               values={{
                 jobLocation: form.jobLocation ?? loc.jobLocation,
@@ -388,6 +438,10 @@ export function BriefWizard({ id }: { id: string }) {
               onResolved={(update) => setForm((f) => ({ ...f, ...update }))}
               onOptionalGps={capture}
             />
+            ) : (
+              <JobLocationSummary jrb={{ ...jrb, ...loc, ...form }} />
+            )}
+            {canEdit ? (
             <TaskConfirm
               workTypeCode={workTypeCode}
               workDescription={extraction?.workDescription || String(form.edited ?? "")}
@@ -403,6 +457,9 @@ export function BriefWizard({ id }: { id: string }) {
                 }
               }}
             />
+            ) : confirmedTasks.length ? (
+              <p><span className="font-bold">EEI task: </span>{confirmedTasks.map((t: { name: string }) => t.name).join("; ")}</p>
+            ) : null}
             <Field id="wo" label="Work order number" value={form.workOrderNumber ?? jrb.workOrderNumber ?? ""} onChange={(v) => setForm({ ...form, workOrderNumber: v })} />
             <Field id="ckt" label="Circuit" value={form.circuitNumber ?? extraction?.location.circuitNumber ?? jrb.circuitNumber ?? ""} onChange={(v) => setForm({ ...form, circuitNumber: v })} />
             <Field id="eic" label="Worker in Charge" value={eicName} />
@@ -420,7 +477,7 @@ export function BriefWizard({ id }: { id: string }) {
 
         {step === 1 && (
           <div className="space-y-4">
-            {jrb.status === "stop_work_active" ? (
+            {jrb.status === "stop_work_active" && canEdit ? (
               <ResumeStopWork id={id} onDone={refresh} />
             ) : null}
             {followUps.length ? (
@@ -447,11 +504,11 @@ export function BriefWizard({ id }: { id: string }) {
             ) : null}
             <h2 className="text-xl font-bold">What can seriously hurt or kill us?</h2>
             <p className="eg-muted text-sm">Official High Energy icons from the Electric Delivery briefing form.</p>
-            {(extraction?.highEnergy ?? []).length === 0 ? (
+            {displayHighEnergy.length === 0 ? (
               <p>Nothing from the talk was clear enough to show as High Energy. Add what you see, or go back and talk through the job.</p>
             ) : (
-              extraction!.highEnergy.map((he) => {
-                const suggested = (extraction?.controls ?? []).filter(
+              displayHighEnergy.map((he) => {
+                const suggested = (extraction?.controls ?? displayControls).filter(
                   (c) => c.exposureId === he.exposureId || (he.key === "fall_from_elevation_4ft" && /fall/i.test(c.text)),
                 );
                 const inventory = briefingCatalog.directControls
@@ -468,6 +525,7 @@ export function BriefWizard({ id }: { id: string }) {
                   ) : (
                     <p className="mt-2 text-sm">No inventory Direct Control was matched from the talk yet.</p>
                   )}
+                  {canEdit ? (
                   <ControlOverride
                     exposureId={he.exposureId}
                     exposureLabel={he.label}
@@ -495,12 +553,19 @@ export function BriefWizard({ id }: { id: string }) {
                       setErrors([]);
                     }}
                   />
+                  ) : (
+                    <p className="mt-2 text-sm">
+                      Direct Control:{" "}
+                      {recorded?.directControlSelections?.[0]?.directControl?.exactName ??
+                        (recorded?.notUsed?.length ? "No direct control available" : "Not recorded")}
+                    </p>
+                  )}
                 </article>
                 );
               })
             )}
             <h2 className="text-xl font-bold">How are we controlling it?</h2>
-            {(extraction?.controls ?? []).map((c, i) => (
+            {displayControls.map((c, i) => (
               <article key={`${c.text}-${i}`} className="eg-card p-3">
                 <p className="font-bold">{c.text}</p>
                 <p className="text-sm">{c.origin === "ai_suggested" ? "Suggested from the Direct Control Inventory" : "Identified from the conversation"}</p>
@@ -509,9 +574,9 @@ export function BriefWizard({ id }: { id: string }) {
             ))}
             {extraction?.ppe?.length ? <p><span className="font-bold">PPE heard: </span>{extraction.ppe.join(", ")}</p> : null}
             <p className="text-sm">EnergyGuard does not decide that work is safe. You confirm what the crew will actually use. Suggested inventory items are not confirmed until you say so.</p>
-            {followUps.length ? (
+            {canEdit && followUps.length ? (
               <p className="eg-alert p-3">Answer the follow-up before confirming controls. EnergyGuard will not mark a control confirmed for you.</p>
-            ) : (
+            ) : canEdit ? (
               <BigButton
                 primary
                 onClick={async () => {
@@ -521,13 +586,13 @@ export function BriefWizard({ id }: { id: string }) {
               >
                 This is what we briefed
               </BigButton>
-            )}
+            ) : null}
           </div>
         )}
 
         {step === 2 && (
           <div className="space-y-4">
-            {jrb.status === "stop_work_active" ? (
+            {jrb.status === "stop_work_active" && canEdit ? (
               <ResumeStopWork id={id} onDone={refresh} />
             ) : null}
             <article className="eg-card p-4">
@@ -541,9 +606,9 @@ export function BriefWizard({ id }: { id: string }) {
               <h2 className="mt-3 text-lg font-bold">Location</h2>
               <p>{formatJobLocation({ ...loc, ...form, ...jrb })}</p>
               <h2 className="mt-3 text-lg font-bold">What can seriously hurt or kill us</h2>
-              {(extraction?.highEnergy ?? []).length ? (
+              {displayHighEnergy.length ? (
                 <ul className="mt-2 space-y-2">
-                  {(extraction?.highEnergy ?? []).map((h) => (
+                  {displayHighEnergy.map((h) => (
                     <li key={h.exposureId}>
                       <HighEnergyIcon compact energyKey={h.key} label={h.label} />
                     </li>
@@ -553,7 +618,7 @@ export function BriefWizard({ id }: { id: string }) {
                 <p>None confirmed from talk</p>
               )}
               <h2 className="mt-3 text-lg font-bold">Critical / Direct Controls</h2>
-              <p>{(extraction?.controls ?? []).map((c) => c.text).join("; ") || "Review required"}</p>
+              <p>{displayControls.map((c) => c.text).join("; ") || "Review required"}</p>
               {extraction?.ppe?.length ? <p className="mt-2"><span className="font-bold">PPE: </span>{extraction.ppe.join(", ")}</p> : null}
             </article>
             <h2 className="text-lg font-bold">OSHA briefing subjects</h2>
@@ -576,6 +641,8 @@ export function BriefWizard({ id }: { id: string }) {
             ) : (
               <p className="text-lg font-bold">{data.readiness?.status}</p>
             )}
+            {canEdit ? (
+              <>
             <h2 className="text-xl font-bold">Crew acknowledgment</h2>
             <p>I participated in the briefing, understand Stop Work and that significant changes require a rebrief, and understand my part of the job.</p>
             {(version?.crewMembers ?? []).length === 0 ? (
@@ -626,12 +693,23 @@ export function BriefWizard({ id }: { id: string }) {
               Submit brief — job in progress
             </BigButton>
             ) : null}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold">Participants</h2>
+                {(version?.crewMembers ?? []).map((m: any) => (
+                  <p key={m.id}>{m.name} — {version.acknowledgments?.some((a: any) => a.name === m.name) ? "Acknowledged" : "Listed"}</p>
+                ))}
+              </div>
+            )}
             {isJobInProgress(jrb.status) ? (
               <p>
                 {READY_NOTICE}{" "}
+                {canEdit ? (
                 <a className="font-bold underline" href={`/briefs/${id}/closeout`}>
                   Open post-job review
                 </a>
+                ) : null}
               </p>
             ) : null}
             {jrb.status === "closed" ? <p className="font-bold">This job is Completed.</p> : null}
@@ -639,7 +717,7 @@ export function BriefWizard({ id }: { id: string }) {
         )}
       </FieldChrome>
 
-      {dialog && (
+      {dialog && canEdit && (
         <EventDialog
           kind={dialog}
           id={id}

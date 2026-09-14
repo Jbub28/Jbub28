@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Presence } from "@prisma/client";
 import { requireUser } from "@/lib/auth/session";
 import { canWriteJrb } from "@/lib/auth/rbac";
+import { canMutateJrb, canReadJrb } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
@@ -60,10 +61,10 @@ export async function GET(_: NextRequest, context: { params: Promise<{ id: strin
   const { id } = await context.params;
   try {
     const jrb = await loadJrb(id);
-    if (!jrb || jrb.organizationId !== user.organizationId) return jsonError("Job brief not found.", 404);
+    if (!jrb || !(await canReadJrb(user, jrb))) return jsonError("Job brief not found.", 404);
     const version = jrb.versions[0];
     const readiness = version ? await buildReadiness(version.id) : null;
-    return NextResponse.json({ jrb, readiness });
+    return NextResponse.json({ jrb, readiness, canEdit: await canMutateJrb(user, jrb) });
   } catch {
     return jsonError("Could not load this job brief.", 500);
   }
@@ -75,7 +76,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   if (!canWriteJrb(user.roles)) return jsonError("You cannot update this job brief.", 403);
   const { id } = await context.params;
   const jrb = await prisma.jrbRecord.findUnique({ where: { id } });
-  if (!jrb || jrb.organizationId !== user.organizationId) return jsonError("Job brief not found.", 404);
+  if (!jrb || !(await canMutateJrb(user, jrb))) return jsonError("Job brief not found.", 404);
   const version = await prisma.jrbVersion.findFirst({ where: { jrbId: id }, orderBy: { versionNumber: "desc" } });
   if (!version) return jsonError("No version.", 400);
   const body = await request.json();
@@ -115,8 +116,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         workClassification: body.workClassification,
         workClassificationConfirmed: Boolean(body.workClassificationConfirmed),
         plannedStartTime: body.plannedStartTime ? new Date(body.plannedStartTime) : null,
-        employeeInChargeId: body.employeeInChargeId ?? jrb.employeeInChargeId,
-        supervisorId: body.supervisorId ?? jrb.supervisorId,
+        employeeInChargeId: jrb.employeeInChargeId,
         workTypeId: body.workTypeId ?? jrb.workTypeId,
         status: "in_progress",
         syncStatus: "synchronized",
@@ -699,5 +699,9 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const updated = await loadJrb(id);
   const current = updated?.versions[0];
   const readiness = current ? await buildReadiness(current.id) : null;
-  return NextResponse.json({ jrb: updated, readiness });
+  return NextResponse.json({
+    jrb: updated,
+    readiness,
+    canEdit: updated ? await canMutateJrb(user, updated) : false,
+  });
 }

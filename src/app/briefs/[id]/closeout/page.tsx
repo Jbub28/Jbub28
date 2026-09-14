@@ -15,6 +15,7 @@ export default function CloseoutPage() {
   const [form, setForm] = useState<Record<string, any>>({});
   const [voiceKeys, setVoiceKeys] = useState<string[]>([]);
   const [jrb, setJrb] = useState<any>(null);
+  const [canEdit, setCanEdit] = useState(true);
   const [locationStatus, setLocationStatus] = useState<"loading" | "ready" | "missing">("loading");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export default function CloseoutPage() {
       .then((d) => {
         if (d.jrb) {
           setJrb(d.jrb);
+          setCanEdit(d.canEdit !== false);
           const existing = d.jrb.versions?.[0]?.postJobReviews?.[0];
           if (existing) setForm(existing);
           setLocationStatus("ready");
@@ -113,6 +115,8 @@ export default function CloseoutPage() {
       <Field id="best" label="Best practices" textarea highlight={voiceMark(voiceKeys, "bestPractices")} value={form.bestPractices ?? ""} onChange={(v) => setForm({ ...form, bestPractices: v })} />
       {error ? <p className="eg-danger p-3" role="alert">{error}</p> : null}
       {message ? <p className="eg-card p-3" role="status">{message}</p> : null}
+      {canEdit ? (
+        <>
       <BigButton onClick={() => void save(false)}>Save review — keep job in progress</BigButton>
       <BigButton
         primary
@@ -126,6 +130,10 @@ export default function CloseoutPage() {
       >
         Finish job — mark Completed
       </BigButton>
+        </>
+      ) : (
+        <p className="eg-card p-3" role="status">Review only. Supervisors cannot complete the crew post-job review.</p>
+      )}
       </div>
       </PageShell>
       <PageFooter />

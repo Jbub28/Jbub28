@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { JrbStatus, WorkClassification } from "@prisma/client";
 import { requireUser } from "@/lib/auth/session";
 import { canWriteJrb } from "@/lib/auth/rbac";
+import { defaultSupervisorIdForUser, jrbVisibleWhere } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { nextJrbNumber, writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
@@ -9,11 +10,12 @@ import { jsonError, originAllowed } from "@/lib/server/http";
 export async function GET() {
   const user = await requireUser();
   const jrbs = await prisma.jrbRecord.findMany({
-    where: { organizationId: user.organizationId },
+    where: await jrbVisibleWhere(user),
     orderBy: { updatedAt: "desc" },
     take: 80,
     include: {
       workType: true,
+      createdBy: { select: { displayName: true } },
       versions: {
         orderBy: { versionNumber: "desc" },
         take: 1,
@@ -38,14 +40,15 @@ export async function POST(request: NextRequest) {
     : null;
   const number = await nextJrbNumber();
   const area = await prisma.operatingArea.findFirst({ where: { organizationId: user.organizationId } });
+  const supervisorId = await defaultSupervisorIdForUser(user.id);
   const jrb = await prisma.jrbRecord.create({
     data: {
       organizationId: user.organizationId,
       jrbNumber: number,
       status: JrbStatus.draft,
       createdById: user.id,
-      employeeInChargeId: body.employeeInChargeId ?? user.id,
-      supervisorId: body.supervisorId ?? null,
+      employeeInChargeId: user.id,
+      supervisorId,
       operatingAreaId: body.operatingAreaId ?? area?.id,
       workTypeId: workType?.id,
       workClassification: (body.workClassification as WorkClassification) ?? WorkClassification.not_yet_determined,

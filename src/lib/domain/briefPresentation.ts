@@ -225,3 +225,17 @@ export function isJobInProgress(status?: string | null): boolean {
 export function canMarkCompleted(status?: string | null): boolean {
   return status === "released_for_work" || status === "stop_work_active" || status === "rebrief_required";
 }
+
+export type SupervisorDeskFolder = "in_progress" | "submitted";
+
+export function supervisorDeskFolder(status?: string | null): SupervisorDeskFolder {
+  if (
+    status === "closed" ||
+    status === "released_for_work" ||
+    status === "stop_work_active" ||
+    status === "rebrief_required"
+  ) {
+    return "submitted";
+  }
+  return "in_progress";
+}

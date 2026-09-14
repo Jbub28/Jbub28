@@ -5,6 +5,7 @@ import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { getAuthProviderName } from "@/lib/providers/auth";
 import { jsonError, originAllowed } from "@/lib/server/http";
 import { writeAudit } from "@/lib/server/audit";
+import { isTestSignInEmail } from "@/lib/auth/testSignIn";
 
 export async function POST(request: NextRequest) {
   if (!originAllowed(request)) return jsonError("Invalid origin", 403);
@@ -12,10 +13,15 @@ export async function POST(request: NextRequest) {
     return jsonError("Use Microsoft Entra ID sign-in.", 501);
   }
   const body = await request.json().catch(() => ({}));
-  const email = String(body.email ?? "");
+  const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
   const user = await prisma.user.findUnique({ where: { email }, include: { roles: true } });
-  if (!user || !user.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
+  if (!user || !user.active) {
+    return jsonError("Email or password is not correct.", 401);
+  }
+  const mockPicker = getAuthProviderName() === "mock" && isTestSignInEmail(email) && !password;
+  const passwordOk = Boolean(user.passwordHash) && password.length > 0 && (await bcrypt.compare(password, user.passwordHash ?? ""));
+  if (!mockPicker && !passwordOk) {
     return jsonError("Email or password is not correct.", 401);
   }
   const session = {

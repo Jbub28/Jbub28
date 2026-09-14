@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { JrbStatus } from "@prisma/client";
 import { requireUser } from "@/lib/auth/session";
 import { canWriteJrb } from "@/lib/auth/rbac";
+import { canMutateJrb } from "@/lib/auth/jrbAccess";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   const body = await request.json();
   if (!body.reason) return jsonError("Choose why conditions changed.", 400);
   const jrb = await prisma.jrbRecord.findUnique({ where: { id } });
-  if (!jrb) return jsonError("Job brief not found.", 404);
+  if (!jrb || !(await canMutateJrb(user, jrb))) return jsonError("Job brief not found.", 404);
   const current = await prisma.jrbVersion.findFirst({ where: { jrbId: id }, orderBy: { versionNumber: "desc" } });
   if (!current) return jsonError("No version.", 400);
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BigButton } from "@/components/field/FieldChrome";
 import { AppHeader, PageFooter, PageShell } from "@/components/ui/AppHeader";
+import { canWriteJrb } from "@/lib/auth/rbac";
 
 export default function NewBriefPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function NewBriefPage() {
   const [workTypeCode, setWorkTypeCode] = useState("ELECTRIC_DISTRIBUTION");
   const [me, setMe] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const canCreate = canWriteJrb((me?.user?.roles ?? []) as Parameters<typeof canWriteJrb>[0]);
   useEffect(() => {
     fetch("/api/reference/catalog").then((r) => r.json()).then((d) => setWorkTypes(d.workTypes ?? []));
     fetch("/api/auth/session").then((r) => r.json()).then(setMe);
@@ -20,6 +22,12 @@ export default function NewBriefPage() {
       <AppHeader title="Start the Job Brief" subtitle="Choose the Electric Delivery work type." />
       <PageShell>
         {error ? <p className="eg-alert p-3" role="alert">{error}</p> : null}
+        {me && !canCreate ? (
+          <p className="eg-alert p-3" role="alert">
+            Supervisors cannot start a Job Brief. Open the Supervisor desk to review crew briefings.
+          </p>
+        ) : (
+          <>
         <div className="space-y-3">
           {workTypes.map((wt) => (
             <BigButton key={wt.id} selected={workTypeCode === wt.code} onClick={() => setWorkTypeCode(wt.code)}>
@@ -47,6 +55,8 @@ export default function NewBriefPage() {
         >
           Create draft
         </button>
+          </>
+        )}
       </PageShell>
       <PageFooter />
     </div>

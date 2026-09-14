@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "EnergyGuard JRB",
-    "slug": "joshua-menninger",
+    "slug": "energyguard-jrb",
     "ios": {
       "bundleIdentifier": "com.jbub28.energyguardjrb",
       "supportsTablet": true,
@@ -14,7 +14,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "0218b930-10e9-4886-b868-0e8eef980e6d"
+        "projectId": "c1132d9c-5228-4a2f-9d8a-d4050fc06ea5"
       }
     }
   }

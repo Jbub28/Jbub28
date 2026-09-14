@@ -156,6 +156,20 @@ export function BriefWizard({ id }: { id: string }) {
     }
   };
 
+  const acknowledgeCrew = async (name: string | undefined, employer?: string) => {
+    const ackName = String(name ?? "").trim();
+    if (!ackName) {
+      setErrors(["Type the crew member's name before acknowledging."]);
+      return;
+    }
+    try {
+      await patch("acknowledge", { name: ackName, employer: employer ?? "Electric Delivery" });
+      setForm((f) => ({ ...f, ackName: f.ackName === name ? "" : f.ackName }));
+    } catch {
+      /* Needs attention banner already shows the API message */
+    }
+  };
+
   const saveStart = () => patch("saveStart", { ...form, ...persistableLocation({ ...jrb, ...loc, ...form }) });
   const followUps: FollowUpQuestion[] = extraction?.followUps ?? [];
   const eicName = jrb?.employeeInCharge?.displayName ?? "Employee in Charge";
@@ -431,7 +445,7 @@ export function BriefWizard({ id }: { id: string }) {
                         return [...rest, { exposureId: he.exposureId, directControlId }];
                       });
                     }}
-                    onSaveNotUsed={(payload) => patch("recordNotUsedStrategy", payload)}
+                    onSaveNotUsed={(payload) => patch("recordNotUsedStrategy", payload).catch(() => undefined)}
                   />
                 </article>
                 );
@@ -536,7 +550,7 @@ export function BriefWizard({ id }: { id: string }) {
                   <div key={m.id} className="eg-card p-3">
                     <p>{m.name} — {acked ? "Acknowledged" : "Needs Attention"}</p>
                     {acked ? null : (
-                      <BigButton onClick={() => patch("acknowledge", { name: m.name, employer: m.employer ?? "Electric Delivery" })}>
+                      <BigButton onClick={() => void acknowledgeCrew(m.name, m.employer)}>
                         Acknowledge for {m.name}
                       </BigButton>
                     )}
@@ -545,7 +559,7 @@ export function BriefWizard({ id }: { id: string }) {
               })
             )}
             <Field id="ackname" label="Name (if someone is not in the list)" value={form.ackName ?? ""} onChange={(v) => setForm({ ...form, ackName: v })} />
-            <BigButton onClick={() => patch("acknowledge", { name: form.ackName, employer: "Electric Delivery" })}>Acknowledge this version</BigButton>
+            <BigButton onClick={() => void acknowledgeCrew(form.ackName)}>Acknowledge this version</BigButton>
             <BigButton
               primary
               onClick={async () => {

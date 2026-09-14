@@ -310,6 +310,21 @@ test("noisy transformer briefing keeps crew names, confirms the EEI task, and ma
   await expect(page.getByText(/The briefing is complete/)).toBeVisible({ timeout: 15_000 });
 });
 
+test("acknowledge without a name stays on the form and explains what to type", async ({ page }) => {
+  await signInAsEic(page);
+  await page.getByRole("link", { name: "Start a Job Brief" }).click();
+  await page.getByRole("button", { name: "Electric Distribution" }).click();
+  await page.getByRole("button", { name: "Create draft" }).click();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByText(/Step 2 of 3/)).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByText(/Step 3 of 3/)).toBeVisible();
+  await page.getByRole("button", { name: "Acknowledge this version" }).click();
+  await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+  await expect(page.getByText("Type the crew member's name before acknowledging.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ready for Work" })).toBeVisible();
+});
+
 test("field crews do not see the supervisor log", async ({ page }) => {
   await signInAsEic(page);
   await expect(page.getByRole("link", { name: "Supervisor log" })).toHaveCount(0);

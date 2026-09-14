@@ -21,7 +21,9 @@
         "config": "production-ios.yml"
       },
       "env": {
-        "CAPACITOR_BUILD": "1"
+        "CAPACITOR_BUILD": "1",
+        "EXPO_APPLE_TEAM_ID": "L7ZVZDDF3G",
+        "EXPO_APPLE_TEAM_TYPE": "COMPANY_OR_ORGANIZATION"
       }
     },
     "production": {
@@ -32,14 +34,18 @@
         "config": "production-ios.yml"
       },
       "env": {
-        "CAPACITOR_BUILD": "1"
+        "CAPACITOR_BUILD": "1",
+        "EXPO_APPLE_TEAM_ID": "L7ZVZDDF3G",
+        "EXPO_APPLE_TEAM_TYPE": "COMPANY_OR_ORGANIZATION"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "6811939293"
+        "ascAppId": "6811939293",
+        "appleTeamId": "L7ZVZDDF3G",
+        "bundleIdentifier": "com.jbub28.energyguardjrb"
       }
     }
   }

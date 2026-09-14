@@ -18,7 +18,17 @@ After a successful production build, submit with your App Store Connect Apple ID
 eas submit --platform ios --id <BUILD_ID> --profile production
 ```
 
-App Store Connect Apple ID is `6811939293` (`eas.json` → `submit.production.ios.ascAppId`).
+App Store Connect Apple ID is `6811939293` (`eas.json` → `submit.production.ios.ascAppId`). Bundle ID is `com.jbub28.energyguardjrb`. Apple Team ID is `L7ZVZDDF3G`.
+
+EAS already has a distribution certificate and an App Store Connect API key, but those were first used for `com.saferoute.nav`. The EnergyGuard bundle needs its own App Store provisioning profile. Cloud builds pass `EXPO_APPLE_TEAM_ID` so EAS can create that profile without an interactive Apple login. Do not submit an IPA signed as `com.saferoute.nav` to app `6811939293`.
+
+If a later iOS build still fails with “Credentials are not set up”, run this once on a machine logged into Expo and Apple:
+
+```bash
+npx eas-cli credentials -p ios
+```
+
+Choose bundle `com.jbub28.energyguardjrb` and set up all credentials (reuse the existing distribution certificate).
 
 ## How it works
 

@@ -6,7 +6,7 @@ const extraHosts = (process.env.CAPACITOR_ALLOWED_HOSTS ?? "")
   .filter(Boolean);
 
 const config: CapacitorConfig = {
-  appId: "com.saferoute.nav",
+  appId: "com.jbub28.energyguardjrb",
   appName: "EnergyGuard JRB",
   webDir: "native-web",
   ios: {

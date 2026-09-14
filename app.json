@@ -3,7 +3,7 @@
     "name": "EnergyGuard JRB",
     "slug": "joshua-menninger",
     "ios": {
-      "bundleIdentifier": "com.saferoute.nav",
+      "bundleIdentifier": "com.jbub28.energyguardjrb",
       "supportsTablet": true,
       "infoPlist": {
         "CFBundleDisplayName": "EnergyGuard JRB",

@@ -44,7 +44,7 @@ Or a local cluster (`docs` assume database `energyguard`).
 
 ## iPhone / TestFlight
 
-EnergyGuard JRB is a Next.js server app wrapped in a Capacitor iOS shell (`com.saferoute.nav`, display name **EnergyGuard JRB**). The iPhone app does not bundle the database. Testers connect to the live HTTPS server from the first screen.
+EnergyGuard JRB is a Next.js server app wrapped in a Capacitor iOS shell (`com.jbub28.energyguardjrb`, display name **EnergyGuard JRB**). The iPhone app does not bundle the database. Testers connect to the live HTTPS server from the first screen.
 
 ```bash
 npm install

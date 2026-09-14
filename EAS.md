@@ -18,12 +18,12 @@ After a successful production build, submit with your App Store Connect Apple ID
 eas submit --platform ios --id <BUILD_ID> --profile production
 ```
 
-Set `eas.json` → `submit.production.ios.ascAppId` to that numeric App Store Connect app ID.
+App Store Connect Apple ID is `6811939293` (`eas.json` → `submit.production.ios.ascAppId`).
 
 ## How it works
 
 1. `npm run build:ios` — write the default HTTPS server URL into `native-web/`
 2. `npx cap sync ios` — copy the iOS connect screen into Xcode
-3. Fastlane `gym` — archive and sign `ios/App/App.xcodeproj` (scheme **App**, bundle `com.saferoute.nav`)
+3. Fastlane `gym` — archive and sign `ios/App/App.xcodeproj` (scheme **App**, bundle `com.jbub28.energyguardjrb`)
 
 Display name on the iPhone is **EnergyGuard JRB**.

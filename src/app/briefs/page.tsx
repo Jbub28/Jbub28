@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ConnectionStatus } from "@/components/field/ConnectionStatus";
 import { AppHeader, PageFooter, PageShell, StatusChip, canSeeLibraries, canSeeSupervisorLog } from "@/components/ui/AppHeader";
-import { briefListBucket, briefTitle, plainStatus, statusTone } from "@/lib/domain/briefPresentation";
+import { briefListBucket, briefTitle, jobTiming, plainStatus, statusTone } from "@/lib/domain/briefPresentation";
 
 type ListFilter = "current" | "archived";
 
@@ -12,9 +12,14 @@ export default function BriefsPage() {
   const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [me, setMe] = useState<any>(null);
   const [filter, setFilter] = useState<ListFilter>("current");
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     fetch("/api/auth/session").then((r) => r.json()).then(setMe);
     fetch("/api/jrbs").then((r) => r.json()).then((d) => setJrbs(d.jrbs ?? []));
+  }, []);
+  useEffect(() => {
+    const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(tick);
   }, []);
   const roles = me?.user?.roles as string[] | undefined;
   const grouped = useMemo(() => {
@@ -73,7 +78,7 @@ export default function BriefsPage() {
         <ul className="mt-6 space-y-3">
           {shown.map((j) => {
             const title = briefTitle(j);
-            const date = new Date(j.date ?? j.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+            const timing = jobTiming(j, new Date(now));
             return (
               <li key={j.id}>
                 <Link href={`/briefs/${j.id}`} className="eg-card block p-4">
@@ -81,7 +86,8 @@ export default function BriefsPage() {
                     <p className="text-xl font-bold">{title}</p>
                     <StatusChip tone={statusTone(j.status)}>{plainStatus(j.status)}</StatusChip>
                   </div>
-                  <p className="mt-1 text-sm">{j.jrbNumber} · {date}</p>
+                  <p className="mt-1 text-sm">{j.jrbNumber}</p>
+                  {timing.line ? <p className="eg-muted mt-1 text-sm">{timing.line}</p> : null}
                 </Link>
               </li>
             );

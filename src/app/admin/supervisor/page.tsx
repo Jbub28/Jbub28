@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatJobLocation } from "@/lib/domain/jobLocation";
+import { jobTiming } from "@/lib/domain/briefPresentation";
 import { AppHeader, PageFooter, PageShell, StatusChip } from "@/components/ui/AppHeader";
 
 export default function SupervisorDeskPage() {
   const [jrbs, setJrbs] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     fetch("/api/admin/supervisor")
@@ -17,6 +19,10 @@ export default function SupervisorDeskPage() {
         setJrbs(d.jrbs ?? []);
       })
       .catch((e) => setError(e.message));
+  }, []);
+  useEffect(() => {
+    const tick = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(tick);
   }, []);
 
   return (
@@ -35,7 +41,9 @@ export default function SupervisorDeskPage() {
           </p>
         )}
         <ul className="mt-6 space-y-3">
-          {(jrbs ?? []).map((j) => (
+          {(jrbs ?? []).map((j) => {
+            const timing = jobTiming(j, new Date(now));
+            return (
             <li key={j.id} className="eg-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <p className="text-xl font-bold">{j.title}</p>
@@ -49,6 +57,7 @@ export default function SupervisorDeskPage() {
                 </div>
               </div>
               <p className="mt-1 text-sm">{j.jrbNumber} · Worker in Charge: {j.employeeInCharge?.displayName ?? "Not identified"}</p>
+              {timing.line ? <p className="text-sm">{timing.line}</p> : null}
               <p className="eg-muted text-sm">{formatJobLocation(j) || "Location not entered"}</p>
               <ul className="mt-2 list-disc pl-5 text-sm">
                 {(j.attention.reasons ?? []).slice(0, 3).map((reason: string) => (
@@ -65,7 +74,8 @@ export default function SupervisorDeskPage() {
                 </Link>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
         {jrbs && jrbs.length === 0 && !error ? <p className="eg-muted mt-6">No active job briefs right now.</p> : null}
       </PageShell>

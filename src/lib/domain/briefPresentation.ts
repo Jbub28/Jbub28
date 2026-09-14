@@ -118,6 +118,92 @@ export function briefTitle(input: Parameters<typeof shortWorkName>[0] & Paramete
   return work === "Job brief" ? input.jrbNumber || "New job brief" : work;
 }
 
+export function formatClockTime(value: Date | string | null | undefined, now = new Date()): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return time;
+  const day = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${day}, ${time}`;
+}
+
+export function formatDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  if (ms < 60_000) return "just opened";
+  const minutes = Math.floor(ms / 60_000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const remainHours = hours % 24;
+  const remainMinutes = minutes % 60;
+  if (days > 0) {
+    if (remainHours === 0) return days === 1 ? "1 day" : `${days} days`;
+    return `${days === 1 ? "1 day" : `${days} days`} ${remainHours} hr`;
+  }
+  if (hours > 0) {
+    if (remainMinutes === 0) return hours === 1 ? "1 hr" : `${hours} hr`;
+    return `${hours} hr ${remainMinutes} min`;
+  }
+  return `${minutes} min`;
+}
+
+export function jobOpenedAt(input: {
+  createdAt?: Date | string | null;
+  date?: Date | string | null;
+}): Date | null {
+  const raw = input.createdAt ?? input.date;
+  if (!raw) return null;
+  const date = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function jobEndedAt(input: {
+  status?: string | null;
+  updatedAt?: Date | string | null;
+}): Date | null {
+  if (input.status !== "closed") return null;
+  if (!input.updatedAt) return null;
+  const date = input.updatedAt instanceof Date ? input.updatedAt : new Date(input.updatedAt);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function jobTiming(
+  input: {
+    createdAt?: Date | string | null;
+    date?: Date | string | null;
+    updatedAt?: Date | string | null;
+    status?: string | null;
+    versions?: { releasedAt?: Date | string | null }[];
+  },
+  now = new Date(),
+): {
+  openedAt: Date | null;
+  openedLabel: string;
+  durationLabel: string;
+  line: string;
+} {
+  const openedAt = jobOpenedAt(input);
+  if (!openedAt) {
+    return { openedAt: null, openedLabel: "", durationLabel: "", line: "" };
+  }
+  const endedAt = jobEndedAt(input);
+  const end = endedAt ?? now;
+  const durationLabel = formatDuration(end.getTime() - openedAt.getTime());
+  const openedLabel = formatClockTime(openedAt, now);
+  const durationPhrase = endedAt ? `Lasted ${durationLabel}` : durationLabel;
+  return {
+    openedAt,
+    openedLabel,
+    durationLabel,
+    line: `Opened ${openedLabel} · ${durationPhrase}`,
+  };
+}
+
+
 export function isJobInProgress(status?: string | null): boolean {
   return status === "released_for_work";
 }

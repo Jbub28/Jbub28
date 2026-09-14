@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/session";
 import { canSupervisorReview } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db";
-import { jsonError, originAllowed } from "@/lib/server/http";
+import { jsonError } from "@/lib/server/http";
 import { attentionBandLabel, supervisorAttention } from "@/lib/domain/supervisorAttention";
 import { briefTitle, plainStatus } from "@/lib/domain/briefPresentation";
 import { CSRA_MAX_SCORE } from "@/lib/domain/csraScorecard";
@@ -45,8 +45,12 @@ export async function GET() {
         plainStatus: plainStatus(j.status),
         jobLocation: j.jobLocation,
         locationIdentifier: j.locationIdentifier,
+        createdAt: j.createdAt,
+        updatedAt: j.updatedAt,
+        date: j.date,
         employeeInCharge: j.employeeInCharge,
         workType: j.workType,
+        versions: j.versions.map((v) => ({ releasedAt: v.releasedAt })),
         attention,
         attentionLabel: attentionBandLabel(attention.band),
         qualityScore: assessment ? `${assessment.totalWeightedScore}/${assessment.maxScore || CSRA_MAX_SCORE}` : null,

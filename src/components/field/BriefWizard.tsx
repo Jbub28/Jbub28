@@ -7,7 +7,7 @@ import { JobLocationFields, JobLocationSummary, useOptionalGps } from "./JobLoca
 import { REBRIEF_REASONS } from "@/lib/domain/controls";
 import { READY_NOTICE } from "@/lib/domain/readiness";
 import { formatGps, formatJobLocation, locationFromRecord, persistableLocation } from "@/lib/domain/jobLocation";
-import { plainStatus, isJobInProgress } from "@/lib/domain/briefPresentation";
+import { jobTiming, plainStatus, isJobInProgress } from "@/lib/domain/briefPresentation";
 import { saveDraftLocal } from "@/lib/offline/store";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { joinSpokenText } from "@/lib/speech/browserSpeech";
@@ -281,6 +281,10 @@ export function BriefWizard({ id }: { id: string }) {
         {step === 0 && (
           <div className="space-y-4">
             <p className="text-lg">JRB {jrb.jrbNumber} · {plainStatus(jrb.status)}</p>
+            {(() => {
+              const timing = jobTiming(jrb);
+              return timing.line ? <p className="eg-muted text-sm">{timing.line}</p> : null;
+            })()}
             {jrb.status === "stop_work_active" ? <ResumeStopWork id={id} onDone={refresh} /> : null}
             <JobTalk
               catalog={briefingCatalog}

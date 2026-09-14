@@ -5,6 +5,7 @@ import { canInitiateStopWork } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
+import { persistEventConversation } from "@/lib/conversation/persistBriefing";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   if (!originAllowed(request)) return jsonError("Invalid origin", 403);
@@ -15,6 +16,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
   if (!body.reason || !body.explanation) return jsonError("Choose a reason and explain what happened.", 400);
   const jrb = await prisma.jrbRecord.findUnique({ where: { id } });
   if (!jrb) return jsonError("Job brief not found.", 404);
+  const version = await prisma.jrbVersion.findFirst({ where: { jrbId: id }, orderBy: { versionNumber: "desc" } });
+  const transcript = String(body.transcript ?? body.explanation ?? "");
+  await persistEventConversation({
+    jrbId: id,
+    versionId: version?.id,
+    userId: user.id,
+    kind: "stop_work",
+    transcript,
+    facts: [
+      { category: "stop_work", key: "reason", label: "Stop Work reason", value: String(body.reason), sourceSegment: transcript },
+      { category: "stop_work", key: "explanation", label: "What happened", value: String(body.explanation), sourceSegment: transcript },
+      ...(body.affectedHazard
+        ? [{ category: "stop_work", key: "affectedHazard", label: "Affected hazard", value: String(body.affectedHazard), sourceSegment: transcript }]
+        : []),
+    ],
+  });
   await prisma.stopWorkEvent.create({
     data: {
       jrbId: id,
@@ -23,6 +40,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       initiatingUserId: user.id,
       relatedTaskOrStep: body.relatedTaskOrStep,
       immediateCondition: body.immediateCondition,
+      correctiveAction: body.correctiveAction,
+      affectedHazard: body.affectedHazard,
+      transcript: body.transcript,
+      rebriefOccurred: Boolean(body.rebriefOccurred),
     },
   });
   await prisma.jrbRecord.update({

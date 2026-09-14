@@ -5,6 +5,7 @@ import { canWriteJrb } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db";
 import { writeAudit } from "@/lib/server/audit";
 import { jsonError, originAllowed } from "@/lib/server/http";
+import { persistEventConversation } from "@/lib/conversation/persistBriefing";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   if (!originAllowed(request)) return jsonError("Invalid origin", 403);
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       status: JrbStatus.rebrief_required,
       workDescriptionOriginal: current.workDescriptionOriginal,
       workDescriptionEdited: current.workDescriptionEdited,
+      briefingTranscript: current.briefingTranscript,
       transcriptStatus: current.transcriptStatus,
       speechProvider: current.speechProvider,
       controlledLibrarySnapshot: current.controlledLibrarySnapshot ?? undefined,
@@ -69,6 +71,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     await prisma.jrbJobsiteWalkdown.create({ data: { ...rest, versionId: created.id } });
   }
 
+  await persistEventConversation({
+    jrbId: id,
+    versionId: created.id,
+    userId: user.id,
+    kind: "rebrief",
+    transcript: String(body.transcript ?? body.explanation ?? ""),
+    facts: [
+      { category: "rebrief", key: "reason", label: "What changed", value: String(body.reason), sourceSegment: String(body.transcript ?? "") },
+      { category: "rebrief", key: "explanation", label: "Change description", value: String(body.explanation ?? ""), sourceSegment: String(body.transcript ?? "") },
+    ],
+  });
   await prisma.rebriefEvent.create({
     data: {
       jrbId: id,
@@ -77,6 +90,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       fromVersion: current.versionNumber,
       toVersion: nextNumber,
       userId: user.id,
+      transcript: body.transcript ?? null,
+      delta: body.delta ?? undefined,
     },
   });
   await prisma.jrbRecord.update({

@@ -1,4 +1,8 @@
 import { matchTasks, type ApprovedSynonym, type ApprovedTask, type MatchResult } from "@/lib/domain/taskMatching";
+import { extractBriefing } from "@/lib/conversation/extractBriefing";
+import type { BriefingCatalog, BriefingExtraction } from "@/lib/conversation/types";
+import { extractPageFields } from "@/lib/voice/extractPageFields";
+import type { ExtractionResult, PageVoiceSchema } from "@/lib/voice/types";
 
 export type AiMatchInput = {
   workTypeCode: string;
@@ -7,10 +11,22 @@ export type AiMatchInput = {
   approvedSynonyms: ApprovedSynonym[];
 };
 
+export type AiExtractInput = {
+  transcript: string;
+  schema: PageVoiceSchema;
+};
+
+export type AiBriefingInput = {
+  transcript: string;
+  catalog: BriefingCatalog;
+};
+
 export interface AiProvider {
   name: string;
   model: string;
   matchTasks(input: AiMatchInput): Promise<MatchResult>;
+  extractPageFields(input: AiExtractInput): Promise<ExtractionResult>;
+  extractBriefing(input: AiBriefingInput): Promise<BriefingExtraction>;
 }
 
 export class LocalLibraryAiProvider implements AiProvider {
@@ -18,6 +34,12 @@ export class LocalLibraryAiProvider implements AiProvider {
   model = "deterministic-v1";
   async matchTasks(input: AiMatchInput): Promise<MatchResult> {
     return matchTasks(input);
+  }
+  async extractPageFields(input: AiExtractInput): Promise<ExtractionResult> {
+    return extractPageFields({ ...input, provider: this.name, model: this.model });
+  }
+  async extractBriefing(input: AiBriefingInput): Promise<BriefingExtraction> {
+    return extractBriefing({ ...input, provider: this.name, model: this.model });
   }
 }
 
@@ -35,6 +57,12 @@ export class AzureOpenAiProvider implements AiProvider {
       };
     }
     return matchTasks(input);
+  }
+  async extractPageFields(input: AiExtractInput): Promise<ExtractionResult> {
+    return extractPageFields({ ...input, provider: this.name, model: this.model });
+  }
+  async extractBriefing(input: AiBriefingInput): Promise<BriefingExtraction> {
+    return extractBriefing({ ...input, provider: this.name, model: this.model });
   }
 }
 

@@ -34,7 +34,17 @@ const climb: ApprovedTask = {
   status: "active",
 };
 
-const all = [distPole, transPole, rack, climb];
+const xfmr: ApprovedTask = {
+  id: "d-xfmr",
+  exactName:
+    "Install or remove equipment or devices (i.e. transformer, sectionalizer, recloser, cutout, switch, arrestor, insulator, regulator, capacitor) - Overhead",
+  activityExactName: "Work on electrical equipment and devices",
+  workTypeCode: "ELECTRIC_DISTRIBUTION",
+  workTypeExactName: "Electric Distribution",
+  status: "active",
+};
+
+const all = [distPole, transPole, rack, climb, xfmr];
 
 describe("task matching", () => {
   it("suggests the Distribution pole task for setting a pole", () => {
@@ -79,6 +89,18 @@ describe("task matching", () => {
     });
     expect(result.followUpQuestion).toContain("pole");
     expect(applyPoleFollowUp("Climbing a pole", "ELECTRIC_DISTRIBUTION", all).suggestions[0]?.exactTaskName).toBe("Climb pole");
+  });
+
+  it("suggests the overhead equipment task for replacing a transformer", () => {
+    const result = matchTasks({
+      workTypeCode: "ELECTRIC_DISTRIBUTION",
+      text: "replace a damaged 50 kVA overhead transformer and associated cut out",
+      approvedTasks: all,
+      approvedSynonyms: [],
+    });
+    expect(result.unmatched).toBe(false);
+    expect(result.suggestions[0]?.exactTaskName).toBe(xfmr.exactName);
+    expect(result.suggestions[0]?.confidence).toBe("Strong Match");
   });
 
   it("never invents a task when unmatched", () => {

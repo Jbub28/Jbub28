@@ -7,6 +7,39 @@ export const DIRECT_CONTROL_NOT_USED_REASONS = [
   "Other",
 ] as const;
 
+export const NO_DIRECT_CONTROL_AVAILABLE = "__no_direct_control_available__";
+export const NO_DIRECT_CONTROL_AVAILABLE_LABEL = "No direct control available";
+
+export type DirectControlChoice = {
+  exposureId: string;
+  exposureLabel: string;
+  selectedDirectControlId?: string | null;
+  notUsedRecorded: boolean;
+};
+
+export function isNoDirectControlAvailable(id?: string | null) {
+  return id === NO_DIRECT_CONTROL_AVAILABLE;
+}
+
+export function isInventoryDirectControlId(id?: string | null) {
+  return Boolean(id) && !isNoDirectControlAvailable(id);
+}
+
+export function missingDirectControlChoice(choices: DirectControlChoice[]): string | null {
+  for (const choice of choices) {
+    const selected = choice.selectedDirectControlId;
+    if (isInventoryDirectControlId(selected)) continue;
+    if (isNoDirectControlAvailable(selected) || choice.notUsedRecorded) {
+      if (!choice.notUsedRecorded) {
+        return `No Direct Control is available for ${choice.exposureLabel}. Select Alternative Controls before you continue.`;
+      }
+      continue;
+    }
+    return `Choose a Direct Control from the inventory for ${choice.exposureLabel}, or choose No direct control available.`;
+  }
+  return null;
+}
+
 export const REBRIEF_REASONS = [
   "Work scope changed",
   "Task changed",

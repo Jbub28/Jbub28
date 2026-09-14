@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     roles: user.roles.map((r) => r.role),
   };
   const token = await createSessionToken(session);
-  await setSessionCookie(token);
+  await setSessionCookie(token, request);
   await writeAudit({ userId: user.id, action: "sign_in", entityType: "user", entityId: user.id });
   return NextResponse.json({ user: session });
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "jrb_records" ADD COLUMN IF NOT EXISTS "discardedAt" TIMESTAMP(3);

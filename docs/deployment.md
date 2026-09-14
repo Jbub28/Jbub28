@@ -42,6 +42,20 @@ Or a local cluster (`docs` assume database `energyguard`).
 - Run `npm test` and Playwright smoke
 - Verify `/manifest.webmanifest` and HTTPS for PWA install
 
+## iPhone / TestFlight
+
+EnergyGuard JRB is a Next.js server app wrapped in a Capacitor iOS shell (`com.jbub28.energyguardjrb`, display name **EnergyGuard JRB**, App Store Connect Apple ID `6811939293`). The iPhone app does not bundle the database. Testers connect to the live HTTPS server from the first screen.
+
+```bash
+npm install
+CAPACITOR_SERVER_URL=https://your-https-host npm run build:ios
+npx cap sync ios
+```
+
+Then archive from Xcode or run the EAS `production` iOS profile. Build number is `CURRENT_PROJECT_VERSION` in `ios/App/App.xcodeproj`. If a tunnel DNS name changes, testers paste the new URL on the connect screen. Typed briefing works on iPhone even when talk-to-text is unavailable.
+
+Demo EIC: `eic@energyguard.local` / `ChangeMe!LocalOnly`
+
 ## Health
 
 `GET /api/health` returns database connectivity without leaking internals.

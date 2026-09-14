@@ -4,12 +4,26 @@ export function jsonError(message: string, status: number, extra?: Record<string
   return NextResponse.json({ error: message, ...extra }, { status });
 }
 
+function isTemporaryHttpsTunnelOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:" && url.hostname.endsWith(".trycloudflare.com");
+  } catch {
+    return false;
+  }
+}
+
 export function originAllowed(request: Request): boolean {
   if (request.method === "GET" || request.method === "HEAD") return true;
   const origin = request.headers.get("origin");
   if (!origin) return true;
   const allowed = process.env.APP_ORIGIN ?? origin;
-  return origin === allowed || origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1");
+  return (
+    origin === allowed ||
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1") ||
+    isTemporaryHttpsTunnelOrigin(origin)
+  );
 }
 
 const buckets = new Map<string, { count: number; reset: number }>();

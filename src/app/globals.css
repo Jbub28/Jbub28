@@ -1,25 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #070b14;
-  --surface: #121a2b;
-  --surface-2: #1b2740;
-  --text: #ffffff;
-  --muted: #d7deea;
-  --accent: #ffd000;
-  --accent-text: #111111;
-  --danger: #ffb4a9;
-  --focus: #7dd3fc;
+  --bg: #f3f5f8;
+  --bg-navy: #0a3161;
+  --surface: #ffffff;
+  --surface-2: #eef2f6;
+  --text: #12263a;
+  --muted: #5b6b7c;
+  --accent: #c9a227;
+  --accent-text: #12263a;
+  --navy: #0a3161;
+  --navy-2: #134074;
+  --danger: #8b1e1e;
+  --danger-bg: #f8e8e8;
+  --warn: #8a5a00;
+  --warn-bg: #fff6dc;
+  --ok: #1f6b4a;
+  --ok-bg: #e8f5ee;
+  --border: #d0d7e2;
+  --focus: #0a3161;
 }
 
 html,
 body {
   min-height: 100%;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans), "Atkinson Hyperlegible", system-ui, sans-serif;
+  font-family: var(--font-sans), "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
   font-size: 1.125rem;
   line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
 }
 
 *:focus-visible {
@@ -33,6 +45,69 @@ input,
 select,
 textarea {
   min-height: 56px;
+  touch-action: manipulation;
+}
+
+button.eg-compact-btn,
+a.eg-compact-btn {
+  min-height: 2.5rem;
+}
+
+button.eg-dock-btn,
+a.eg-dock-btn {
+  min-height: 2rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  padding: 0 0.45rem;
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  button.eg-dock-btn,
+  a.eg-dock-btn {
+    min-height: 2.25rem;
+    font-size: 0.8125rem;
+  }
+}
+
+input,
+select,
+textarea {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.eg-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgb(18 38 58 / 6%);
+}
+
+.eg-alert {
+  background: var(--warn-bg);
+  border: 1px solid #e4c56a;
+  color: var(--text);
+  border-radius: 0.75rem;
+}
+
+.eg-danger {
+  background: var(--danger-bg);
+  border: 1px solid #e0b4b4;
+  color: var(--text);
+  border-radius: 0.75rem;
+}
+
+.eg-kicker {
+  color: var(--navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eg-muted {
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

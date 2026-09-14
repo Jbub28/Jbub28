@@ -1,114 +1,51 @@
-# EAS Build — SafeRoute Nav (Capacitor iOS)
+# EAS Build — EnergyGuard JRB (Capacitor iOS)
 
-This project uses [Expo Application Services (EAS)](https://expo.dev/eas) with **custom build workflows** to compile the Capacitor iOS app in the cloud. You do not need a local Mac for cloud builds.
+This project uses [Expo Application Services (EAS)](https://expo.dev/eas) custom workflows to compile the Capacitor iOS shell. The Next.js API and database stay on the HTTPS server. Testers connect from the first screen in the app.
 
-## One-time setup
-
-Run these on your machine (or anywhere you can log in to Expo):
+## Build
 
 ```bash
-# 1. Install EAS CLI (global, or use npx eas from this repo)
-npm install --global eas-cli
-
-# 2. Log in to your Expo account
-eas login
-
-# 3. Link this repo to an EAS project (creates/updates eas.json + app.json projectId)
-eas build:configure
-```
-
-When `eas build:configure` runs, it will:
-- Create or link an Expo project
-- Write the real `projectId` into `app.json`
-- Confirm build profiles in `eas.json`
-
-## Required secrets
-
-Mapbox and Supabase tokens are baked in at **build time** for the static export. Set them as EAS secrets before your first production build:
-
-```bash
-eas secret:create --scope project --name NEXT_PUBLIC_MAPBOX_TOKEN --value "pk.your_token"
-eas secret:create --scope project --name NEXT_PUBLIC_SUPABASE_URL --value "https://your-project.supabase.co"
-eas secret:create --scope project --name NEXT_PUBLIC_SUPABASE_ANON_KEY --value "your_anon_key"
-```
-
-## Build commands
-
-```bash
-# Production IPA (App Store / TestFlight)
 eas build --platform ios --profile production
-
-# Internal preview build (signed device build)
-eas build --platform ios --profile preview
-
-# Simulator build (no Apple credentials needed)
-eas build --platform ios --profile development
 ```
 
-Or use npm scripts (uses the local `eas-cli` dev dependency):
-
-```bash
-npm run eas:build:ios
-```
+The `production` profile signs an App Store IPA (TestFlight-capable). Version is 1.0.1.
 
 ## Submit to TestFlight
 
-After a successful production build:
+After a successful production build, submit with your App Store Connect Apple ID of the app:
 
 ```bash
-eas submit --platform ios --profile production
+eas submit --platform ios --id <BUILD_ID> --profile production
 ```
 
-Or combine build + submit:
+App Store Connect Apple ID is `6811939293` (`eas.json` → `submit.production.ios.ascAppId`). Bundle ID is `com.jbub28.energyguardjrb`. Apple Team ID is `L7ZVZDDF3G`.
+
+Do not submit an IPA signed as `com.saferoute.nav` to app `6811939293`. Expo still has store credentials only for that old bundle. The EnergyGuard identifier needs its own App Store provisioning profile on the Expo project before a GitHub/cloud build can sign.
+
+### One-time signing setup (required)
+
+On a machine logged into Expo **and** Apple Developer, from this repo:
 
 ```bash
-eas build --platform ios --profile production --auto-submit
+npx eas-cli credentials -p ios
 ```
 
-Update `eas.json` → `submit.production.ios` with your Apple ID, App Store Connect app ID, and team ID before submitting.
+1. Select the `@jbub28s-team/joshua-menninger` project.
+2. Choose bundle identifier `com.jbub28.energyguardjrb` (add it if Expo only lists `com.saferoute.nav`).
+3. **Set up all** build credentials. Reuse the existing Apple Distribution certificate (team `L7ZVZDDF3G`). Let EAS create or download an App Store provisioning profile for `com.jbub28.energyguardjrb`.
+
+Alternatively, in a browser:
+
+1. [Apple Developer → Identifiers](https://developer.apple.com/account/resources/identifiers/list) — confirm App ID `com.jbub28.energyguardjrb`.
+2. [Apple Developer → Profiles](https://developer.apple.com/account/resources/profiles/list) — create an **App Store** profile for that App ID, using the same distribution certificate already on Expo.
+3. Upload that profile under [Expo iOS credentials](https://expo.dev/accounts/jbub28s-team/projects/joshua-menninger/credentials) for identifier `com.jbub28.energyguardjrb`.
+
+After that, `eas build --platform ios --profile production --auto-submit` can run non-interactively.
 
 ## How it works
 
-This is a **Next.js + Capacitor** app, not a standard Expo/React Native app. EAS uses custom YAML workflows in `.eas/build/`:
+1. `npm run build:ios` — write the default HTTPS server URL into `native-web/`
+2. `npx cap sync ios` — copy the iOS connect screen into Xcode
+3. Fastlane `gym` — archive and sign `ios/App/App.xcodeproj` (scheme **App**, bundle `com.jbub28.energyguardjrb`)
 
-1. `npm run build:ios` — static Next.js export (`CAPACITOR_BUILD=1`)
-2. `npx cap sync ios` — copy web bundle into the Xcode project
-3. Fastlane `gym` — archive and sign `ios/App/App.xcodeproj` (scheme: **App**)
-
-## Apple credentials
-
-On your first signed build, EAS will prompt you to set up:
-- Apple Developer Program membership
-- Distribution certificate
-- Provisioning profile for `com.saferoute.nav`
-
-Or manage them manually:
-
-```bash
-eas credentials
-```
-
-## CI / non-interactive login
-
-For GitHub Actions or other CI, create an Expo access token and set:
-
-```bash
-export EXPO_TOKEN=your_expo_access_token
-eas build --platform ios --profile production --non-interactive
-```
-
-Create tokens at: https://expo.dev/accounts/[account]/settings/access-tokens
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| `Not logged in` | Run `eas login` |
-| `projectId` missing | Run `eas build:configure` |
-| Blank map in app | Set `NEXT_PUBLIC_MAPBOX_TOKEN` as EAS secret before build |
-| Build can't find Xcode project | Confirm `ios/App/App.xcodeproj` exists (`npm run cap:sync` locally first) |
-| Global install permission error | Use `npx eas` or `npm run eas:*` scripts instead |
-
-## Local alternative (Mac + Xcode)
-
-If you prefer building locally, see [IOS.md](./IOS.md).
+Display name on the iPhone is **EnergyGuard JRB**.

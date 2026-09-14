@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import type { RoleName } from "@prisma/client";
+import { cookieSecure } from "./cookieSecure";
 
 export type SessionUser = {
   id: string;
@@ -30,12 +31,12 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     .sign(secret());
 }
 
-export async function setSessionCookie(token: string) {
+export async function setSessionCookie(token: string, request?: Request) {
   const store = await cookies();
   store.set(cookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: cookieSecure(request),
     path: "/",
   });
 }

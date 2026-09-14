@@ -16,12 +16,14 @@
       }
     },
     "preview": {
-      "distribution": "internal",
+      "distribution": "store",
       "ios": {
         "config": "production-ios.yml"
       },
       "env": {
-        "CAPACITOR_BUILD": "1"
+        "CAPACITOR_BUILD": "1",
+        "EXPO_APPLE_TEAM_ID": "L7ZVZDDF3G",
+        "EXPO_APPLE_TEAM_TYPE": "COMPANY_OR_ORGANIZATION"
       }
     },
     "production": {
@@ -32,16 +34,18 @@
         "config": "production-ios.yml"
       },
       "env": {
-        "CAPACITOR_BUILD": "1"
+        "CAPACITOR_BUILD": "1",
+        "EXPO_APPLE_TEAM_ID": "L7ZVZDDF3G",
+        "EXPO_APPLE_TEAM_TYPE": "COMPANY_OR_ORGANIZATION"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "REPLACE_WITH_APPLE_ID",
-        "ascAppId": "REPLACE_WITH_APP_STORE_CONNECT_APP_ID",
-        "appleTeamId": "REPLACE_WITH_TEAM_ID"
+        "ascAppId": "6811939293",
+        "appleTeamId": "L7ZVZDDF3G",
+        "bundleIdentifier": "com.jbub28.energyguardjrb"
       }
     }
   }

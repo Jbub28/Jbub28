@@ -10,9 +10,19 @@ export async function GET() {
   const user = await requireUser();
   const jrbs = await prisma.jrbRecord.findMany({
     where: { organizationId: user.organizationId },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    include: { workType: true, versions: { orderBy: { versionNumber: "desc" }, take: 1 } },
+    orderBy: { updatedAt: "desc" },
+    take: 80,
+    include: {
+      workType: true,
+      versions: {
+        orderBy: { versionNumber: "desc" },
+        take: 1,
+        select: {
+          workDescriptionEdited: true,
+          workDescriptionOriginal: true,
+        },
+      },
+    },
   });
   return NextResponse.json({ jrbs });
 }
@@ -46,8 +56,11 @@ export async function POST(request: NextRequest) {
       clearanceNumber: body.clearanceNumber,
       hazardNumber: body.hazardNumber,
       sawsNumber: body.sawsNumber,
-      addressOrCoordinates: body.addressOrCoordinates,
-      workLocation: body.workLocation,
+      jobLocation: body.jobLocation ?? null,
+      streetAddress: body.streetAddress ?? null,
+      locationIdentifier: body.locationIdentifier ?? null,
+      addressOrCoordinates: body.addressOrCoordinates ?? null,
+      workLocation: body.workLocation ?? body.jobLocation ?? null,
       contractorInvolved: Boolean(body.contractorInvolved),
       contractorCompany: body.contractorCompany,
       emergencyAccess: body.emergencyAccess,

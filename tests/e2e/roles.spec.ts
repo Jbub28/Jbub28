@@ -101,6 +101,7 @@ test("Mike Torres and Sarah Collins cover the TestFlight worker/supervisor brief
   await expect(page.getByText("Review only")).toBeVisible();
   await expect(page.getByText(UNIQUE_LOCATION).first()).toBeVisible();
   await expect(page.getByText("Mike Torres").first()).toBeVisible();
+  await expect(page.getByText("OSHA briefing subjects")).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Draft" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Submit brief — job in progress" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Stop Work" })).toHaveCount(0);

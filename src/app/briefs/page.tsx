@@ -123,14 +123,14 @@ export default function BriefsPage() {
             const folder = briefListBucket(j);
             return (
               <li key={j.id} className="eg-card p-4">
-                <a href={`/briefs/${j.id}`} className="block">
+                <Link href={`/briefs/${j.id}`} className="block">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-xl font-bold">{title}</p>
                     <StatusChip tone={statusTone(j.status, j.discardedAt)}>{plainStatus(j.status, j.discardedAt)}</StatusChip>
                   </div>
                   <p className="mt-1 text-sm">{j.jrbNumber}{j.createdBy?.displayName ? ` · ${j.createdBy.displayName}` : ""}</p>
                   {timing.line ? <p className="eg-muted mt-1 text-sm">{timing.line}</p> : null}
-                </a>
+                </Link>
                 {canCreate && folder === "in_progress" && j.status !== "closed" ? (
                   <button
                     type="button"

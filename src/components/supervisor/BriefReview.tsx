@@ -9,6 +9,14 @@ type SupervisorBriefReviewProps = {
   readiness: { status?: string; gaps?: { message: string; nextAction: string }[] } | null;
 };
 
+const OSHA_SUBJECTS: { label: string; key: string }[] = [
+  { label: "Hazards associated with the job", key: "hazardsAddressed" },
+  { label: "Work procedures involved", key: "proceduresAddressed" },
+  { label: "Special precautions", key: "precautionsAddressed" },
+  { label: "Energy-source controls", key: "energyControlsAddressed" },
+  { label: "PPE requirements", key: "ppeAddressed" },
+];
+
 export function SupervisorBriefReview({ jrb, readiness }: SupervisorBriefReviewProps) {
   const version = jrb.versions?.[0];
   const timing = jobTiming(jrb);
@@ -22,6 +30,10 @@ export function SupervisorBriefReview({ jrb, readiness }: SupervisorBriefReviewP
   const crew = version?.crewMembers ?? [];
   const steps = version?.jobSteps ?? [];
   const conditions = version?.conditions ?? [];
+  const questions = version?.questions ?? [];
+  const assessment = version?.briefingAssessment;
+  const stopEvents = jrb.stopWorkEvents ?? [];
+  const rebriefEvents = jrb.rebriefEvents ?? [];
 
   return (
     <div className="space-y-4">
@@ -155,10 +167,61 @@ export function SupervisorBriefReview({ jrb, readiness }: SupervisorBriefReviewP
           </ul>
         </article>
       ) : null}
-      {readiness?.status ? (
+      <article className="eg-card p-4">
+        <h2 className="text-lg font-bold">OSHA briefing subjects</h2>
+        <ul className="mt-2 space-y-2">
+          {OSHA_SUBJECTS.map((item) => (
+            <li key={item.key}>
+              {assessment?.[item.key] ? "Addressed in the briefing" : "Needs attention"} — {item.label}
+            </li>
+          ))}
+        </ul>
+      </article>
+      {questions.length ? (
+        <article className="eg-card p-4">
+          <h2 className="text-lg font-bold">Questions from the briefing</h2>
+          <ul className="list-disc pl-5">
+            {questions.map((q: any) => (
+              <li key={q.id}>
+                {q.question ?? "Question"}
+                {q.eicResponse ? ` — ${q.eicResponse}` : ""}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ) : null}
+      {stopEvents.length || rebriefEvents.length ? (
+        <article className="eg-card p-4">
+          <h2 className="text-lg font-bold">Stop work and rebriefs</h2>
+          <ul className="list-disc pl-5">
+            {stopEvents.map((event: any) => (
+              <li key={event.id}>
+                Stop work: {event.reason}
+                {event.explanation ? ` — ${event.explanation}` : ""}
+              </li>
+            ))}
+            {rebriefEvents.map((event: any) => (
+              <li key={event.id}>
+                Rebrief: {event.reason}
+                {event.explanation ? ` — ${event.explanation}` : ""}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ) : null}
+      {readiness?.status || readiness?.gaps?.length ? (
         <article className="eg-card p-4">
           <h2 className="text-lg font-bold">Readiness</h2>
-          <p>{readiness.status}</p>
+          {readiness?.status ? <p>{readiness.status}</p> : null}
+          {readiness?.gaps?.length ? (
+            <ul className="mt-2 list-disc pl-5">
+              {readiness.gaps.map((gap) => (
+                <li key={`${gap.message}-${gap.nextAction}`}>
+                  {gap.message} Next: {gap.nextAction}
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </article>
       ) : null}
     </div>

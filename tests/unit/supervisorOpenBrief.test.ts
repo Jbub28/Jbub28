@@ -26,6 +26,8 @@ describe("supervisor Open the job brief", () => {
     expect(briefPage).toContain("SupervisorBriefReview");
     expect(briefPage).not.toContain("/briefs/");
     expect(briefPage).not.toContain("BriefWizard");
+    expect(briefPage).not.toContain("window.open");
+    expect(briefPage).not.toContain("target=\"_blank\"");
   });
 
   it("reuses supervisor auth and canReadJrb without worker mutations", () => {
@@ -34,5 +36,17 @@ describe("supervisor Open the job brief", () => {
     expect(briefApi).toContain("loadJrb");
     expect(briefApi).toContain("canEdit: false");
     expect(briefApi).not.toMatch(/export async function (POST|PATCH|PUT|DELETE)/);
+  });
+
+  it("renders the submitted briefing as review-only, including OSHA subjects", () => {
+    const review = readFileSync("src/components/supervisor/BriefReview.tsx", "utf8");
+    expect(review).toContain("OSHA briefing subjects");
+    expect(review).toContain("JobLocationSummary");
+    expect(review).toContain("HighEnergyIcon");
+    expect(review).not.toContain("Save Draft");
+    expect(review).not.toContain("Submit brief");
+    expect(review).not.toContain("Stop Work");
+    expect(review).not.toContain("fetch(");
+    expect(review).not.toMatch(/PATCH|patch\(/);
   });
 });

@@ -48,22 +48,55 @@
         font-size: 1.125rem;
         font-weight: 700;
       }
+      button.secondary {
+        background: #ffffff;
+        color: #0a3161;
+        border: 2px solid #0a3161;
+        margin-top: 0.75rem;
+      }
       .muted { color: #5b6b7c; font-size: 0.95rem; }
+      details.support {
+        margin-top: 1rem;
+      }
+      details.support summary {
+        cursor: pointer;
+        color: #5b6b7c;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      details.support .panel {
+        margin-top: 0.85rem;
+      }
     </style>
   </head>
   <body>
     <main>
       <p class="muted">Electric Delivery</p>
       <h1>EnergyGuard JRB</h1>
-      <p>Open the job brief on this iPhone. If the address changes after a DNS error, paste the new HTTPS link and connect again.</p>
-      <label for="server">Server address</label>
-      <input id="server" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://" />
+      <p id="status">Opening the job brief on this iPhone…</p>
       <button type="button" id="connect">Connect</button>
+      <details class="support" id="support">
+        <summary>Change server</summary>
+        <div class="panel">
+          <p class="muted">Support and testing only. Field crews can ignore this.</p>
+          <label for="server">Server address</label>
+          <input id="server" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://" />
+          <button type="button" id="save">Save and connect</button>
+          <button type="button" class="secondary" id="reset">Use default server</button>
+        </div>
+      </details>
     </main>
     <script>
-      const KEY = "energyguard.serverUrl";
+      const OVERRIDE_KEY = "energyguard.serverUrlOverride";
+      const LEGACY_KEY = "energyguard.serverUrl";
+      const DEFAULT_SERVER_URL = "https://jbub28-production.up.railway.app";
       const input = document.getElementById("server");
       const connect = document.getElementById("connect");
+      const save = document.getElementById("save");
+      const reset = document.getElementById("reset");
+      const support = document.getElementById("support");
+      const status = document.getElementById("status");
+      let autoConnectTimer = 0;
 
       function normalize(value) {
         const trimmed = String(value || "").trim();
@@ -80,27 +113,70 @@
       }
 
       function go(url) {
-        localStorage.setItem(KEY, url);
         window.location.replace(url);
       }
 
-      fetch("./server-default.json")
-        .then((r) => r.json())
-        .then((data) => {
-          input.value = normalize(localStorage.getItem(KEY)) || normalize(data.url);
-        })
-        .catch(() => {
-          input.value = normalize(localStorage.getItem(KEY));
-        });
+      function cancelAutoConnect() {
+        if (autoConnectTimer) {
+          window.clearTimeout(autoConnectTimer);
+          autoConnectTimer = 0;
+        }
+      }
 
-      connect.addEventListener("click", () => {
+      function readOverride() {
+        return normalize(localStorage.getItem(OVERRIDE_KEY));
+      }
+
+      async function defaultUrl() {
+        try {
+          const data = await fetch("./server-default.json").then((r) => r.json());
+          return normalize(data.url) || DEFAULT_SERVER_URL;
+        } catch {
+          return DEFAULT_SERVER_URL;
+        }
+      }
+
+      support.addEventListener("toggle", () => {
+        if (support.open) {
+          cancelAutoConnect();
+          status.textContent = "Enter a server address for testing or support, then save.";
+        }
+      });
+
+      connect.addEventListener("click", async () => {
+        cancelAutoConnect();
+        const url = readOverride() || (await defaultUrl());
+        go(url);
+      });
+
+      save.addEventListener("click", () => {
         const url = normalize(input.value);
         if (!url) {
           input.focus();
           return;
         }
+        localStorage.setItem(OVERRIDE_KEY, url);
         go(url);
       });
+
+      reset.addEventListener("click", async () => {
+        localStorage.removeItem(OVERRIDE_KEY);
+        localStorage.removeItem(LEGACY_KEY);
+        const url = await defaultUrl();
+        input.value = url;
+        go(url);
+      });
+
+      (async () => {
+        localStorage.removeItem(LEGACY_KEY);
+        const fallback = await defaultUrl();
+        const override = readOverride();
+        input.value = override || fallback;
+        if (support.open) return;
+        autoConnectTimer = window.setTimeout(() => {
+          go(override || fallback);
+        }, 800);
+      })();
     </script>
   </body>
 </html>

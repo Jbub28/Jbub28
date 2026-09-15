@@ -16,7 +16,13 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: "https",
-    allowNavigation: ["*.trycloudflare.com", "localhost", "127.0.0.1", ...extraHosts],
+    allowNavigation: [
+      "jbub28-production.up.railway.app",
+      "*.trycloudflare.com",
+      "localhost",
+      "127.0.0.1",
+      ...extraHosts,
+    ],
   },
   plugins: {
     SplashScreen: {

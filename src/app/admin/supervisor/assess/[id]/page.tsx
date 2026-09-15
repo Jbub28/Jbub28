@@ -40,7 +40,7 @@ export default function SupervisorAssessPage() {
         <p className="mb-4">
           <Link href="/admin/supervisor" className="font-bold text-[var(--navy)] underline">Back to Supervisor desk</Link>
           {" · "}
-          <Link href="/briefs" className="font-bold text-[var(--navy)] underline">Home</Link>
+          <Link href={`/admin/supervisor/brief/${params.id}`} className="font-bold text-[var(--navy)] underline">Open the job brief</Link>
         </p>
         {error ? <p className="eg-danger p-3" role="alert">{error}</p> : null}
         {data?.jrb ? (

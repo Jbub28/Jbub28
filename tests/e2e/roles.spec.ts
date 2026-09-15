@@ -62,7 +62,7 @@ test("Mike Torres and Sarah Collins cover the TestFlight worker/supervisor brief
 
   await page.getByRole("button", { name: "My briefs" }).click();
   await expect(page.getByRole("heading", { name: "My job briefs" })).toBeVisible();
-  await expect(page.getByText(UNIQUE_LOCATION)).toBeVisible();
+  await expect(page.getByText(UNIQUE_LOCATION).first()).toBeVisible();
   await page.getByText(UNIQUE_LOCATION).first().click();
   await expect(page.getByRole("textbox", { name: "Job Location" })).toHaveValue(UNIQUE_LOCATION);
 
@@ -90,26 +90,33 @@ test("Mike Torres and Sarah Collins cover the TestFlight worker/supervisor brief
 
   await expect(page.getByRole("tab", { name: /In progress/ })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Submitted \/ completed/ })).toBeVisible();
-  const card = page.locator("li").filter({ hasText: UNIQUE_LOCATION });
+  const card = page.locator("li").filter({ has: page.locator(`a[href="/admin/supervisor/brief/${briefId}"]`) });
   await expect(card).toBeVisible();
   await expect(card.getByText("Mike Torres")).toBeVisible();
   const openBrief = card.getByRole("link", { name: "Open the job brief" });
-  await expect(openBrief).toHaveAttribute("href", `/briefs/${briefId}`);
-  await expect(openBrief).not.toHaveAttribute("href", /https?:\/\/|localhost|trycloudflare/);
+  await expect(openBrief).toHaveAttribute("href", `/admin/supervisor/brief/${briefId}`);
+  await expect(openBrief).not.toHaveAttribute("href", /\/briefs\/|https?:\/\/|localhost|trycloudflare/);
   await openBrief.click();
+  await expect(page).toHaveURL(new RegExp(`/admin/supervisor/brief/${briefId}`));
   await expect(page.getByText("Review only")).toBeVisible();
-  await expect(page.getByText(UNIQUE_LOCATION)).toBeVisible();
-  await expect(page.getByText("Mike Torres")).toBeVisible();
+  await expect(page.getByText(UNIQUE_LOCATION).first()).toBeVisible();
+  await expect(page.getByText("Mike Torres").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Save Draft" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Submit brief — job in progress" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Stop Work" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Talk through the job" })).toHaveCount(0);
 
-  const sarahRead = await page.request.get(`/api/jrbs/${briefId}`);
+  const sarahRead = await page.request.get(`/api/admin/supervisor/brief/${briefId}`);
   const sarahReadJson = await sarahRead.json();
   expect(sarahRead.ok()).toBeTruthy();
   expect(sarahReadJson.canEdit).toBe(false);
   expect(sarahReadJson.jrb.jobLocation).toBe(UNIQUE_LOCATION);
+
+  await page.getByRole("link", { name: "Assess this briefing" }).click();
+  await expect(page).toHaveURL(new RegExp(`/admin/supervisor/assess/${briefId}`));
+  await expect(page.getByRole("heading", { name: /CSRA|Pre-Job|scorecard/i })).toBeVisible();
+  await page.getByRole("link", { name: "Back to Supervisor desk" }).click();
+  await expect(page.getByRole("heading", { name: "Supervisor desk" })).toBeVisible();
 
   const outsiderLogin = await request.post("/api/auth/login", {
     data: { email: "eic@energyguard.local", password: "ChangeMe!LocalOnly" },
@@ -137,4 +144,6 @@ test("Mike Torres and Sarah Collins cover the TestFlight worker/supervisor brief
 
   const outsiderGet = await page.request.get(`/api/jrbs/${outsiderId}`);
   expect(outsiderGet.status()).toBe(404);
+  const outsiderSupervisorBrief = await page.request.get(`/api/admin/supervisor/brief/${outsiderId}`);
+  expect(outsiderSupervisorBrief.status()).toBe(404);
 });

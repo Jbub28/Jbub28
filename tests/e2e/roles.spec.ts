@@ -93,7 +93,10 @@ test("Mike Torres and Sarah Collins cover the TestFlight worker/supervisor brief
   const card = page.locator("li").filter({ hasText: UNIQUE_LOCATION });
   await expect(card).toBeVisible();
   await expect(card.getByText("Mike Torres")).toBeVisible();
-  await card.getByRole("link", { name: "Open the job brief" }).click();
+  const openBrief = card.getByRole("link", { name: "Open the job brief" });
+  await expect(openBrief).toHaveAttribute("href", `/briefs/${briefId}`);
+  await expect(openBrief).not.toHaveAttribute("href", /https?:\/\/|localhost|trycloudflare/);
+  await openBrief.click();
   await expect(page.getByText("Review only")).toBeVisible();
   await expect(page.getByText(UNIQUE_LOCATION)).toBeVisible();
   await expect(page.getByText("Mike Torres")).toBeVisible();

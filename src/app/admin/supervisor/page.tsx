@@ -98,9 +98,9 @@ export default function SupervisorDeskPage() {
                 <Link href={`/admin/supervisor/assess/${j.id}`} className="rounded-xl bg-[var(--navy)] px-4 py-3 font-bold text-white">
                   Assess this briefing
                 </Link>
-                <a href={`/briefs/${j.id}`} className="rounded-xl border border-[var(--border)] px-4 py-3 font-bold">
+                <Link href={`/admin/supervisor/brief/${j.id}`} className="rounded-xl border border-[var(--border)] px-4 py-3 font-bold">
                   Open the job brief
-                </a>
+                </Link>
               </div>
             </li>
             );
